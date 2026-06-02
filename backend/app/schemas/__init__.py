@@ -19,6 +19,11 @@ from app.schemas.backtest import (
     BacktestTrade,
     TimeSeriesSplitWindow,
 )
+from app.schemas.calibration import (
+    CalibrationBucket,
+    CalibrationResult,
+    CalibrationSample,
+)
 from app.schemas.data_availability import (
     DataAvailabilityLedgerInput,
     DataAvailabilityLedgerRecord,
@@ -45,6 +50,9 @@ __all__ = [
     "BacktestObservation",
     "BacktestResult",
     "BacktestTrade",
+    "CalibrationBucket",
+    "CalibrationResult",
+    "CalibrationSample",
     "DataAvailabilityLedgerInput",
     "DataAvailabilityLedgerRecord",
     "FactorScore",

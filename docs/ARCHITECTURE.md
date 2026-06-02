@@ -32,6 +32,7 @@ flowchart LR
 - Scoring modules under `backend/app/services/scoring/`
 - Indicator modules under `backend/app/services/indicators/`
 - Backtest Lab under `backend/app/services/backtest_lab.py`
+- Probability Calibration under `backend/app/services/probability_calibration.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -96,6 +97,19 @@ Supported MVP controls:
 Required result metrics include win rate, trade count, average and median return, expectancy, max drawdown, Profit Factor, Sharpe Ratio, Sortino Ratio, max single loss, max consecutive losses, average holding days, turnover, sector win rate, and market-state win rate.
 
 Backtests must use features and labels that were available at the signal timestamp. Do not use revised fundamentals, later-published labels, or future market data when simulating historical signals.
+
+### Probability Calibration
+
+Probability calibration is independent from the scoring formula. It compares historical predicted probabilities with realized labels and reports whether the displayed probability is trustworthy.
+
+Supported MVP outputs:
+
+- Calibration Curve buckets such as 60%-65%, 65%-70%, and 70%-75%
+- Brier Score for probability accuracy
+- Probability Bucket Backtest with sample count, average predicted probability, actual win rate, calibration error, and reliability status
+- segment filters for horizon, sector, and market state
+
+If a bucket predicts 80% but the realized win rate is near 55%, the bucket should be marked overconfident and reviewed before showing high-confidence language in the UI.
 
 ## Runtime
 
