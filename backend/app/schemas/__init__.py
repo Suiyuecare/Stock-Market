@@ -82,6 +82,7 @@ from app.schemas.objective_score import (
     ObjectiveScoreRequest,
     ObjectiveScoreResult,
 )
+from app.schemas.operations import AlertEventRecord, JobRunRecord, ReadinessCheck, ReadinessResponse
 from app.schemas.portfolio_risk import (
     PortfolioAllocation,
     PortfolioCandidate,
@@ -216,6 +217,8 @@ __all__ = [
     "ObjectiveScoreConfig",
     "ObjectiveScoreRequest",
     "ObjectiveScoreResult",
+    "AlertEventRecord",
+    "JobRunRecord",
     "NewsEvent",
     "NewsParseRequest",
     "NewsParseResponse",
@@ -228,6 +231,8 @@ __all__ = [
     "PerformanceStatsInput",
     "PerformanceStatsResult",
     "RankingResponse",
+    "ReadinessCheck",
+    "ReadinessResponse",
     "RiskScore",
     "SignalDataAvailabilityCheck",
     "SignalAntiPatternConfig",

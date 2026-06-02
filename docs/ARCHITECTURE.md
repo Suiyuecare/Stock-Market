@@ -58,6 +58,8 @@ The MVP API can run with mock/sample data or official open-data providers. Produ
 - `GET /api/rankings/volume-price-divergence`
 - `GET /api/us-market/radar`
 - `GET /api/risk/high-risk`
+- `GET /api/monitoring/readiness`
+- `GET /api/monitoring/alerts`
 
 All scoring endpoints return explainable research payloads and the standard disclaimer. They must not return direct investment advice.
 
@@ -86,6 +88,18 @@ Implemented MVP job behavior still uses mock providers first, but scheduled runs
 - `news_ingestion_job` ingests mock provider news, classifies events through the parser interface, writes normalized news events, and writes data availability ledger rows.
 
 Direct function calls can still return artifacts without persistence for tests and local inspection. The scheduler wrappers create a SQLAlchemy session and persist artifacts into PostgreSQL. The provider layer now includes official open-data fetchers for TWSE/MOPS company profiles, monthly revenue, material information, and CNA RSS parsing. The next deployment phase should switch scheduled jobs from mock providers to those open-data providers and keep writing artifacts into PostgreSQL with data availability ledger records.
+
+### Operations Monitoring
+
+The MVP includes a lightweight observability baseline that works without external monitoring keys:
+
+- `job_runs` records every scheduled job execution, duration, status, result summary, and error message.
+- `alert_events` records operational alerts such as failed scheduled jobs, provider failures, readiness problems, and unresolved launch issues.
+- `OperationsMonitor.run_job` wraps scheduled jobs with structured logging, job run persistence, failure capture, and alert emission.
+- `GET /api/monitoring/readiness` reports database reachability, scheduled-job status, open alert count, and the latest job runs.
+- `GET /api/monitoring/alerts` lists unresolved operational alerts.
+
+Sentry, Vercel log drains, email, SMS, and push notifications remain optional provider integrations. Without their environment variables, the app still records alerts in PostgreSQL and logs structured events for Vercel/runtime log inspection.
 
 ### Backtest Lab
 

@@ -45,6 +45,8 @@ EXPECTED_TABLES = {
     "backtest_results",
     "strategy_parameters",
     "signal_performance_stats",
+    "job_runs",
+    "alert_events",
 }
 
 

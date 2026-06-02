@@ -7,6 +7,7 @@ from app.models.fundamental import FundamentalMonthly, FundamentalQuarterly
 from app.models.institutional import InstitutionalTradingDaily, InstitutionalTradingDay
 from app.models.label import LabelsDaily
 from app.models.news import NewsEvent
+from app.models.operations import AlertEvent, JobRun
 from app.models.price import PriceDaily
 from app.models.signal import Signal, SignalOutcome, SignalPerformanceStats
 from app.models.stock import StockMaster
@@ -16,6 +17,7 @@ from app.models.us_tw_supply_chain_map import USTWSupplyChainMap, USTWSupplyChai
 
 __all__ = [
     "Base",
+    "AlertEvent",
     "BacktestResultRecord",
     "BacktestRun",
     "DataAvailabilityLedger",
@@ -25,6 +27,7 @@ __all__ = [
     "FundamentalQuarterly",
     "InstitutionalTradingDaily",
     "InstitutionalTradingDay",
+    "JobRun",
     "LabelsDaily",
     "NewsEvent",
     "PriceDaily",

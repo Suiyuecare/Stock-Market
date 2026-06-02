@@ -4,21 +4,24 @@ from app.database import SessionLocal
 from app.services.jobs.daily_after_market_job import run_tw_after_close_job
 from app.services.jobs.news_ingestion_job import run_news_ingestion_job
 from app.services.jobs.pre_open_us_market_job import run_us_premarket_job
+from app.services.operations_monitor import OperationsMonitor
+
+monitor = OperationsMonitor()
 
 
 def run_tw_after_close_job_with_persistence() -> None:
     with SessionLocal() as session:
-        run_tw_after_close_job(session=session)
+        monitor.run_job(session, "tw-after-close", lambda: run_tw_after_close_job(session=session))
 
 
 def run_us_premarket_job_with_persistence() -> None:
     with SessionLocal() as session:
-        run_us_premarket_job(session=session)
+        monitor.run_job(session, "us-premarket-linkage", lambda: run_us_premarket_job(session=session))
 
 
 def run_news_ingestion_job_with_persistence() -> None:
     with SessionLocal() as session:
-        run_news_ingestion_job(session=session)
+        monitor.run_job(session, "news-ingestion", lambda: run_news_ingestion_job(session=session))
 
 
 def main() -> None:
