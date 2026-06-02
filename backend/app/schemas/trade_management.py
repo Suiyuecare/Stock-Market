@@ -32,6 +32,7 @@ class TradeManagementRequest(BaseModel):
     benchmark_entry_price: Optional[Decimal] = None
     benchmark_future_closes: Optional[List[Decimal]] = None
     atr: Optional[Decimal] = None
+    total_cost_rate: Optional[Decimal] = None
     recent_loss_dates: List[date] = Field(default_factory=list)
     config: TradeManagementConfig = TradeManagementConfig()
 

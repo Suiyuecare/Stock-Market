@@ -112,6 +112,18 @@ The MVP must define simulated entry and exit rules even before broker integratio
 
 The app should report fixed-horizon win rate, take-profit/stop-loss win rate, and relative-to-benchmark win rate.
 
+### Cost Model
+
+Backtests and simulated labels must deduct configurable costs before reporting win rate, expectancy, or probability calibration quality.
+
+- buy and sell commission rates are configurable
+- transaction tax rate is configurable
+- minimum commission fee is configurable
+- slippage is modeled by market-cap bucket, with MVP defaults of 3 bps for large cap, 8 bps for mid cap, and 15 bps for small cap
+- ETF, stock, day-trading, futures, and broker-specific cost assumptions should be represented as different cost-model configurations
+
+The product should never present gross-return-only performance as the main result, because short-term strategy quality can be materially overstated when trading costs are ignored.
+
 ### Dashboard
 
 - Market status cards

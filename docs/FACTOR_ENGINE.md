@@ -82,6 +82,33 @@ The engine should report three win definitions:
 - take-profit / stop-loss win: take-profit is touched before stop-loss
 - relative win: fixed-horizon return beats benchmark return plus costs
 
+### 0.3 Cost Variables
+
+Backtests, labels, and simulated trade-management results must deduct costs before calculating win rate or expected return. Costs are configurable because stocks, ETFs, day trading, futures, brokers, liquidity buckets, and order sizes can have different fee, tax, and slippage assumptions.
+
+```yaml
+cost_model:
+  commission_rate_buy: configurable
+  commission_rate_sell: configurable
+  transaction_tax_rate: configurable
+  slippage_bps_large_cap: 3
+  slippage_bps_mid_cap: 8
+  slippage_bps_small_cap: 15
+  min_fee: configurable
+```
+
+The cost model reports:
+
+- buy-side commission
+- sell-side commission
+- sell-side transaction tax
+- buy-side slippage
+- sell-side slippage
+- total cost amount
+- total cost rate for return calculations
+
+No backtest should report raw gross-return win rate as the primary result, because short-horizon strategies are easily overstated when transaction cost, tax, and liquidity slippage are ignored.
+
 ### 1. FundamentalScore
 
 Inputs:

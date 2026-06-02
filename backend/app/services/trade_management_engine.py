@@ -10,7 +10,9 @@ class TradeManagementEngine:
 
     def evaluate(self, request: TradeManagementRequest) -> List[TradeManagementResult]:
         results: List[TradeManagementResult] = []
-        total_cost = request.config.fee_rate + request.config.transaction_tax_rate + request.config.slippage
+        total_cost = request.total_cost_rate or (
+            request.config.fee_rate + request.config.transaction_tax_rate + request.config.slippage
+        )
         stop_loss_pct = self._stop_loss_pct(request)
         take_profit_pct = request.config.take_profit_pct_range[0]
         cooldown_active = self._cooldown_active(request)

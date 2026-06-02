@@ -2,6 +2,8 @@ from datetime import date
 from decimal import Decimal
 
 from app.schemas import TradeManagementConfig, TradeManagementRequest
+from app.schemas import CostModelRequest
+from app.services.cost_model_engine import CostModelEngine
 from app.services.trade_management_engine import TradeManagementEngine
 
 
@@ -88,3 +90,18 @@ def test_trade_management_trailing_stop_can_exit_before_horizon() -> None:
     result = TradeManagementEngine().evaluate(request)[0]
 
     assert result.exit_reason == "trailing_stop"
+
+
+def test_trade_management_can_use_configurable_cost_model_rate() -> None:
+    cost = CostModelEngine().calculate(
+        CostModelRequest(
+            buy_notional=Decimal("100000"),
+            sell_notional=Decimal("100000"),
+            market_cap_bucket="small_cap",
+        )
+    )
+    request = _request(total_cost_rate=cost.total_cost_rate)
+    result = next(item for item in TradeManagementEngine().evaluate(request) if item.horizon_days == 5)
+
+    assert result.exit_reason == "take_profit"
+    assert result.net_return == Decimal("0.05") - cost.total_cost_rate

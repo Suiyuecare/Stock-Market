@@ -24,6 +24,11 @@ from app.schemas.calibration import (
     CalibrationResult,
     CalibrationSample,
 )
+from app.schemas.cost_model import (
+    CostModelConfig,
+    CostModelRequest,
+    CostModelResult,
+)
 from app.schemas.data_availability import (
     DataAvailabilityLedgerInput,
     DataAvailabilityLedgerRecord,
@@ -110,6 +115,9 @@ __all__ = [
     "CalibrationBucket",
     "CalibrationResult",
     "CalibrationSample",
+    "CostModelConfig",
+    "CostModelRequest",
+    "CostModelResult",
     "DataAvailabilityLedgerInput",
     "DataAvailabilityLedgerRecord",
     "ExplainabilityDataSource",
