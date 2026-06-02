@@ -173,7 +173,72 @@ Components:
 
 The app should rank strategy configurations by `ObjectiveScore` and keep raw win rate as supporting context.
 
-### 0.6 MVP Initial Strategy Defaults
+### 0.6 Factor Weight Profiles
+
+Initial scoring uses manual factor weights. Later versions can replace these with model-learned weights after enough point-in-time labels, validation folds, and monitoring data exist.
+
+General Taiwan stocks:
+
+```text
+FinalScore =
+  0.20 * FundamentalScore
++ 0.18 * ChipScore
++ 0.17 * TechnicalScore
++ 0.15 * USMarketScore
++ 0.12 * NewsScore
++ 0.08 * MacroScore
++ 0.05 * TargetPriceScore
++ 0.05 * LiquidityScore
+- 0.35 * RiskScore
+```
+
+Electronics, semiconductor, and AI supply-chain stocks:
+
+```text
+FinalScore =
+  0.17 * FundamentalScore
++ 0.17 * ChipScore
++ 0.16 * TechnicalScore
++ 0.25 * USMarketScore
++ 0.10 * NewsScore
++ 0.05 * MacroScore
++ 0.05 * TargetPriceScore
++ 0.05 * LiquidityScore
+- 0.35 * RiskScore
+```
+
+Domestic demand, traditional industry, and construction stocks:
+
+```text
+FinalScore =
+  0.25 * FundamentalScore
++ 0.20 * ChipScore
++ 0.20 * TechnicalScore
++ 0.05 * USMarketScore
++ 0.15 * NewsScore
++ 0.10 * MacroScore
++ 0.05 * TargetPriceScore
+- 0.35 * RiskScore
+```
+
+Bear or high-volatility markets:
+
+```text
+FinalScore =
+  0.18 * FundamentalScore
++ 0.15 * ChipScore
++ 0.12 * TechnicalScore
++ 0.10 * USMarketScore
++ 0.10 * NewsScore
++ 0.05 * MacroScore
++ 0.05 * TargetPriceScore
++ 0.05 * LiquidityScore
+- 0.55 * RiskScore
+```
+
+In bear markets, the goal is not to find more stocks. The system should raise thresholds, increase risk penalties, and reduce the number of generated signals.
+
+### 0.7 MVP Initial Strategy Defaults
 
 The MVP starts with a conservative preset designed for 5-day relative win-rate reliability:
 

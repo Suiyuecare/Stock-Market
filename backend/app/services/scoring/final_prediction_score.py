@@ -13,7 +13,7 @@ from app.services.scoring.target_price_score import calculate_target_price_score
 from app.services.scoring.technical_score import calculate_technical_score
 from app.services.scoring.us_market_score import calculate_us_market_score, us_linkage_score
 from app.services.indicators import build_technical_indicators
-from app.services.market_regime_engine import adjusted_factor_weights
+from app.services.factor_weight_profiles import FactorWeightProfileService
 
 DISCLAIMER = "Outputs are for research and education only, not personalized investment advice."
 FINAL_SCORE_WEIGHTS = {
@@ -26,6 +26,7 @@ FINAL_SCORE_WEIGHTS = {
     "target_price": 0.05,
     "liquidity": 0.05,
 }
+FACTOR_WEIGHT_PROFILE_SERVICE = FactorWeightProfileService()
 
 
 def clamp(value: float, lower: float = 0.0, upper: float = 1.0) -> float:
@@ -70,6 +71,8 @@ def calculate_final_prediction_score(
     scores: Mapping[str, Union[float, int, Mapping[str, object]]],
     risk_score: Union[float, int, object],
     market_regime: Optional[object] = None,
+    stock_profile: Optional[Mapping[str, object]] = None,
+    factor_weight_profile: Optional[str] = None,
 ) -> Dict[str, object]:
     normalized = {
         "fundamental": normalize_to_100(_extract_score(scores.get("fundamental", 50))),
@@ -83,10 +86,10 @@ def calculate_final_prediction_score(
     }
     risk_value = float(getattr(risk_score, "total", risk_score))
     risk_normalized = normalize_to_100(risk_value)
-    factor_weights = _weights_for_regime(market_regime)
-    risk_multiplier = _risk_multiplier_for_regime(market_regime)
+    weight_profile = FACTOR_WEIGHT_PROFILE_SERVICE.select_profile(stock_profile, market_regime, factor_weight_profile)
+    factor_weights = weight_profile.factor_weights
     bullish_score = sum(normalized[key] * weight for key, weight in factor_weights.items())
-    risk_adjusted_score = bullish_score - 0.35 * risk_multiplier * risk_normalized
+    risk_adjusted_score = bullish_score - weight_profile.risk_score_weight * risk_normalized
     confidence_values = [_extract_confidence(value) for value in scores.values()]
     confidence_numbers = [value for value in confidence_values if value is not None]
     confidence = sum(confidence_numbers) / len(confidence_numbers) if confidence_numbers else 50.0
@@ -99,8 +102,10 @@ def calculate_final_prediction_score(
         "top_risk_factors": ["risk_score"] if risk_normalized >= 60 else [],
         "component_scores": normalized,
         "factor_weights": factor_weights,
+        "factor_weight_profile": weight_profile.name,
         "market_regime": _regime_name(market_regime),
-        "risk_weight_multiplier": round(risk_multiplier, 4),
+        "risk_score_weight": weight_profile.risk_score_weight,
+        "signal_policy_notes": weight_profile.signal_policy_notes,
     }
 
     return {
@@ -113,31 +118,6 @@ def calculate_final_prediction_score(
         "explanation": explanation,
         "confidence": clamp_100(confidence),
     }
-
-
-def _weights_for_regime(market_regime: Optional[object]) -> Dict[str, float]:
-    adjustments = _regime_adjustments(market_regime)
-    if not adjustments:
-        return dict(FINAL_SCORE_WEIGHTS)
-    return adjusted_factor_weights(FINAL_SCORE_WEIGHTS, adjustments)
-
-
-def _regime_adjustments(market_regime: Optional[object]) -> Mapping[str, float]:
-    if market_regime is None:
-        return {}
-    if isinstance(market_regime, Mapping):
-        value = market_regime.get("factor_weight_adjustments", {})
-        return value if isinstance(value, Mapping) else {}
-    value = getattr(market_regime, "factor_weight_adjustments", {})
-    return value if isinstance(value, Mapping) else {}
-
-
-def _risk_multiplier_for_regime(market_regime: Optional[object]) -> float:
-    if market_regime is None:
-        return 1.0
-    if isinstance(market_regime, Mapping):
-        return float(market_regime.get("risk_weight_multiplier", 1.0))
-    return float(getattr(market_regime, "risk_weight_multiplier", 1.0))
 
 
 def _regime_name(market_regime: Optional[object]) -> Optional[str]:
@@ -219,7 +199,7 @@ def build_signal(instrument: dict) -> PredictionSignal:
         "supply_chain_tags": instrument.get("supply_chain_tags", []),
     }
     score_payloads = _payloads_for_signal(instrument["symbol"], indicators, series["closes"], series["volumes"], linkage, events, stock_profile)
-    final_prediction = calculate_final_prediction_score(score_payloads, risk)
+    final_prediction = calculate_final_prediction_score(score_payloads, risk, stock_profile=stock_profile)
     factors = build_factor_scores(instrument["symbol"], indicators, series["closes"], linkage, events, series["volumes"], stock_profile)
     score = round((float(final_prediction["RiskAdjustedScore"]) - 50) / 50, 4)
     sorted_factors = sorted(factors, key=lambda item: item.score * item.weight, reverse=True)

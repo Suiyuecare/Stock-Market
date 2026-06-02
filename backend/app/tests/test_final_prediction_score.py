@@ -37,6 +37,8 @@ def test_final_prediction_score_formula_and_probabilities() -> None:
     assert payload["probability_up_20d"] >= payload["probability_up_5d"]
     assert payload["confidence"] == 61.875
     assert payload["explanation"]["component_scores"]["fundamental"] == 80
+    assert payload["explanation"]["factor_weight_profile"] == "general_tw_stock"
+    assert payload["explanation"]["risk_score_weight"] == 0.35
 
 
 def test_final_prediction_score_normalizes_legacy_payloads() -> None:
@@ -80,3 +82,45 @@ def test_build_signal_contract() -> None:
 def test_build_all_signals_sorted_source_count() -> None:
     signals = build_all_signals()
     assert len(signals) == len(TW_INSTRUMENTS)
+
+
+def test_final_prediction_score_uses_electronics_weight_profile() -> None:
+    payload = calculate_final_prediction_score(
+        {
+            "fundamental": 50,
+            "chip": 50,
+            "technical": 50,
+            "us_market": 100,
+            "news": 50,
+            "macro": 50,
+            "target_price": 50,
+            "liquidity": 50,
+        },
+        risk_score=0,
+        stock_profile={"industry": "semiconductor", "supply_chain_tags": ["ai_server"]},
+    )
+
+    assert payload["explanation"]["factor_weight_profile"] == "electronics_semiconductor_ai"
+    assert payload["explanation"]["factor_weights"]["us_market"] == 0.25
+    assert payload["BullishScore"] == 62.5
+
+
+def test_final_prediction_score_uses_bear_market_risk_weight() -> None:
+    payload = calculate_final_prediction_score(
+        {
+            "fundamental": 70,
+            "chip": 70,
+            "technical": 70,
+            "us_market": 70,
+            "news": 70,
+            "macro": 70,
+            "target_price": 70,
+            "liquidity": 70,
+        },
+        risk_score=60,
+        market_regime={"primary_regime": "bear_market", "active_regimes": ["high_volatility"]},
+    )
+
+    assert payload["explanation"]["factor_weight_profile"] == "bear_or_high_volatility"
+    assert payload["explanation"]["risk_score_weight"] == 0.55
+    assert payload["RiskAdjustedScore"] == 23

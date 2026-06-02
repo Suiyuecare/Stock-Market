@@ -136,6 +136,12 @@ The system should compare strategy configurations with a confidence-aware object
 
 The MVP objective combines lower-bound win rate, average net return, profit factor, calibration quality, stability across validation segments, and a max-drawdown penalty. Raw win rate should remain visible, but it should not be the primary ranking metric.
 
+### Factor Weight Profiles
+
+The MVP starts with manual factor weights. General Taiwan stocks use balanced weights, electronics and semiconductor stocks receive higher US market linkage weight, domestic/traditional/construction stocks receive lower US linkage and higher fundamental/chip/technical/news weight, and bear or high-volatility markets increase the RiskScore penalty from 0.35 to 0.55.
+
+In bear markets, the product should reduce signal count and raise thresholds rather than trying to find more names.
+
 ### MVP Strategy Defaults
 
 The initial preset targets 5-day relative win-rate reliability. It uses `up_5d_relative` as the main label against TAIEX, requires transaction costs and slippage, filters out low-liquidity and special-risk stocks, caps the daily list at 20 names, caps each industry at 5 names, rejects major negative news, rejects obvious MACD or high-price volume divergence, prefers foreign and investment-trust synchronized buying, and downgrades high-beta electronics exposure when US market conditions weaken.

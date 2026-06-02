@@ -48,6 +48,10 @@ from app.schemas.feature_variables import (
     TechnicalFeatureInput,
     USMarketFeatureInput,
 )
+from app.schemas.factor_weights import (
+    FactorWeightPresetCatalog,
+    FactorWeightProfile,
+)
 from app.schemas.explainability import (
     ExplainabilityDataSource,
     ExplainabilityFactorContribution,
@@ -147,6 +151,8 @@ __all__ = [
     "ExplainabilityReport",
     "ExplainabilityReportInput",
     "FactorScore",
+    "FactorWeightPresetCatalog",
+    "FactorWeightProfile",
     "FeatureStoreDailyInput",
     "FeatureStoreDailyRecord",
     "FeatureStoreQuery",

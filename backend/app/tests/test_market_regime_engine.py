@@ -99,5 +99,5 @@ def test_final_prediction_score_can_use_market_regime_adjustments() -> None:
     )
 
     assert payload["explanation"]["market_regime"] == "bear_market"
-    assert payload["explanation"]["risk_weight_multiplier"] > 1
+    assert payload["explanation"]["risk_score_weight"] == 0.55
     assert payload["RiskAdjustedScore"] < payload["BullishScore"]
