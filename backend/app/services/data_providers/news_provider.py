@@ -1,3 +1,10 @@
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+from typing import Any, Dict, List, Optional
+from xml.etree import ElementTree
+
+import httpx
+
 from app.services.data_providers.base import NewsDataProvider
 
 NEWS_ENDPOINTS = {
@@ -47,7 +54,7 @@ NEWS_EVENT_TYPES = [
 
 
 class NewsProvider(NewsDataProvider):
-    """Placeholder for licensed news/event provider integration.
+    """News provider with CNA RSS support and licensed-source endpoint registry.
 
     CNA RSS can seed MVP news events when terms allow. Cnyes, NewsAPI,
     Reuters/LSEG, NewsData.io, and TheNewsAPI remain disabled until API keys,
@@ -59,5 +66,92 @@ class NewsProvider(NewsDataProvider):
     normalized_fields = NEWS_NORMALIZED_FIELDS
     event_types = NEWS_EVENT_TYPES
 
-    def get_news(self, symbol: str):
-        return []
+    def __init__(self, client: Optional[httpx.Client] = None, timeout: float = 10.0) -> None:
+        self.client = client or httpx.Client(timeout=timeout, follow_redirects=True)
+
+    def get_news(self, symbol: str) -> List[Dict[str, Any]]:
+        events = self.get_latest_rss_news()
+        if not symbol:
+            return events
+        normalized = symbol.upper()
+        return [
+            event
+            for event in events
+            if normalized in event["title"].upper()
+            or normalized in event["summary"].upper()
+            or normalized in [item.upper() for item in event.get("related_symbols", [])]
+        ]
+
+    def get_latest_rss_news(self, limit: int = 20) -> List[Dict[str, Any]]:
+        events: List[Dict[str, Any]] = []
+        for source_name, endpoint_key in (("CNA Finance RSS", "cna_finance_rss"), ("CNA Technology RSS", "cna_technology_rss")):
+            response = self.client.get(self.endpoints[endpoint_key])
+            response.raise_for_status()
+            events.extend(parse_rss_feed(response.text, source_name))
+        return events[:limit]
+
+
+def parse_rss_feed(xml_text: str, source: str) -> List[Dict[str, Any]]:
+    root = ElementTree.fromstring(xml_text)
+    items = root.findall("./channel/item")
+    if not items:
+        items = root.findall(".//{http://www.w3.org/2005/Atom}entry")
+
+    events = []
+    for item in items:
+        title = _text(item, "title")
+        summary = _text(item, "description") or _text(item, "summary") or title
+        url = _text(item, "link") or _atom_link(item)
+        published_raw = _text(item, "pubDate") or _text(item, "published") or _text(item, "updated")
+        published_at = _parse_datetime(published_raw)
+        if not title:
+            continue
+        events.append(
+            {
+                "event_time": published_at.isoformat(),
+                "market": "TW",
+                "stock_id": None,
+                "related_symbol": None,
+                "related_symbols": [],
+                "related_industry": None,
+                "source": source,
+                "title": title,
+                "summary": _strip_cdata(summary),
+                "url": url,
+                "sentiment_score": 0,
+                "event_type": "industry",
+                "impact_score": 0,
+                "confidence": 0.5,
+            }
+        )
+    return events
+
+
+def _text(item: ElementTree.Element, tag: str) -> str:
+    node = item.find(tag)
+    if node is None:
+        node = item.find(f"{{http://www.w3.org/2005/Atom}}{tag}")
+    return (node.text or "").strip() if node is not None else ""
+
+
+def _atom_link(item: ElementTree.Element) -> str:
+    link = item.find("{http://www.w3.org/2005/Atom}link")
+    if link is None:
+        return ""
+    return link.attrib.get("href", "")
+
+
+def _parse_datetime(value: str) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    try:
+        return parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return datetime.utcnow()
+
+
+def _strip_cdata(value: str) -> str:
+    return value.replace("<![CDATA[", "").replace("]]>", "").strip()

@@ -3,6 +3,7 @@ from app.services.data_providers.news_provider import (
     NEWS_EVENT_TYPES,
     NEWS_NORMALIZED_FIELDS,
     NewsProvider,
+    parse_rss_feed,
 )
 
 
@@ -31,3 +32,26 @@ def test_news_provider_tracks_scoring_event_types() -> None:
     assert "revenue" in NEWS_EVENT_TYPES
     assert "supply_chain" in NEWS_EVENT_TYPES
     assert "geopolitical" in NEWS_EVENT_TYPES
+
+
+def test_news_provider_parses_cna_rss_items() -> None:
+    xml = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>半導體景氣回溫</title>
+          <description><![CDATA[AI 需求帶動供應鏈。]]></description>
+          <link>https://example.com/news/1</link>
+          <pubDate>Wed, 03 Jun 2026 08:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    events = parse_rss_feed(xml, "CNA Finance RSS")
+
+    assert events[0]["source"] == "CNA Finance RSS"
+    assert events[0]["title"] == "半導體景氣回溫"
+    assert events[0]["summary"] == "AI 需求帶動供應鏈。"
+    assert events[0]["url"] == "https://example.com/news/1"
+    assert events[0]["event_type"] == "industry"

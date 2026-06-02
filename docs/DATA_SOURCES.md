@@ -87,6 +87,23 @@ These are candidates to evaluate, not final commitments:
 - NewsAPI or licensed news feeds
 - RSS feeds where terms allow processing
 
+## Implemented Open-Data Providers
+
+The codebase now includes production-shaped provider classes for legal open-data ingestion. These providers use injectable HTTP clients so tests do not depend on external network availability.
+
+| Provider | File | Current capability |
+| --- | --- | --- |
+| TWSE / MOPS listed data | `backend/app/services/data_providers/twse_provider.py` | Fetch and parse listed company profiles, market index JSON, listed material information JSON, and monthly revenue CSV |
+| MOPS / mopsfin | `backend/app/services/data_providers/mops_provider.py` | Fetch and parse listed company profiles, monthly revenue CSV, and listed material information CSV |
+| CNA RSS | `backend/app/services/data_providers/news_provider.py` | Fetch and parse CNA finance and technology RSS into normalized news event payloads |
+
+Deployment notes:
+
+- These providers are safe to use as the first official-data layer, but their endpoint terms should still be reviewed before storing or redisplaying raw payloads.
+- The frontend must label data freshness and source status clearly.
+- Scheduled jobs still need to be switched from `MockMarketDataProvider` to official providers before claiming production data coverage.
+- Paid, real-time, analyst estimate, and licensed news providers remain disabled until contracts, API keys, and display rights are confirmed.
+
 ## Commercial Taiwan Data Sources
 
 Commercial providers require a paid contract or trial key before use. Never commit provider API keys; store them in `.env.local` or deployment environment variables.
@@ -150,7 +167,7 @@ These providers can feed NewsScore, event timelines, earnings/revenue news class
 
 Implementation notes:
 
-- Start MVP news ingestion with mock data and optional CNA RSS feeds where terms allow parsing.
+- Start MVP news ingestion with CNA RSS feeds where terms allow parsing, with mock data as a fallback.
 - Treat Cnyes, Reuters/LSEG, NewsAPI, NewsData.io, and TheNewsAPI as licensed or key-based integrations; do not commit credentials.
 - Cnyes Open API is not assumed free for production use. Confirm commercial cooperation, data scope, display rights, and redistribution terms before enabling it.
 - Normalize all provider payloads into event time, market, stock ID or related symbol, source, title, summary, sentiment score, event type, impact score, confidence, and URL.
