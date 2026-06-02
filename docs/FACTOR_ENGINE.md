@@ -197,6 +197,17 @@ Implemented indicators:
 - OBV
 - Volume-price divergence
 
+Each indicator keeps a numeric function for compatibility and exposes an explainable analysis function:
+
+- `analyze_moving_averages`
+- `analyze_rsi`
+- `analyze_kd`
+- `analyze_obv`
+- `analyze_macd`
+- `analyze_volume_price_divergence`
+
+`build_technical_indicators` returns the legacy numeric fields plus a `signals` object containing the explainable payload for each indicator.
+
 Implemented MACD outputs:
 
 - EMA12
