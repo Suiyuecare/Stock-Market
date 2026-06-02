@@ -173,6 +173,89 @@ Components:
 
 The app should rank strategy configurations by `ObjectiveScore` and keep raw win rate as supporting context.
 
+### 0.6 MVP Initial Strategy Defaults
+
+The MVP starts with a conservative preset designed for 5-day relative win-rate reliability:
+
+```yaml
+strategy_objective:
+  primary: maximize_out_of_sample_win_rate_lower_bound
+  secondary:
+    - positive_expected_value
+    - profit_factor_above_1_2
+    - max_drawdown_below_limit
+    - enough_trade_samples
+
+label:
+  main_target: up_5d_relative
+  auxiliary_targets:
+    - up_1d_absolute
+    - up_20d_relative
+  benchmark: TAIEX
+  min_excess_return: 0.003
+  entry_price: next_open
+  exit_price: close_after_horizon
+  include_transaction_costs: true
+  include_slippage: true
+
+universe:
+  min_listing_days: 250
+  min_close_price: 10
+  min_avg_turnover_20d_twd: 50000000
+  exclude_full_delivery: true
+  exclude_disposition: true
+  exclude_missing_data: true
+
+signal_filter:
+  min_probability_up_5d: 0.60
+  min_confidence: 0.60
+  max_risk_score: 55
+  min_risk_adjusted_score: 50
+  top_k_per_day: 20
+  max_per_industry: 5
+  require_no_major_negative_news: true
+
+technical_filter:
+  allow_macd_golden_cross: true
+  allow_macd_above_zero: true
+  reject_macd_bearish_divergence: true
+  reject_high_price_volume_divergence: true
+  require_volume_confirmation_for_breakout: true
+
+chip_filter:
+  require_institutional_net_buy: false
+  prefer_foreign_and_trust_sync_buy: true
+  min_institutional_net_ratio: 0.03
+  reject_three_institutions_sync_sell: true
+
+us_market_filter:
+  use_us_market_score: true
+  min_us_market_score_for_electronics: 55
+  reject_high_vix_spike: true
+  reject_us_futures_sharp_reversal_for_high_beta_electronics: true
+
+risk_management:
+  stop_loss_type: atr_or_percent
+  stop_loss_pct: 0.06
+  take_profit_pct: 0.10
+  trailing_stop_enabled: true
+  max_holding_days: 5
+  cooldown_days_after_loss: 3
+
+validation:
+  method: walk_forward
+  train_window_days: 756
+  validation_window_days: 126
+  test_window_days: 126
+  retrain_frequency: monthly
+  min_trades_per_fold: 100
+  min_total_trades: 500
+  evaluate_by_industry: true
+  evaluate_by_market_regime: true
+```
+
+The preset intentionally limits signal count, avoids low-quality universe samples, rejects high-risk technical and news conditions, and lowers confidence in electronics signals when US linkage turns sharply weaker.
+
 ### 1. FundamentalScore
 
 Inputs:

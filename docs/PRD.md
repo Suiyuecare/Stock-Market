@@ -136,6 +136,12 @@ The system should compare strategy configurations with a confidence-aware object
 
 The MVP objective combines lower-bound win rate, average net return, profit factor, calibration quality, stability across validation segments, and a max-drawdown penalty. Raw win rate should remain visible, but it should not be the primary ranking metric.
 
+### MVP Strategy Defaults
+
+The initial preset targets 5-day relative win-rate reliability. It uses `up_5d_relative` as the main label against TAIEX, requires transaction costs and slippage, filters out low-liquidity and special-risk stocks, caps the daily list at 20 names, caps each industry at 5 names, rejects major negative news, rejects obvious MACD or high-price volume divergence, prefers foreign and investment-trust synchronized buying, and downgrades high-beta electronics exposure when US market conditions weaken.
+
+These defaults are starting assumptions for walk-forward testing, not permanent strategy rules.
+
 ### Dashboard
 
 - Market status cards
