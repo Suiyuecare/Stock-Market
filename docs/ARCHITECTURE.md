@@ -38,6 +38,7 @@ flowchart LR
 - Portfolio Risk Engine under `backend/app/services/portfolio_risk_engine.py`
 - Explainability Report Builder under `backend/app/services/explainability_report.py`
 - Model Monitoring Engine under `backend/app/services/model_monitoring.py`
+- Signal Quality Evaluator under `backend/app/services/signal_quality_evaluator.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -206,6 +207,21 @@ Monitored metrics:
 - news parsing error rate
 
 If the recent 20-day win rate falls below the historical mean by more than two standard deviations, the engine marks `possible_model_decay`, lowers the signal-strength multiplier, and recommends retraining or recalibration review.
+
+### Signal Quality Evaluation
+
+Signal quality evaluation runs on backtest outputs before a signal definition is treated as production-worthy. It checks whether the signal has more than a high win rate.
+
+Required checks:
+
+- high enough win rate
+- positive expectancy after costs
+- positive average return after costs
+- acceptable drawdown
+- sufficient sample count
+- Profit Factor above threshold
+
+This prevents strategies such as many small wins and a few large losses from being accepted just because the headline win rate looks high.
 
 ## Runtime
 

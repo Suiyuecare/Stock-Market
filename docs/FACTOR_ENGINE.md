@@ -241,6 +241,21 @@ Inputs:
 
 The monitoring engine emits daily health status, alerts, and a signal-strength multiplier. If the recent 20-day win rate is below the historical average by more than two standard deviations, it marks `possible_model_decay` and recommends lowering signal strength while reviewing retraining or recalibration.
 
+### 13. SignalQualityEvaluator
+
+Inputs:
+
+- win rate
+- trade count
+- average return after costs
+- expectancy after costs
+- max drawdown
+- Profit Factor
+- max single loss
+- transaction cost and slippage
+
+The evaluator prevents the system from optimizing raw win rate alone. A high-win-rate signal can be rejected if expectancy is negative, drawdown is unacceptable, sample count is too small, or transaction costs remove the edge.
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.
