@@ -49,6 +49,24 @@ docker compose up --build
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - API docs: http://localhost:8000/docs
+- Production site: https://stock.suiyuecare.com
+
+## 部署設定
+
+正式站網域：
+
+```text
+stock.suiyuecare.com
+```
+
+Vercel production environment 建議設定：
+
+```text
+NEXT_PUBLIC_SITE_URL=https://stock.suiyuecare.com
+NEXT_PUBLIC_API_BASE_URL=<production API base URL>
+```
+
+如果前後端分開部署，`NEXT_PUBLIC_API_BASE_URL` 要指向 FastAPI production API。不要把 OpenAI API key 或任何 secrets commit 到 repo，請放在 Vercel Environment Variables 或本機 `.env.local`。
 
 ## 第一階段資料流
 
