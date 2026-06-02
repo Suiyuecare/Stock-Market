@@ -72,6 +72,15 @@ The MVP should store raw and derived feature variables in the feature store. Ear
 
 Derived resonance variables such as `fundamental_turnaround`, `quality_growth`, and `chip_alignment_score` help the system find conditions where multiple factors point in the same direction.
 
+Additional feature groups:
+
+- technical variables: MA trend, breakouts, volume ratios, RSI, KD, ATR, volatility, MACD states, and volume-price divergence
+- US linkage variables: US index returns, SOX/Nasdaq/ADR/key-stock movement, futures, rates, FX, betas, supply-chain sensitivity, and `us_market_alignment_score`
+- news variables: sentiment, impact, confidence, event type, novelty, source reliability, risk flags, supply-chain linkage, and consistency with fundamentals
+- risk variables: risk score, volatility, beta, drawdown, liquidity, gap risk, margin overheat, institutional selling, negative news, valuation overheat, VIX, and US futures reversal
+
+Hard risk gates should prevent weak samples from entering the primary research signal list when risk is too high, liquidity is too poor, major negative news is active, high-level volume-price divergence appears with institutional selling, or US futures sharply weaken electronics exposure.
+
 ### Dashboard
 
 - Market status cards

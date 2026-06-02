@@ -140,6 +140,13 @@ Inputs:
 - OBV
 - Breakout / breakdown
 
+Core feature variables:
+
+- trend: `ma5_above_ma20`, `ma20_above_ma60`, `ma20_slope`, `ma60_slope`, `price_above_ma20`, `price_above_ma60`, `breakout_20d_high`, `breakout_60d_high`
+- volume and momentum: `volume_ma20_ratio`, `obv_slope`, `rsi14`, `kd_k`, `kd_d`, `atr_pct`, `volatility_20d`
+- MACD: `macd_dif`, `macd_dea`, `macd_hist`, `macd_hist_slope_3d`, `macd_golden_cross`, `macd_death_cross`, `macd_above_zero`, `macd_below_zero`, `macd_bullish_divergence`, `macd_bearish_divergence`
+- volume-price divergence: `price_up_volume_up`, `price_up_volume_down`, `price_down_volume_down`, `price_down_volume_up`, `new_high_volume_not_confirmed`, `new_high_obv_not_confirmed`, `new_high_macd_not_confirmed`, `new_low_macd_bullish_divergence`, `new_low_obv_bullish_divergence`, `volume_price_score`
+
 ### 4. USMarketScore
 
 Inputs:
@@ -153,6 +160,13 @@ Inputs:
 - US futures movement
 - US news sentiment
 - US-Taiwan supply chain sensitivity
+
+Core feature variables:
+
+- US returns: `nasdaq_return_1d`, `sox_return_1d`, `sp500_return_1d`, `qqq_return_1d`, `smh_return_1d`, `vix_change_1d`
+- key stocks: `tsm_adr_return_1d`, `tsm_adr_premium_discount`, `nvda_return_1d`, `amd_return_1d`, `avgo_return_1d`, `aapl_return_1d`, `mu_return_1d`, `msft_return_1d`, `meta_return_1d`, `googl_return_1d`, `amzn_return_1d`
+- macro and futures: `nq_futures_return_preopen`, `es_futures_return_preopen`, `us10y_change`, `dxy_change`, `usd_twd_change`
+- derived linkage: `us_tw_beta_20d`, `us_tw_beta_60d`, `beta_to_sox`, `beta_to_nasdaq`, `beta_to_nvda`, `beta_to_tsm_adr`, `us_supply_chain_sensitivity`, `us_market_alignment_score`
 
 MVP formula:
 
@@ -188,6 +202,31 @@ Inputs:
 - Sentiment score
 - Confidence
 
+Core feature variables:
+
+- `news_sentiment_score`
+- `news_impact_score`
+- `news_confidence`
+- `positive_news_count_24h`
+- `negative_news_count_24h`
+- `news_volume_spike`
+- `event_type`
+- `event_novelty_score`
+- `source_reliability_score`
+- `material_news_flag`
+- `earnings_news_flag`
+- `revenue_news_flag`
+- `guidance_news_flag`
+- `capex_news_flag`
+- `tariff_risk_flag`
+- `export_control_risk_flag`
+- `lawsuit_risk_flag`
+- `default_risk_flag`
+- `already_reflected_in_price`
+- `supply_chain_linkage_score`
+- `fundamental_consistency_score`
+- `news_effective_score`
+
 ### 6. RiskScore
 
 Inputs:
@@ -202,6 +241,34 @@ Inputs:
 - Financial weakness
 - US market risk
 - VIX increase
+
+Core feature variables:
+
+- `risk_score`
+- `volatility_20d`
+- `atr_pct`
+- `beta_to_taiex`
+- `beta_to_sox`
+- `max_drawdown_60d`
+- `max_drawdown_120d`
+- `liquidity_score`
+- `gap_risk`
+- `limit_up_down_risk`
+- `margin_overheat_score`
+- `institutional_selling_risk`
+- `negative_news_risk`
+- `financial_risk`
+- `valuation_overheat_score`
+- `vix_risk`
+- `us_futures_reversal_risk`
+
+Hard risk gates:
+
+- high RiskScore: not eligible for primary signal
+- poor liquidity: exclude
+- major negative news: exclude
+- high-level volume-price divergence plus institutional reversal to sell: exclude
+- weak US futures for electronics: downgrade
 
 ### 7. FinalPredictionScore
 

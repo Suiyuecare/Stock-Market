@@ -1,4 +1,12 @@
-from app.schemas import ChipFeatureInput, FeatureVectorResult, FundamentalFeatureInput
+from app.schemas import (
+    ChipFeatureInput,
+    FeatureVectorResult,
+    FundamentalFeatureInput,
+    NewsFeatureInput,
+    RiskFeatureInput,
+    TechnicalFeatureInput,
+    USMarketFeatureInput,
+)
 
 
 def test_fundamental_feature_input_schema_tracks_required_variables() -> None:
@@ -38,3 +46,15 @@ def test_feature_vector_result_schema_can_feed_feature_store() -> None:
 
     assert result.feature_group == "fundamental"
     assert result.features["quality_growth"] == 80.0
+
+
+def test_extended_feature_input_schemas_track_required_variables() -> None:
+    technical = TechnicalFeatureInput(ma5=105, ma20=100, macd_golden_cross=True)
+    us_market = USMarketFeatureInput(sox_return_1d=0.02, tsm_adr_premium_discount=0.01)
+    news = NewsFeatureInput(event_type="guidance", material_news_flag=True)
+    risk = RiskFeatureInput(risk_score=80, liquidity_score=30)
+
+    assert technical.macd_golden_cross is True
+    assert us_market.sox_return_1d == 0.02
+    assert news.material_news_flag is True
+    assert risk.liquidity_score == 30

@@ -38,6 +38,10 @@ from app.schemas.feature_variables import (
     ChipFeatureInput,
     FeatureVectorResult,
     FundamentalFeatureInput,
+    NewsFeatureInput,
+    RiskFeatureInput,
+    TechnicalFeatureInput,
+    USMarketFeatureInput,
 )
 from app.schemas.explainability import (
     ExplainabilityDataSource,
@@ -113,6 +117,10 @@ __all__ = [
     "FundamentalFeatureInput",
     "Instrument",
     "ChipFeatureInput",
+    "NewsFeatureInput",
+    "RiskFeatureInput",
+    "TechnicalFeatureInput",
+    "USMarketFeatureInput",
     "InstitutionalTradingInput",
     "LabelEngineRequest",
     "LabelResult",
