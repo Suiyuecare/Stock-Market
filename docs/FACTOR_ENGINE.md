@@ -202,6 +202,28 @@ Controls:
 
 The portfolio engine is for simulated research exposure, not order placement. It can reduce a broad list of high-scoring names into a smaller watchlist that respects concentration and market-risk limits.
 
+### 11. ExplainabilityReport
+
+Inputs:
+
+- signal_id
+- generated_at
+- data sources and point-in-time availability
+- model version
+- scoring version
+- score calculation details
+- factor scores and factor weights
+- positive factors
+- negative factors
+- risk factors
+- historical calibration / similar-condition win rate
+- selection decision
+- market regime
+- portfolio risk context
+- user-visible text
+
+The report preserves the analysis basis for each research signal. It should be generated before the user sees the signal so the displayed explanation can be audited later.
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.

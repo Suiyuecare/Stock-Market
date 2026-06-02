@@ -34,6 +34,12 @@ from app.schemas.feature_store import (
     FeatureStoreDailyRecord,
     FeatureStoreQuery,
 )
+from app.schemas.explainability import (
+    ExplainabilityDataSource,
+    ExplainabilityFactorContribution,
+    ExplainabilityReport,
+    ExplainabilityReportInput,
+)
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.label import LabelEngineRequest, LabelResult
 from app.schemas.market_regime import MarketRegimeInput, MarketRegimeResult
@@ -68,6 +74,10 @@ __all__ = [
     "CalibrationSample",
     "DataAvailabilityLedgerInput",
     "DataAvailabilityLedgerRecord",
+    "ExplainabilityDataSource",
+    "ExplainabilityFactorContribution",
+    "ExplainabilityReport",
+    "ExplainabilityReportInput",
     "FactorScore",
     "FeatureStoreDailyInput",
     "FeatureStoreDailyRecord",

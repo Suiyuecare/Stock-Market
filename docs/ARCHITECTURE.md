@@ -36,6 +36,7 @@ flowchart LR
 - Market Regime Engine under `backend/app/services/market_regime_engine.py`
 - Signal Selection Layer under `backend/app/services/signal_selection_layer.py`
 - Portfolio Risk Engine under `backend/app/services/portfolio_risk_engine.py`
+- Explainability Report Builder under `backend/app/services/explainability_report.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -168,6 +169,25 @@ MVP controls:
 - weak US futures electronics exposure reduction
 
 Example: if 30 high-scoring names are all in AI server supply chains, the engine caps sector exposure and keeps only the highest-ranked subset instead of allowing the watchlist to become one concentrated theme.
+
+### Explainability Report
+
+The explainability report is the audit trail for every research signal. It records how the signal was generated and what the user saw.
+
+Required trace fields:
+
+- `signal_id`
+- generation timestamp
+- data sources, versions, and fields used
+- point-in-time data availability
+- model and scoring versions
+- score calculation details
+- positive, negative, and risk factor explanations
+- historical calibration or similar-condition win-rate summary
+- selection decision and portfolio risk context
+- user-visible text and disclaimer
+
+The report should be generated before rendering a stock detail page so the UI explanation and backend calculation remain traceable.
 
 ## Runtime
 
