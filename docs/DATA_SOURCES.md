@@ -46,7 +46,7 @@ These are candidates to evaluate, not final commitments:
 
 ## Official Taiwan Data Sources
 
-Use official TWSE/MOPS sources first for listed Taiwan equities. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
+Use official TWSE/MOPS/TPEx sources first for Taiwan equities. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
 
 | # | API / Source | Purpose | URL |
 | -: | --- | --- | --- |
@@ -64,14 +64,20 @@ Use official TWSE/MOPS sources first for listed Taiwan equities. These endpoints
 | 12 | TWSE real-time trading information licensing | Real-time listed equity quote licensing | `https://www.twse.com.tw/zh/products/information/real-time.html` |
 | 13 | TWSE delayed trading information licensing | 20-minute delayed data licensing | `https://www.twse.com.tw/zh/products/information/delayed.html` |
 | 14 | TWSE market information usage rules | Contracts, information fees, usage rules | `https://www.twse.com.tw/zh/products/information/use.html` |
+| 15 | TPEx OpenAPI | OTC / emerging stock quotes, institutional flow, company data | `https://www.tpex.org.tw/openapi/` |
+| 16 | TPEx Swagger JSON | Machine-readable TPEx API specification | `https://www.tpex.org.tw/openapi/swagger.json` |
+| 17 | TPEx data purchase | OTC after-market trading data and information downloads | `https://www.tpex.org.tw/zh-tw/service/data/overview.html` |
+| 18 | TPEx delayed trading information | OTC delayed quote licensing | `https://www.tpex.org.tw/zh-tw/service/data/product/delay.html` |
+| 19 | TPEx after-market trading information download system | Paid subscription data download service | `https://intd.tpex.org.tw` |
 
 Implementation notes:
 
 - For MVP, prefer after-market/open data endpoints over real-time feeds.
-- Keep TWSE/MOPS ingestion behind provider interfaces.
+- Keep TWSE/MOPS/TPEx ingestion behind provider interfaces.
 - Do not redistribute real-time or delayed trading data without confirming license terms.
 - Use `swagger.json` to generate or validate endpoint mappings before adding new fetch methods.
 - Use MOPS CSV endpoints as fallback sources when an equivalent OpenAPI endpoint is unavailable.
+- Use TPEx OpenAPI for OTC and emerging stock coverage once the field mapping is implemented.
 
 ## Provider Evaluation Checklist
 
