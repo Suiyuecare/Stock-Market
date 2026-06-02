@@ -178,6 +178,30 @@ Implementation notes:
 - Add cost controls before production use: model selection, max output size, timeout, retry limits, caching, and batch/background processing for scheduled news jobs.
 - Keep source URLs and attribution from the original news provider; OpenAI should classify and summarize, not become the source of market facts.
 
+## Brokerage Trading / Real-Time Taiwan Quote APIs
+
+The MVP is an analysis and alerting app, so it does not require brokerage APIs. Broker APIs should only be considered for a future product scope that includes simulated trading, live order routing, account balances, positions, order reports, or execution reports.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 91 | SinoPac Shioaji official portal | Taiwan stocks / futures orders, real-time quotes, account data | `https://ai.sinotrade.com.tw/python/Main/index.aspx` |
+| 92 | Shioaji GitHub Docs | SinoPac API documentation | `https://sinotrade.github.io/` |
+| 93 | Fubon Neo API Trading Docs | Fubon order API | `https://www.fbs.com.tw/TradeAPI/en/docs/trading/introduction` |
+| 94 | Fubon Neo API Market Data | Fubon Taiwan stock market data API | `https://www.fbs.com.tw/TradeAPI/en/docs/market-data/intro/` |
+| 95 | Fubon Neo Futures Market Data | Fubon Taiwan futures market data API | `https://www.fbs.com.tw/TradeAPI/en/docs/market-data-future/intro` |
+| 96 | Yuanta SPARK API | Yuanta Securities trading API platform | `https://www.yuanta.com.tw/file-repository/content/API/page/index.html` |
+| 97 | Yuanta API order service | Yuanta API order application notes | `https://www.yuanta.com.tw/eyuanta/Securities/DigitalArea/ApiOrder` |
+| 98 | Yuanta Futures API | Yuanta Futures API | `https://www.yuantafutures.com.tw/ytf/easywin/api/download.html` |
+
+Implementation notes:
+
+- Do not enable live order placement in the current MVP.
+- Keep any future brokerage integration behind an explicit `BrokerageProvider` boundary with separate permissions for market data, simulation, order routing, account data, positions, and order reports.
+- Require user opt-in, broker account approval, certificate/API-key setup, paper-trading tests, and risk controls before any live trading feature.
+- Store broker credentials, certificates, and API keys outside the repository and outside client-side frontend code.
+- For real-time quote display, confirm exchange/vendor redistribution terms before streaming data to users or storing tick data.
+- Product copy must continue to avoid direct investment instructions. Brokerage APIs are infrastructure capabilities, not recommendations.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
