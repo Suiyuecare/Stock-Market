@@ -21,11 +21,24 @@ const formatMoney = new Intl.NumberFormat("zh-TW", {
 
 let watchlist = [...initialWatchlist];
 let supabaseClient = null;
+let currentUser = null;
 
-function setDbStatus(message, mode = "") {
-  const status = document.querySelector("#dbStatus");
+function setStatus(selector, message, mode = "") {
+  const status = document.querySelector(selector);
   status.textContent = message;
   status.className = `status-pill ${mode}`.trim();
+}
+
+function setDbStatus(message, mode = "") {
+  setStatus("#dbStatus", message, mode);
+}
+
+function setUserStatus(message, mode = "") {
+  setStatus("#userStatus", message, mode);
+}
+
+function userLabel(user) {
+  return user?.user_metadata?.full_name || user?.email || "已登入使用者";
 }
 
 function toAppStock(row) {
@@ -41,6 +54,7 @@ function toAppStock(row) {
 
 function toDbStock(stock) {
   return {
+    user_id: currentUser.id,
     symbol: stock.symbol,
     name: stock.name,
     price: stock.price,
@@ -68,8 +82,88 @@ async function setupSupabase() {
   }
 }
 
-async function loadWatchlist() {
+async function setupAuth() {
   if (!supabaseClient) {
+    setUserStatus("尚未登入", "offline");
+    updateAuthUi();
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.getUser();
+  currentUser = error ? null : data.user;
+  updateAuthUi();
+
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    currentUser = session?.user || null;
+    updateAuthUi();
+    await loadUserData();
+  });
+}
+
+function updateAuthUi() {
+  const loginButton = document.querySelector("#loginButton");
+  const logoutButton = document.querySelector("#logoutButton");
+  const addSymbolButton = document.querySelector("#addSymbolButton");
+  const saveJournalButton = document.querySelector("#saveJournalButton");
+
+  loginButton.hidden = Boolean(currentUser);
+  logoutButton.hidden = !currentUser;
+  addSymbolButton.disabled = !currentUser;
+  saveJournalButton.disabled = !currentUser;
+
+  if (currentUser) {
+    setUserStatus(`${userLabel(currentUser)} 的後台`, "connected");
+    return;
+  }
+
+  setUserStatus("請用 Google 登入啟用個人後台", "offline");
+}
+
+async function signInWithGoogle() {
+  if (!supabaseClient) {
+    setDbStatus("尚未連線 Supabase，無法登入", "offline");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+
+  if (error) setUserStatus(`Google 登入失敗：${error.message}`, "offline");
+}
+
+async function signOut() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  watchlist = [...initialWatchlist];
+  document.querySelector("#journalText").value = "";
+  document.querySelector("#saveStatus").textContent = "尚未儲存";
+  updateAuthUi();
+  renderWatchlist();
+}
+
+async function loadUserData() {
+  await loadWatchlist();
+  await loadJournal();
+}
+
+async function seedWatchlistIfEmpty() {
+  const payload = initialWatchlist.map((stock) => toDbStock(stock));
+  const { error } = await supabaseClient.from("watchlist_items").insert(payload);
+  if (error) {
+    setDbStatus("建立個人清單失敗，請確認 RLS schema", "offline");
+    return false;
+  }
+  return true;
+}
+
+async function loadWatchlist() {
+  if (!supabaseClient || !currentUser) {
+    watchlist = [...initialWatchlist];
     renderWatchlist();
     return;
   }
@@ -80,32 +174,36 @@ async function loadWatchlist() {
     .order("created_at", { ascending: true });
 
   if (error) {
-    setDbStatus("Supabase 資料表尚未建立，使用示範資料", "offline");
+    setDbStatus("個人資料表尚未完成，使用示範資料", "offline");
+    watchlist = [...initialWatchlist];
     renderWatchlist();
     return;
   }
 
-  watchlist = data.length > 0 ? data.map(toAppStock) : [...initialWatchlist];
+  if (data.length === 0 && (await seedWatchlistIfEmpty())) {
+    await loadWatchlist();
+    return;
+  }
+
+  watchlist = data.map(toAppStock);
   renderWatchlist();
 }
 
 async function saveStock(stock) {
-  if (!supabaseClient) return;
+  if (!supabaseClient || !currentUser) return;
 
   const { error } = await supabaseClient.from("watchlist_items").insert(toDbStock(stock));
-  if (error) setDbStatus("新增股票未同步，請確認 Supabase schema", "offline");
+  if (error) setDbStatus("新增股票未同步，請確認個人資料權限", "offline");
 }
 
 async function loadJournal() {
   const journalText = document.querySelector("#journalText");
   const saveStatus = document.querySelector("#saveStatus");
 
-  if (!supabaseClient) {
+  if (!supabaseClient || !currentUser) {
     const savedJournal = window.localStorage.getItem("stock-market-journal");
-    if (savedJournal) {
-      journalText.value = savedJournal;
-      saveStatus.textContent = "已載入本機筆記";
-    }
+    journalText.value = savedJournal || "";
+    saveStatus.textContent = savedJournal ? "已載入本機筆記" : "登入後可儲存個人雲端筆記";
     return;
   }
 
@@ -116,14 +214,14 @@ async function loadJournal() {
     .maybeSingle();
 
   if (error) {
-    setDbStatus("投資筆記資料表尚未建立", "offline");
+    setDbStatus("個人筆記資料表尚未完成", "offline");
     return;
   }
 
-  if (data) {
-    journalText.value = data.content || "";
-    saveStatus.textContent = `已載入雲端筆記 ${new Date(data.updated_at).toLocaleTimeString("zh-TW")}`;
-  }
+  journalText.value = data?.content || "";
+  saveStatus.textContent = data
+    ? `已載入個人筆記 ${new Date(data.updated_at).toLocaleTimeString("zh-TW")}`
+    : "尚未儲存個人筆記";
 }
 
 function renderWatchlist() {
@@ -185,6 +283,11 @@ function refreshDemoData() {
 }
 
 async function addSymbol() {
+  if (!currentUser) {
+    setUserStatus("請先用 Google 登入", "offline");
+    return;
+  }
+
   const symbol = window.prompt("請輸入股票代號");
   if (!symbol) return;
 
@@ -209,32 +312,38 @@ function setupJournalSave() {
   const saveStatus = document.querySelector("#saveStatus");
 
   document.querySelector("#saveJournalButton").addEventListener("click", async () => {
-    if (!supabaseClient) {
+    if (!currentUser) {
       window.localStorage.setItem("stock-market-journal", journalText.value);
-      saveStatus.textContent = `已儲存本機筆記 ${new Date().toLocaleTimeString("zh-TW")}`;
+      saveStatus.textContent = "請登入後儲存個人雲端筆記";
       return;
     }
 
-    const { error } = await supabaseClient.from("journal_entries").upsert({
-      entry_key: "daily",
-      content: journalText.value,
-      updated_at: new Date().toISOString(),
-    });
+    const { error } = await supabaseClient.from("journal_entries").upsert(
+      {
+        user_id: currentUser.id,
+        entry_key: "daily",
+        content: journalText.value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,entry_key" }
+    );
 
     if (error) {
-      saveStatus.textContent = "雲端儲存失敗，請確認 Supabase schema";
+      saveStatus.textContent = "雲端儲存失敗，請確認個人資料權限";
       return;
     }
 
-    saveStatus.textContent = `已儲存雲端筆記 ${new Date().toLocaleTimeString("zh-TW")}`;
+    saveStatus.textContent = `已儲存個人雲端筆記 ${new Date().toLocaleTimeString("zh-TW")}`;
   });
 }
 
 document.querySelector("#refreshButton").addEventListener("click", refreshDemoData);
 document.querySelector("#addSymbolButton").addEventListener("click", addSymbol);
+document.querySelector("#loginButton").addEventListener("click", signInWithGoogle);
+document.querySelector("#logoutButton").addEventListener("click", signOut);
 
 renderPortfolio();
 setupJournalSave();
 await setupSupabase();
-await loadWatchlist();
-await loadJournal();
+await setupAuth();
+await loadUserData();

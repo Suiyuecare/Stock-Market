@@ -36,4 +36,12 @@ Vercel 需要設定：
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 
-資料表 schema 放在 `supabase/schema.sql`。目前是 prototype 公開資料模式，RLS 已開啟，但允許 `anon` 讀取/新增 watchlist 與讀寫共用筆記；正式版應加入 Supabase Auth 後改成每位使用者只存取自己的資料。
+資料表 schema 放在 `supabase/schema.sql`。
+
+目前已使用 Supabase Auth + Google OAuth。登入後，每位使用者只會讀寫自己的 `watchlist_items` 與 `journal_entries`。
+
+Supabase Dashboard 還需要啟用 Google provider，並把正式網址加入允許的 redirect URL：
+
+```text
+https://stock-market-cico.vercel.app
+```

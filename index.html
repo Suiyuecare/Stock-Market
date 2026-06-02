@@ -30,10 +30,17 @@
           <p class="eyebrow">2026 投資工作台</p>
           <h1>股票決策儀表板</h1>
         </div>
-        <button id="refreshButton" type="button">更新示範數據</button>
+        <div class="topbar-actions">
+          <button id="refreshButton" type="button">更新示範數據</button>
+          <button id="loginButton" type="button">Google 登入</button>
+          <button id="logoutButton" class="secondary-button" type="button" hidden>登出</button>
+        </div>
       </header>
 
-      <div id="dbStatus" class="status-pill">資料庫連線準備中</div>
+      <div class="status-row">
+        <div id="dbStatus" class="status-pill">資料庫連線準備中</div>
+        <div id="userStatus" class="status-pill offline">尚未登入</div>
+      </div>
 
       <section id="overview" class="summary-grid" aria-label="投資組合總覽">
         <article class="metric">
