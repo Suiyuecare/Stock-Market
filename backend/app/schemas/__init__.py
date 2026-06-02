@@ -71,6 +71,11 @@ from app.schemas.target_variables import (
     TargetVariableRequest,
     TargetVariableResult,
 )
+from app.schemas.universe_filter import (
+    UniverseFilterCandidate,
+    UniverseFilterConfig,
+    UniverseFilterResult,
+)
 from app.schemas.us_market import (
     TaiwanStockProfile,
     USMarketScoreRequest,
@@ -134,6 +139,9 @@ __all__ = [
     "TargetVariableRequest",
     "TargetVariableResult",
     "TimeSeriesSplitWindow",
+    "UniverseFilterCandidate",
+    "UniverseFilterConfig",
+    "UniverseFilterResult",
     "TaiwanStockProfile",
     "USMarketScoreRequest",
     "USMarketScoreResponse",

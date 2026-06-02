@@ -37,6 +37,27 @@ y_tp_sl_h = 1 if the path touches take-profit before stop-loss else 0
 
 The primary MVP model target is `y_rel_5d`, because it asks whether a stock can outperform the Taiwan weighted index after costs and a minimum excess-return hurdle.
 
+### 0.1 Universe Filters
+
+Universe filters remove low-quality samples before model training, backtesting, and signal generation.
+
+Default filters:
+
+```yaml
+universe_filters:
+  min_listing_days: 250
+  min_close_price: 10
+  min_avg_turnover_20d_twd: 50000000
+  exclude_full_delivery_stocks: true
+  exclude_disposition_stocks: true
+  exclude_attention_stocks_for_conservative_mode: true
+  exclude_low_liquidity: true
+  exclude_recent_extreme_gap: true
+  exclude_missing_fundamental_data: true
+```
+
+These filters reduce misleading backtests from illiquid names, special-risk stocks, short listing histories, low-price stocks, and missing fundamental data.
+
 ### 1. FundamentalScore
 
 Inputs:

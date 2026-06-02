@@ -47,6 +47,22 @@ Supporting labels:
 
 This target design avoids rewarding stocks that only rise because the whole market is strong.
 
+### Universe Filters
+
+Before a stock enters training, backtesting, ranking, or signal generation, the system should apply conservative universe filters:
+
+- at least 250 listing days
+- close price at least TWD 10
+- 20-day average turnover at least TWD 50,000,000
+- exclude full-delivery stocks
+- exclude disposition stocks
+- exclude attention stocks in conservative mode
+- exclude low-liquidity stocks
+- exclude recent extreme gap moves
+- exclude records with missing fundamental data
+
+The goal is to avoid inflated backtests and unstable signals from stocks that are hard to trade, newly listed, special-risk, low-priced, or missing critical data.
+
 ### Dashboard
 
 - Market status cards
