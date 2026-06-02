@@ -1,50 +1,108 @@
 # AGENTS.md
 
-Repo-specific guidance for Codex and other coding agents.
+## Project overview
 
-## Product Direction
+This project is a Taiwan + US stock factor analysis and prediction web app.
 
-This repository is a Taiwan-US stock prediction web system. Do not start with a mobile app. The first serious milestone is a Web App + API + PostgreSQL + Redis + scheduled jobs foundation.
+The system analyzes Taiwan stocks using:
 
-The first MVP is:
+1. Fundamental factors
+2. Liquidity and institutional/chip factors
+3. Macroeconomic factors
+4. Technical factors
+5. News and sentiment factors
+6. US market linkage factors
+7. Analyst target price / valuation factors
+8. Risk scoring
 
-- Taiwan market after-close daily workflow
-- US premarket linkage workflow
-- Prediction signal dashboard
-- Watchlist and model-driver summaries
-- News/event parsing through an LLM provider interface
+The app must output explainable scores and probabilities, not direct buy/sell advice.
 
-Do not build full real-time intraday trading in the first version. Realtime market data has licensing, cost, and reliability constraints.
+## Product rules
 
-## Tech Stack
+Do not use words such as:
 
-- Frontend: Next.js / React
-- Backend API: Python FastAPI
-- Database: PostgreSQL
-- Cache / Queue: Redis
-- Background jobs: APScheduler first; Celery-compatible design when queue execution is needed
-- AI parser: OpenAI-compatible provider interface
-- Charts: TradingView lightweight-charts or Recharts
-- Local runtime: Docker Compose
-- Tests: pytest for backend; add frontend tests when UI logic becomes non-trivial
+- guaranteed profit
+- must buy
+- must sell
+- 100% accurate
+- insider tip
 
-## Engineering Rules
+Use terms such as:
 
-- Keep API contracts typed with Pydantic models.
-- Keep frontend API types aligned with backend response schemas.
-- Keep financial model logic deterministic and testable.
-- Separate data ingestion, feature/factor calculation, prediction scoring, and presentation.
-- Never hard-code secret keys. Use `.env.example` for names only.
-- Prefer explicit, legal, documented market-data providers. Do not scrape sources with unclear terms.
-- Add tests for factor calculations, parser output normalization, and API contracts.
+- probability
+- factor score
+- risk score
+- historical backtest
+- research signal
+- educational analysis
 
-## MVP Boundaries
+## Engineering rules
+
+- Use clear modular architecture.
+- Add tests for all scoring functions.
+- Keep data providers abstracted behind interfaces.
+- Use mock data for MVP.
+- Never commit API keys or secrets.
+- Use `.env.example` for required environment variables.
+- Prefer readable code over clever code.
+- Write docstrings for non-trivial scoring logic.
+- Keep frontend pages simple but useful.
+- Every API response should include enough explanation for the UI to show why a score was generated.
+
+## Backend stack
+
+Preferred:
+
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Redis
+- pytest
+
+## Frontend stack
+
+Preferred:
+
+- React / Next.js
+- TypeScript
+- Simple dashboard UI
+- Charts for price, MACD, volume, and factor scores
+
+## Core scoring modules
+
+Implement the scoring modules as separate files:
+
+- `fundamental_score.py`
+- `chip_score.py`
+- `technical_score.py`
+- `us_market_score.py`
+- `news_score.py`
+- `macro_score.py`
+- `target_price_score.py`
+- `risk_score.py`
+- `final_prediction_score.py`
+
+Each scoring function should return:
+
+```json
+{
+  "score": 0,
+  "positive_factors": [],
+  "negative_factors": [],
+  "risk_factors": [],
+  "confidence": 0
+}
+```
+
+## MVP boundaries
 
 Allowed in MVP:
 
 - Daily OHLCV storage
 - Market/session status
-- US/TW linkage signals
+- Taiwan after-close workflow
+- US premarket linkage workflow
 - Rule-based scoring baseline
 - LLM news parser interface
 - Background job skeletons
@@ -57,12 +115,19 @@ Not in MVP:
 - Mobile app
 - Paid data redistribution features
 
-## Before Finishing Work
+## Before finishing work
 
 Run what is available locally:
 
 ```bash
 PYTHONPATH=backend pytest backend/tests
+```
+
+If frontend dependencies are installed:
+
+```bash
+cd frontend
+pnpm run build
 ```
 
 If Docker is available:
