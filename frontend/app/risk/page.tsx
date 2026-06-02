@@ -1,7 +1,8 @@
 import { AppShell } from "@/components/AppShell";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
-import { DISCLAIMER_TEXT, sanitizeDisplayText, sanitizeRiskScore, toPercent } from "@/lib/view-model";
+import { sanitizeDisplayText, sanitizeRiskScore, toPercent } from "@/lib/view-model";
 import { fetchHighRisk } from "@/lib/api";
 
 export default async function RiskPage() {
@@ -18,7 +19,7 @@ export default async function RiskPage() {
         </div>
         <div className="status">{primary ? primary.stock_id : "Risk"}</div>
       </header>
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
       <section className="metric-grid">
         <ScoreCard label="最高風險標的" value={primary?.stock_id ?? "觀察中"} detail={primary?.stock_name ?? "目前無高風險樣本"} tone="risk" />
         <ScoreCard label="風險係數" value={risk ? `${Math.round(risk.total * 100)}` : "0"} detail={risk ? sanitizeDisplayText(risk.explanation) : "資料觀察中"} tone="risk" />

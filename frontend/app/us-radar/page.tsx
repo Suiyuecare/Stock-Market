@@ -1,7 +1,8 @@
 import { AppShell } from "@/components/AppShell";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { ScoreCard } from "@/components/ScoreCard";
 import { USMarketRadar } from "@/components/USMarketRadar";
-import { DISCLAIMER_TEXT, formatScore, signedLabel } from "@/lib/view-model";
+import { formatScore, signedLabel } from "@/lib/view-model";
 import { fetchMarketSummary, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function USRadarPage() {
@@ -17,7 +18,7 @@ export default async function USRadarPage() {
         </div>
         <div className="status">{summary.us_premarket_status}</div>
       </header>
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
       <section className="metric-grid">
         <ScoreCard label="NASDAQ" value={signedLabel(radar.linkage.NASDAQ ?? 0)} detail="美股科技指數" />
         <ScoreCard label="SOX" value={signedLabel(radar.linkage.SOX ?? 0)} detail="半導體連動核心" />

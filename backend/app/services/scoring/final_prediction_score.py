@@ -15,7 +15,11 @@ from app.services.scoring.us_market_score import calculate_us_market_score, us_l
 from app.services.indicators import build_technical_indicators
 from app.services.factor_weight_profiles import FactorWeightProfileService
 
-DISCLAIMER = "Outputs are for research and education only, not personalized investment advice."
+DISCLAIMER = (
+    "Outputs are for research and education only, not personalized investment advice, "
+    "investment advisory service, trade instruction, profit guarantee, or solicitation. "
+    "Data may be delayed, estimated, incomplete, or demo-mode during MVP Beta."
+)
 FINAL_SCORE_WEIGHTS = {
     "fundamental": 0.20,
     "chip": 0.18,

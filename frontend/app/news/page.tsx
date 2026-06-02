@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/AppShell";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { NewsTimeline } from "@/components/NewsTimeline";
 import { ScoreCard } from "@/components/ScoreCard";
-import { DISCLAIMER_TEXT } from "@/lib/view-model";
 import { fetchStocks, fetchStockNews } from "@/lib/api";
 
 export default async function NewsPage() {
@@ -18,7 +18,7 @@ export default async function NewsPage() {
         </div>
         <div className="status">事件解析</div>
       </header>
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
       <section className="metric-grid">
         <ScoreCard label="事件數" value={`${news.length}`} detail="樣本新聞與事件" />
         <ScoreCard label="涵蓋標的" value={`${stocks.stocks.length}`} detail="台股追蹤池" />

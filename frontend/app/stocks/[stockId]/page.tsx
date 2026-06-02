@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { InstitutionalTradingPanel } from "@/components/InstitutionalTradingPanel";
 import { MACDPanel } from "@/components/MACDPanel";
@@ -15,7 +16,7 @@ import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
 import { VolumePriceDivergenceBadge } from "@/components/VolumePriceDivergenceBadge";
-import { buildStockMetrics, DISCLAIMER_TEXT, formatScore, sanitizeDisplayText, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
+import { buildStockMetrics, formatScore, sanitizeDisplayText, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
 import { fetchStockDetail, fetchStockInstitutional, fetchStockNews, fetchStockScores, fetchStockTechnical, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function StockDetailPage({ params }: { params: Promise<{ stockId: string }> }) {
@@ -53,7 +54,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         </div>
         <div className="status">5D 上漲機率 {metrics.probabilityUp5d}%</div>
       </header>
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
 
       <StockQuoteOverview signal={signal} />
 

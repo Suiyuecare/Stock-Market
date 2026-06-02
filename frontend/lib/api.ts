@@ -304,7 +304,7 @@ export async function fetchHighRisk(): Promise<HighRiskResponse> {
   return getJson<HighRiskResponse>("/api/risk/high-risk");
 }
 
-const disclaimer = "本系統僅提供資料分析與研究用途，不構成個人化投資建議。";
+const disclaimer = "本系統僅提供資料整理、研究分析與教育用途，不構成個人化投資建議、投資顧問服務、交易指示、獲利保證或招攬買賣；MVP Beta 期間部分資料可能延遲、估算或仍為示範資料。";
 
 const instruments: StockInstrument[] = [
   { symbol: "2330", market: "TW", name: "台積電", sector: "半導體", currency: "TWD" },

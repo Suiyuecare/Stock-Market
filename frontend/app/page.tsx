@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { NewsTimeline } from "@/components/NewsTimeline";
 import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
@@ -11,7 +12,7 @@ import { StockRankingTable } from "@/components/StockRankingTable";
 import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
-import { buildStockMetrics, DISCLAIMER_TEXT, sanitizeRiskScore } from "@/lib/view-model";
+import { buildStockMetrics, sanitizeRiskScore } from "@/lib/view-model";
 import { fetchHighRisk, fetchMarketSummary, fetchStockDetail, fetchStocks, fetchTopProbabilityRanking, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function Home() {
@@ -38,7 +39,7 @@ export default async function Home() {
         <div className="status">今天先看懂，再決定是否放入觀察</div>
       </header>
 
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
 
       <section className="metric-grid">
         <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />

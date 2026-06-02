@@ -1,8 +1,9 @@
 import { AppShell } from "@/components/AppShell";
 import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { ScoreCard } from "@/components/ScoreCard";
 import { StockRankingTable } from "@/components/StockRankingTable";
-import { DISCLAIMER_TEXT, formatRatio, formatScore, sanitizeDisplayText } from "@/lib/view-model";
+import { formatRatio, formatScore, sanitizeDisplayText } from "@/lib/view-model";
 import { fetchInstitutionalBuyingRanking, fetchMacdGoldenCrossRanking, fetchTopProbabilityRanking, fetchVolumePriceDivergenceRanking } from "@/lib/api";
 
 export default async function RankingPage() {
@@ -23,7 +24,7 @@ export default async function RankingPage() {
         </div>
         <div className="status">研究訊號</div>
       </header>
-      <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+      <ComplianceNotice />
       <section className="metric-grid">
         <ScoreCard label="樣本數" value={`${ranking.signals.length}`} detail="目前 MVP 追蹤標的" />
         <ScoreCard label="最高觀察標的" value={top.symbol} detail={top.name} tone="positive" />

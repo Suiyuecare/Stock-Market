@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ComplianceNotice } from "@/components/ComplianceNotice";
 
 const navItems = [
   { href: "/", label: "入門總覽" },
@@ -27,6 +28,7 @@ export function AppShell({ active, children }: { active: string; children: React
             </a>
           ))}
         </nav>
+        <ComplianceNotice compact />
       </aside>
       <section className="content">{children}</section>
     </main>

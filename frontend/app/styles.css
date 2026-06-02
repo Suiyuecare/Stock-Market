@@ -149,6 +149,67 @@ h2 {
   font-size: 0.9rem;
 }
 
+.compliance-notice {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin: -8px 0 18px;
+  border: 1px solid rgba(180, 35, 24, 0.32);
+  border-left: 5px solid var(--negative);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff7f4;
+  color: #5c251f;
+}
+
+.compliance-notice span,
+.compliance-compact strong {
+  color: var(--negative);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.compliance-notice strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.compliance-notice p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.compliance-notice ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.compliance-notice li {
+  line-height: 1.45;
+}
+
+.compliance-compact {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  border: 1px solid rgba(234, 136, 12, 0.26);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 248, 237, 0.08);
+}
+
+.compliance-compact span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .metric-grid,
 .grid {
   display: grid;
@@ -952,6 +1013,7 @@ th {
   .quote-signal-strip,
   .quote-detail-grid,
   .professional-grid,
+  .compliance-notice,
   .backtest-summary,
   .backtest-sections,
   .backtest-columns {

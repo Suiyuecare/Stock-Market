@@ -1,6 +1,13 @@
 import type { FactorScore, PredictionSignal, RiskScore } from "@/lib/api";
 
-export const DISCLAIMER_TEXT = "本系統僅提供資料分析與研究用途，不構成個人化投資建議。";
+export const BETA_NOTICE_TEXT = "目前為 MVP Beta 研究展示版，部分行情、法人、財報、目標區間與回測資料仍可能使用示範或延遲資料。";
+export const DISCLAIMER_TEXT = "本系統僅提供資料整理、研究分析與教育用途，不構成個人化投資建議、投資顧問服務、交易指示、獲利保證或招攬買賣。";
+export const COMPLIANCE_POINTS = [
+  "所有機率、因子分數、風險係數與觀察名單都只是研究訊號，不能單獨作為交易決策依據。",
+  "資料可能延遲、缺漏、估算或仍處於示範模式；正式判斷請以交易所、公開資訊觀測站與原始資料來源為準。",
+  "歷史回測與相似樣本不代表未來績效，模型可能在不同市場狀態下失效。",
+  "使用者需自行承擔投資風險；若需要投資、法律或稅務建議，請諮詢具資格的專業人士。",
+];
 
 export type StockDisplayMetrics = {
   probabilityUp1d: number;
