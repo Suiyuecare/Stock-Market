@@ -14,10 +14,10 @@ export default async function RiskPage() {
     <AppShell active="/risk">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Risk Monitoring</p>
+          <p className="eyebrow">風險監控</p>
           <h1>風險監控</h1>
         </div>
-        <div className="status">{primary ? primary.stock_id : "Risk"}</div>
+        <div className="status risk">{primary ? `${primary.stock_id} ${primary.stock_name}` : "Risk Monitor"}</div>
       </header>
       <ComplianceNotice />
       <section className="metric-grid">

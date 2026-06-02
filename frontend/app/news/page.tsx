@@ -13,10 +13,10 @@ export default async function NewsPage() {
     <AppShell active="/news">
       <header className="topbar">
         <div>
-          <p className="eyebrow">News Timeline</p>
+          <p className="eyebrow">新聞時間軸</p>
           <h1>新聞事件時間線</h1>
         </div>
-        <div className="status">事件解析</div>
+        <div className="status">以事件補充因子說明依據</div>
       </header>
       <ComplianceNotice />
       <section className="metric-grid">

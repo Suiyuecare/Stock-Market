@@ -13,10 +13,10 @@ export default async function USRadarPage() {
     <AppShell active="/us-radar">
       <header className="topbar">
         <div>
-          <p className="eyebrow">US Linkage Radar</p>
+          <p className="eyebrow">美股連動雷達</p>
           <h1>美股連動雷達</h1>
         </div>
-        <div className="status">{summary.us_premarket_status}</div>
+        <div className="status">美股連動指標：{summary.us_premarket_status}</div>
       </header>
       <ComplianceNotice />
       <section className="metric-grid">

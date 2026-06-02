@@ -49,10 +49,10 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
     <AppShell active="/stocks/2330">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Stock Decision Workspace</p>
-          <h1>{signal.symbol} {signal.name} 觀察說明書</h1>
+          <p className="eyebrow">個股決策面板</p>
+          <h1>{signal.symbol} {signal.name} 可理解的選股解釋頁</h1>
         </div>
-        <div className="status">5D 上漲機率 {metrics.probabilityUp5d}%</div>
+        <div className="status ok">5D 上漲機率 {metrics.probabilityUp5d}%</div>
       </header>
       <ComplianceNotice />
 

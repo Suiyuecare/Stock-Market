@@ -20,9 +20,9 @@ export default async function RankingPage() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Taiwan Ranking</p>
-          <h1>台股因子排名</h1>
+          <h1>台股觀察榜（因子 + 風險）</h1>
         </div>
-        <div className="status">研究訊號</div>
+        <div className="status">研究訊號：從 1084 檔中選出可討論對象</div>
       </header>
       <ComplianceNotice />
       <section className="metric-grid">

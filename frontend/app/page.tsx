@@ -34,10 +34,10 @@ export default async function Home() {
     <AppShell active="/">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Finance Template Workspace</p>
-          <h1>台美股入門觀察工作台</h1>
+          <p className="eyebrow">台美股訊號研究平台</p>
+          <h1>入門友善版觀察工作台</h1>
         </div>
-        <div className="status">今天先看懂，再決定是否放入觀察</div>
+        <div className="status ok">研究視角：觀察訊號，不提供個人化建議</div>
       </header>
 
       <ComplianceNotice />
