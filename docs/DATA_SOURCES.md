@@ -23,6 +23,39 @@ Use legal, documented data providers. Do not build the product around scraping o
 - ADR data for Taiwan-linked companies
 - FX: USD/TWD, DXY
 
+## US / Global Market Data Sources
+
+These providers can feed USMarketScore, pre-open radar, futures linkage, FX, commodities, and backup technical/news data. Most require API keys or commercial licensing.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 38 | Massive / Polygon Docs | US stocks, ETFs, indices, options, crypto, FX quotes | `https://massive.com/docs` |
+| 39 | Massive / Polygon REST base | US market data REST API | `https://api.polygon.io` |
+| 40 | Massive / Polygon WebSocket | US stock real-time streaming | `wss://socket.polygon.io/stocks` |
+| 41 | Finnhub API Docs | US quotes, company fundamentals, news, economic data | `https://finnhub.io/docs/api` |
+| 42 | Finnhub REST base | Finnhub API base | `https://finnhub.io/api/v1` |
+| 43 | Nasdaq Data Link Docs | Global datasets, commodities, futures, alternative data | `https://docs.data.nasdaq.com/` |
+| 44 | Nasdaq Data Link API | Nasdaq Data Link REST API | `https://data.nasdaq.com/api/v3` |
+| 45 | Nasdaq Data Link API product page | Real-time exchange data and REST / streaming API notes | `https://www.nasdaq.com/solutions/data/nasdaq-data-link/api` |
+| 46 | Alpha Vantage Docs | US stocks, ETFs, FX, commodities, technical indicator backup | `https://www.alphavantage.co/documentation/` |
+| 47 | Alpha Vantage base | REST API base | `https://www.alphavantage.co/query` |
+| 48 | CME Group Market Data APIs | NQ / ES futures, FedWatch, futures/options data | `https://www.cmegroup.com/market-data/market-data-api.html` |
+| 49 | CME Real-Time Futures & Options API | CME WebSocket real-time futures/options | `https://www.cmegroup.com/market-data/real-time-futures-and-options-data-api.html` |
+| 50 | CME Reference Data API | CME product and contract reference data | `https://www.cmegroup.com/trading/market-tech-and-data-services/cme-reference-data-api.html` |
+| 51 | ICE Developer Center | ICE Data Services API documentation | `https://developer.theice.com/hc/en-us` |
+| 52 | ICE Data API / Commodity Energy Data | Energy, commodity, derivatives data | `https://developer.ice.com/fixed-income-data-services/catalog/ice-data-derivatives-commodity-energy-data` |
+| 53 | Intrinio Docs | US stocks, fundamentals, options, news backup source | `https://docs.intrinio.com/documentation/api_v2/getting_started` |
+| 54 | Twelve Data Docs | US stocks, FX, crypto, technical indicator backup | `https://twelvedata.com/docs` |
+| 55 | EODHD API | Global stocks, ETFs, FX, news, technical indicator backup | `https://eodhd.com/` |
+
+Implementation notes:
+
+- Keep all US/global providers optional and keyed through environment variables.
+- Use Massive/Polygon or Finnhub as primary candidates for US equity and ETF linkage when licensing allows.
+- Use CME for NQ/ES futures and Fed/futures-related pre-open signals.
+- Use Nasdaq Data Link, ICE, Intrinio, Twelve Data, Alpha Vantage, and EODHD as evaluated backup/enrichment sources.
+- Do not enable WebSocket streaming in the MVP until real-time licensing, cost, and reliability requirements are clear.
+
 ### News and Events
 
 - Company news
