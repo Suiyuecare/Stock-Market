@@ -12,11 +12,15 @@ from app.schemas.core import (
     StockDetailResponse,
     TechnicalIndicators,
 )
+from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 
 __all__ = [
+    "ChipScoreRequest",
+    "ChipScoreResponse",
     "FactorScore",
     "HealthResponse",
     "Instrument",
+    "InstitutionalTradingInput",
     "MarketSummary",
     "NewsEvent",
     "NewsParseRequest",

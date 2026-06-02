@@ -215,6 +215,22 @@ Implemented factor categories:
 - News sentiment
 - Risk score adjustment
 
+Implemented institutional/chip factors:
+
+- `foreign_net_ratio = foreign_net / volume`
+- `investment_trust_net_ratio = investment_trust_net / volume`
+- `dealer_net_ratio = dealer_net / volume`
+- `institutional_net_ratio = total_institutional_net / volume`
+- Consecutive foreign net-buy days
+- Consecutive investment trust net-buy days
+- Foreign and investment trust simultaneous net buying
+- Foreign, investment trust, and dealer synchronized buying
+- Foreign, investment trust, and dealer synchronized selling
+- Foreign buying while investment trust is selling
+- Investment trust accumulation
+- Investment trust continuous selling while price is below MA20
+- Institutional reversal from buying to selling
+
 ## Implementation Notes
 
 - MVP data providers use mock/sample data first so the app can run without paid data licenses.
