@@ -46,7 +46,7 @@ These are candidates to evaluate, not final commitments:
 
 ## Official Taiwan Data Sources
 
-Use official TWSE/MOPS/TPEx/TAIFEX sources first for Taiwan equities, derivatives, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
+Use official TWSE/MOPS/TPEx/TAIFEX/TDCC sources first for Taiwan equities, derivatives, ownership concentration, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
 
 | # | API / Source | Purpose | URL |
 | -: | --- | --- | --- |
@@ -72,16 +72,21 @@ Use official TWSE/MOPS/TPEx/TAIFEX sources first for Taiwan equities, derivative
 | 20 | TAIFEX OpenAPI | Taiwan index futures, options, futures institutional data | `https://openapi.taifex.com.tw/` |
 | 21 | TAIFEX Swagger JSON | Machine-readable TAIFEX API specification | `https://openapi.taifex.com.tw/swagger.json` |
 | 22 | TAIFEX official portal | Official futures exchange data entry point | `https://www.taifex.com.tw/` |
+| 23 | TDCC OpenAPI Swagger | TDCC OpenAPI documentation | `https://openapi-t.tdcc.com.tw/swagger-ui/index.html` |
+| 24 | TDCC OpenData API Docs | TDCC OAS documentation entry point | `https://openapi.tdcc.com.tw/tdcc-opendata-api-docs` |
+| 25 | TDCC OpenData legacy download | TDCC CSV / OpenData download entry | `https://smart.tdcc.com.tw/opendata/` |
+| 26 | TDCC ownership distribution endpoint | Holding brackets, major holders, ownership concentration | `https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5` |
 
 Implementation notes:
 
 - For MVP, prefer after-market/open data endpoints over real-time feeds.
-- Keep TWSE/MOPS/TPEx/TAIFEX ingestion behind provider interfaces.
+- Keep TWSE/MOPS/TPEx/TAIFEX/TDCC ingestion behind provider interfaces.
 - Do not redistribute real-time or delayed trading data without confirming license terms.
 - Use `swagger.json` to generate or validate endpoint mappings before adding new fetch methods.
 - Use MOPS CSV endpoints as fallback sources when an equivalent OpenAPI endpoint is unavailable.
 - Use TPEx OpenAPI for OTC and emerging stock coverage once the field mapping is implemented.
 - Use TAIFEX OpenAPI for Taiwan futures/options linkage, futures institutional positioning, and market position factors once endpoint field mapping is implemented.
+- Use TDCC OpenData for ownership distribution, large-holder concentration, and chip concentration risk factors once endpoint field mapping is implemented.
 
 ## Provider Evaluation Checklist
 
