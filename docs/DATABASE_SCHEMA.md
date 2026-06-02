@@ -2,6 +2,10 @@
 
 The local Docker schema lives in `infra/postgres/init.sql`.
 
+The SQLAlchemy models live in `backend/app/models/`.
+
+Alembic migrations live in `backend/alembic/`.
+
 This MVP schema uses explicit domain table names for Taiwan stocks, US linkage, news events, and final daily factor scores. It is optimized for explainable factor analysis rather than trade execution.
 
 ## `stock_master`
@@ -219,4 +223,18 @@ Tracks scheduled market processing phases.
 
 ## Migration Direction
 
-The MVP uses init SQL for local Docker. Before production, move schema changes to explicit migrations with Alembic or another migration tool.
+The MVP now includes an Alembic baseline migration:
+
+```bash
+cd backend
+PYTHONPATH=. alembic -c alembic.ini upgrade head
+```
+
+Sample CSV loading is implemented in `app.services.data_providers.csv_seed_loader`. The loader maps early sample CSV column names into the production table names, such as `symbol` to `stock_id` and `foreign_net_buy` to `foreign_net`.
+
+To load sample data into the configured database:
+
+```bash
+cd backend
+PYTHONPATH=. python -m app.services.data_providers.seed_sample_data
+```
