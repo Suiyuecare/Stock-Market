@@ -37,6 +37,7 @@ flowchart LR
 - Signal Selection Layer under `backend/app/services/signal_selection_layer.py`
 - Portfolio Risk Engine under `backend/app/services/portfolio_risk_engine.py`
 - Explainability Report Builder under `backend/app/services/explainability_report.py`
+- Model Monitoring Engine under `backend/app/services/model_monitoring.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -188,6 +189,23 @@ Required trace fields:
 - user-visible text and disclaimer
 
 The report should be generated before rendering a stock detail page so the UI explanation and backend calculation remain traceable.
+
+### Model Monitoring
+
+Model monitoring runs after daily labels, backtests, calibration, and operations metrics are available. It tracks whether the model is still behaving like its historical baseline.
+
+Monitored metrics:
+
+- recent 20-day and 60-day win rates
+- recent 20-day average return and max drawdown
+- prediction calibration error
+- sector win-rate changes
+- factor contribution drift
+- data latency
+- API failure rate
+- news parsing error rate
+
+If the recent 20-day win rate falls below the historical mean by more than two standard deviations, the engine marks `possible_model_decay`, lowers the signal-strength multiplier, and recommends retraining or recalibration review.
 
 ## Runtime
 

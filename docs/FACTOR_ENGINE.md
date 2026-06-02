@@ -224,6 +224,23 @@ Inputs:
 
 The report preserves the analysis basis for each research signal. It should be generated before the user sees the signal so the displayed explanation can be audited later.
 
+### 12. ModelMonitoringEngine
+
+Inputs:
+
+- recent 20-day and 60-day win rate
+- historical win-rate mean and standard deviation
+- recent 20-day average return
+- recent 20-day max drawdown
+- probability calibration error
+- sector win-rate changes
+- factor contribution changes
+- data latency
+- API failure rate
+- news parsing error rate
+
+The monitoring engine emits daily health status, alerts, and a signal-strength multiplier. If the recent 20-day win rate is below the historical average by more than two standard deviations, it marks `possible_model_decay` and recommends lowering signal strength while reviewing retraining or recalibration.
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.

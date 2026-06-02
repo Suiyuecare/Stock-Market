@@ -43,6 +43,12 @@ from app.schemas.explainability import (
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.label import LabelEngineRequest, LabelResult
 from app.schemas.market_regime import MarketRegimeInput, MarketRegimeResult
+from app.schemas.model_monitoring import (
+    ModelMonitoringAlert,
+    ModelMonitoringInput,
+    ModelMonitoringResult,
+    ModelMonitoringThresholds,
+)
 from app.schemas.portfolio_risk import (
     PortfolioAllocation,
     PortfolioCandidate,
@@ -90,6 +96,10 @@ __all__ = [
     "MarketSummary",
     "MarketRegimeInput",
     "MarketRegimeResult",
+    "ModelMonitoringAlert",
+    "ModelMonitoringInput",
+    "ModelMonitoringResult",
+    "ModelMonitoringThresholds",
     "NewsEvent",
     "NewsParseRequest",
     "NewsParseResponse",
