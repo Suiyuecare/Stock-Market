@@ -109,6 +109,36 @@ The cost model reports:
 
 No backtest should report raw gross-return win rate as the primary result, because short-horizon strategies are easily overstated when transaction cost, tax, and liquidity slippage are ignored.
 
+### 0.4 Validation Variables
+
+Validation prevents the model from proving itself with contaminated or statistically weak samples. The MVP uses walk-forward validation rather than random splits, because stock signals are time-series data.
+
+```yaml
+validation:
+  split_method: walk_forward
+  train_window_days: 756
+  validation_window_days: 126
+  test_window_days: 126
+  retrain_frequency: monthly
+  embargo_days: 5
+  min_trades_per_fold: 100
+  min_total_trades: 500
+  evaluate_by_market_regime: true
+  evaluate_by_industry: true
+  evaluate_by_liquidity_bucket: true
+```
+
+`embargo_days` creates a gap between train, validation, and test windows. This is required when predicting 5-day or 20-day returns because overlapping label periods can leak future information across adjacent windows.
+
+Each validation run should report:
+
+- fold windows and sample counts
+- validation and test trade counts
+- whether each fold passes `min_trades_per_fold`
+- whether total test samples pass `min_total_trades`
+- results by market regime, industry, and liquidity bucket
+- warnings when the validation design is too weak to trust
+
 ### 1. FundamentalScore
 
 Inputs:

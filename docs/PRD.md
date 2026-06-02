@@ -124,6 +124,12 @@ Backtests and simulated labels must deduct configurable costs before reporting w
 
 The product should never present gross-return-only performance as the main result, because short-term strategy quality can be materially overstated when trading costs are ignored.
 
+### Validation Design
+
+Model validation must use walk-forward splits with an embargo gap between train, validation, and test periods. The default windows are 756 training days, 126 validation days, 126 test days, monthly retraining, and a 5-day embargo.
+
+Validation must reject or warn on weak results when a fold has fewer than 100 trades or the full validation run has fewer than 500 test trades. Results should be broken down by market regime, industry, and liquidity bucket so the system can detect signals that only work in narrow conditions.
+
 ### Dashboard
 
 - Market status cards

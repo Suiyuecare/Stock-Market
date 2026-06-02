@@ -104,6 +104,11 @@ from app.schemas.us_market import (
     USMarketScoreResponse,
     USTWSensitivityInput,
 )
+from app.schemas.validation import (
+    ValidationConfig,
+    ValidationFold,
+    ValidationResult,
+)
 
 __all__ = [
     "ChipScoreRequest",
@@ -184,4 +189,7 @@ __all__ = [
     "USMarketScoreRequest",
     "USMarketScoreResponse",
     "USTWSensitivityInput",
+    "ValidationConfig",
+    "ValidationFold",
+    "ValidationResult",
 ]
