@@ -151,6 +151,30 @@ Regimes:
 
 The regime engine returns factor-weight adjustments instead of direct investment advice. For example, bear markets raise the RiskScore multiplier, range markets increase technical/volume-price context, and US technology strength increases USMarketScore impact for electronics and semiconductor-linked stocks.
 
+### 9. SignalSelectionLayer
+
+Inputs:
+
+- predicted probability
+- RiskScore
+- confidence
+- calibration sample count
+- liquidity score
+- chip score
+- USMarketScore
+- major negative event flag
+- high-risk event window flag, such as earnings, conference call, or ex-dividend windows
+
+The selection layer decides whether a signal enters the primary watchlist, high-risk watchlist, low-confidence watchlist, or is excluded. It gives the system a no-signal option, which is necessary when probability is high but liquidity, risk, sample size, or event risk is unacceptable.
+
+Examples:
+
+- high probability and acceptable risk: primary watchlist
+- high probability and high RiskScore: high-risk watchlist
+- high probability and low calibration sample count: low-confidence watchlist
+- high probability and poor liquidity: excluded
+- US linkage positive but Taiwan chip score weak: low-confidence watchlist
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.

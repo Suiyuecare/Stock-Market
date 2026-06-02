@@ -34,6 +34,7 @@ flowchart LR
 - Backtest Lab under `backend/app/services/backtest_lab.py`
 - Probability Calibration under `backend/app/services/probability_calibration.py`
 - Market Regime Engine under `backend/app/services/market_regime_engine.py`
+- Signal Selection Layer under `backend/app/services/signal_selection_layer.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -132,6 +133,23 @@ Examples:
 - bear markets increase the RiskScore multiplier and reduce trend-following confidence
 - range markets emphasize technical structure, volume-price divergence, and support/resistance context
 - US technology strength increases USMarketScore sensitivity for semiconductor and electronics supply-chain names
+
+### Signal Selection Layer
+
+The signal selection layer runs after probability scoring, calibration, risk scoring, and regime analysis. Its job is to decide whether a signal should be shown as a primary research candidate, downgraded, marked high risk, or excluded.
+
+Selection checks:
+
+- probability threshold
+- RiskScore threshold
+- calibration sample count
+- model confidence
+- liquidity score
+- major negative news or material event flags
+- high-risk event windows such as earnings, conference calls, and ex-dividend periods
+- factor conflict checks such as positive US linkage but weak Taiwan institutional/chip score
+
+The layer intentionally supports a no-signal decision. The system should prefer fewer, higher-confidence research signals over broad daily lists.
 
 ## Runtime
 

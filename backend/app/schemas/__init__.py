@@ -37,6 +37,11 @@ from app.schemas.feature_store import (
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.label import LabelEngineRequest, LabelResult
 from app.schemas.market_regime import MarketRegimeInput, MarketRegimeResult
+from app.schemas.signal_selection import (
+    SignalSelectionConfig,
+    SignalSelectionInput,
+    SignalSelectionResult,
+)
 from app.schemas.us_market import (
     TaiwanStockProfile,
     USMarketScoreRequest,
@@ -75,6 +80,9 @@ __all__ = [
     "RankingResponse",
     "RiskScore",
     "SignalDataAvailabilityCheck",
+    "SignalSelectionConfig",
+    "SignalSelectionInput",
+    "SignalSelectionResult",
     "StockDetailResponse",
     "TechnicalIndicators",
     "TimeSeriesSplitWindow",
