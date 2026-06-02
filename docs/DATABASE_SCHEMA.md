@@ -369,6 +369,76 @@ Primary key:
 
 - `(model_version, strategy_version, horizon_days, market_regime, industry, probability_bucket, risk_bucket)`
 
+## `backtest_runs`
+
+Audit record for each walk-forward validation or strategy optimization run.
+
+- `run_id`
+- `strategy_version`
+- `model_version`
+- `feature_version`
+- `started_at`
+- `completed_at`
+- `status`
+- `split_method`
+- `train_window_days`
+- `validation_window_days`
+- `test_window_days`
+- `embargo_days`
+- `objective_score`
+- `notes`
+
+Primary key:
+
+- `run_id`
+
+## `backtest_results`
+
+Aggregated performance output for a strategy version, horizon, and evaluation segment.
+
+- `result_id`
+- `run_id`
+- `strategy_version`
+- `horizon_days`
+- `market_regime`
+- `industry`
+- `liquidity_bucket`
+- `probability_bucket`
+- `risk_bucket`
+- `win_rate`
+- `win_rate_lower_bound`
+- `trade_count`
+- `average_net_return`
+- `median_net_return`
+- `profit_factor`
+- `max_drawdown`
+- `sharpe_ratio`
+- `calibration_error`
+- `best_parameter_set`
+- `worst_market_regime`
+- `best_market_regime`
+- `top_positive_factor_combinations`
+- `top_failure_patterns`
+
+Primary key:
+
+- `result_id`
+
+## `strategy_parameters`
+
+Versioned signal selection, risk, trade management, and factor weight settings used by a run.
+
+- `strategy_version`
+- `parameter_group`
+- `parameter_name`
+- `parameter_value`
+- `parameter_json`
+- `created_at`
+
+Primary key:
+
+- `(strategy_version, parameter_group, parameter_name)`
+
 ## Operational Tables
 
 ### `market_sessions`

@@ -965,6 +965,28 @@ Implemented institutional/chip factors:
 - Investment trust continuous selling while price is below MA20
 - Institutional reversal from buying to selling
 
+Implemented win-rate optimization and backtesting services:
+
+- `LabelEngine` builds absolute, relative, risk-adjusted, and take-profit / stop-loss labels.
+- `FeatureSnapshotEngine` stores point-in-time feature snapshots with `available_for_signal_at`.
+- `BacktestLab` evaluates holding-period, take-profit, stop-loss, cost, slippage, and segment filters.
+- `SignalSelectionLayer` applies probability, confidence, risk, liquidity, news, and concentration filters.
+- `ProbabilityCalibration` calculates calibration buckets, Brier score, and mean calibration error.
+- `ValidationEngine` runs chronological walk-forward validation with embargo support.
+- `PerformanceStatsEngine` converts backtest trades into segment-level win-rate, Wilson lower bound, return, drawdown, Sharpe, and calibration statistics.
+- `StrategyOptimizer` ranks strategy parameter sets only after minimum sample size, positive net return, Profit Factor, drawdown, and confidence constraints pass.
+
+The MVP objective score is:
+
+```text
+0.40 * WinRateLowerBound
++ 0.20 * AverageNetReturnScore
++ 0.15 * ProfitFactorScore
++ 0.10 * CalibrationScore
++ 0.10 * StabilityScore
+- 0.05 * MaxDrawdownPenalty
+```
+
 ## Implementation Notes
 
 - MVP data providers use mock/sample data first so the app can run without paid data licenses.

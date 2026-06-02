@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     Base,
+    BacktestResultRecord,
+    BacktestRun,
     DataAvailabilityLedger,
     FactorScoresDaily,
     FeatureStoreDaily,
@@ -17,6 +19,7 @@ from app.models import (
     SignalOutcome,
     SignalPerformanceStats,
     StockMaster,
+    StrategyParameter,
     USMarketDailyORM,
 )
 from app.services.data_providers.csv_seed_loader import seed_from_sample_data
@@ -38,6 +41,9 @@ EXPECTED_TABLES = {
     "labels_daily",
     "signals",
     "signal_outcomes",
+    "backtest_runs",
+    "backtest_results",
+    "strategy_parameters",
     "signal_performance_stats",
 }
 
@@ -273,3 +279,70 @@ def test_signal_tables_store_generated_signals_outcomes_and_stats() -> None:
         assert session.query(Signal).count() == 1
         assert session.query(SignalOutcome).count() == 1
         assert session.query(SignalPerformanceStats).count() == 1
+
+
+def test_backtest_tables_store_runs_results_and_strategy_parameters() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        session.add(
+            BacktestRun(
+                run_id="run-mvp-default-202606",
+                strategy_version="mvp-default-v1",
+                model_version="model-v1",
+                feature_version="feature-v1",
+                started_at=datetime(2026, 6, 30, 10, 0, tzinfo=timezone.utc),
+                completed_at=datetime(2026, 6, 30, 10, 5, tzinfo=timezone.utc),
+                status="completed",
+                split_method="walk_forward",
+                train_window_days=756,
+                validation_window_days=126,
+                test_window_days=126,
+                embargo_days=5,
+                objective_score=62.5,
+                notes="MVP walk-forward research run",
+            )
+        )
+        session.add(
+            BacktestResultRecord(
+                result_id="result-mvp-default-5d",
+                run_id="run-mvp-default-202606",
+                strategy_version="mvp-default-v1",
+                horizon_days=5,
+                market_regime="bull_market",
+                industry="semiconductor",
+                liquidity_bucket="high",
+                probability_bucket="0.60-0.70",
+                risk_bucket="30-50",
+                win_rate=0.62,
+                win_rate_lower_bound=0.58,
+                trade_count=720,
+                average_net_return=0.018,
+                median_net_return=0.011,
+                profit_factor=1.55,
+                max_drawdown=-0.08,
+                sharpe_ratio=1.15,
+                calibration_error=0.04,
+                best_parameter_set={"probability_threshold": 0.6, "holding_period": 5},
+                worst_market_regime="high_volatility",
+                best_market_regime="bull_market",
+                top_positive_factor_combinations=["chip + technical + US linkage"],
+                top_failure_patterns=["high risk score with weak liquidity"],
+            )
+        )
+        session.add(
+            StrategyParameter(
+                strategy_version="mvp-default-v1",
+                parameter_group="signal_filter",
+                parameter_name="min_probability_up_5d",
+                parameter_value="0.60",
+                parameter_json={"source": "mvp_default"},
+                created_at=datetime(2026, 6, 30, 10, 0, tzinfo=timezone.utc),
+            )
+        )
+        session.commit()
+
+        assert session.query(BacktestRun).count() == 1
+        assert session.query(BacktestResultRecord).count() == 1
+        assert session.query(StrategyParameter).count() == 1

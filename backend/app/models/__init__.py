@@ -1,4 +1,5 @@
 from app.models.base import Base
+from app.models.backtest import BacktestResultRecord, BacktestRun, StrategyParameter
 from app.models.data_availability import DataAvailabilityLedger
 from app.models.factor_score import FactorScoresDaily
 from app.models.feature_store import FeatureStoreDaily
@@ -15,6 +16,8 @@ from app.models.us_tw_supply_chain_map import USTWSupplyChainMap, USTWSupplyChai
 
 __all__ = [
     "Base",
+    "BacktestResultRecord",
+    "BacktestRun",
     "DataAvailabilityLedger",
     "FactorScoresDaily",
     "FeatureStoreDaily",
@@ -28,6 +31,7 @@ __all__ = [
     "Signal",
     "SignalOutcome",
     "SignalPerformanceStats",
+    "StrategyParameter",
     "StockMaster",
     "TechnicalIndicatorsDaily",
     "USMarketDaily",
