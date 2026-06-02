@@ -1,3 +1,4 @@
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, select
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     Base,
+    DataAvailabilityLedger,
     FactorScoresDaily,
     InstitutionalTradingDaily,
     NewsEvent,
@@ -26,6 +28,7 @@ EXPECTED_TABLES = {
     "us_tw_supply_chain_map",
     "news_events",
     "factor_scores_daily",
+    "data_availability_ledger",
 }
 
 
@@ -61,3 +64,44 @@ def test_sample_csv_seed_data_can_be_inserted() -> None:
         factor_score = session.scalar(select(FactorScoresDaily).where(FactorScoresDaily.stock_id == "2330"))
         assert factor_score.fundamental_score is not None
         assert factor_score.top_positive_factors
+
+
+def test_data_availability_ledger_enforces_point_in_time_usage() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    signal_generated_at = datetime(2026, 6, 5, 9, 0, tzinfo=timezone.utc)
+
+    with Session(engine) as session:
+        early_revenue = DataAvailabilityLedger(
+            source="TWSE",
+            dataset_name="price_daily",
+            symbol="2330",
+            data_date=date(2026, 6, 4),
+            published_at=datetime(2026, 6, 4, 14, 40, tzinfo=timezone.utc),
+            ingested_at=datetime(2026, 6, 4, 15, 1, tzinfo=timezone.utc),
+            available_for_signal_at=datetime(2026, 6, 4, 15, 5, tzinfo=timezone.utc),
+            revision_number=1,
+            checksum="price-v1",
+            raw_payload_path="raw/twse/price_daily/2026-06-04.json",
+        )
+        future_revenue = DataAvailabilityLedger(
+            source="MOPS",
+            dataset_name="fundamental_monthly",
+            symbol="2330",
+            data_date=date(2026, 5, 31),
+            published_at=datetime(2026, 6, 10, 10, 0, tzinfo=timezone.utc),
+            ingested_at=datetime(2026, 6, 10, 10, 5, tzinfo=timezone.utc),
+            available_for_signal_at=datetime(2026, 6, 10, 10, 10, tzinfo=timezone.utc),
+            revision_number=1,
+            checksum="revenue-v1",
+            raw_payload_path="raw/mops/fundamental_monthly/2026-05.json",
+        )
+        session.add_all([early_revenue, future_revenue])
+        session.commit()
+
+        usable_rows = session.scalars(
+            select(DataAvailabilityLedger).where(DataAvailabilityLedger.available_for_signal_at <= signal_generated_at)
+        ).all()
+
+        assert [row.dataset_name for row in usable_rows] == ["price_daily"]

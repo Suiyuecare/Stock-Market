@@ -10,6 +10,27 @@ create table if not exists market_sessions (
   unique (market, session_date, phase)
 );
 
+create table if not exists data_availability_ledger (
+  id uuid primary key default gen_random_uuid(),
+  source text not null,
+  dataset_name text not null,
+  symbol text,
+  data_date date not null,
+  published_at timestamptz not null,
+  ingested_at timestamptz not null,
+  available_for_signal_at timestamptz not null,
+  revision_number integer not null default 1,
+  checksum text,
+  raw_payload_path text,
+  unique (source, dataset_name, symbol, data_date, revision_number)
+);
+
+create index if not exists ix_data_availability_signal_time
+  on data_availability_ledger (dataset_name, symbol, available_for_signal_at);
+
+create index if not exists ix_data_availability_source_date
+  on data_availability_ledger (source, dataset_name, data_date);
+
 create table if not exists stock_master (
   stock_id text primary key,
   stock_name text not null,

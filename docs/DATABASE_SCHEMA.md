@@ -8,6 +8,37 @@ Alembic migrations live in `backend/alembic/`.
 
 This MVP schema uses explicit domain table names for Taiwan stocks, US linkage, news events, and final daily factor scores. It is optimized for explainable factor analysis rather than trade execution.
 
+## `data_availability_ledger`
+
+Data availability ledger for point-in-time correctness.
+
+This table records when each source dataset is officially published, ingested by
+the system, and safe to use for signal generation. Backtests and signal jobs must
+only use rows where:
+
+```text
+available_for_signal_at <= signal_generated_at
+```
+
+This prevents look-ahead bias, such as using monthly revenue before its official
+publication date.
+
+- `id`
+- `source`
+- `dataset_name`
+- `symbol`
+- `data_date`
+- `published_at`
+- `ingested_at`
+- `available_for_signal_at`
+- `revision_number`
+- `checksum`
+- `raw_payload_path`
+
+Uniqueness:
+
+- `(source, dataset_name, symbol, data_date, revision_number)`
+
 ## `stock_master`
 
 Taiwan stock master.
