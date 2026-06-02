@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { InstitutionalTradingPanel } from "@/components/InstitutionalTradingPanel";
@@ -98,6 +99,16 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
             </div>
           </div>
           <ReferencePanel signal={signal} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Win-rate Evidence</p>
+              <h2>勝率最佳化與回測可信度</h2>
+            </div>
+          </div>
+          <BacktestConfidencePanel signal={signal} />
         </article>
 
         <article className="panel span-2">

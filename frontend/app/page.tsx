@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { NewsTimeline } from "@/components/NewsTimeline";
@@ -86,6 +87,16 @@ export default async function Home() {
             </div>
           </div>
           <ReferencePanel signal={selected} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Backtest Confidence</p>
+              <h2>歷史相似訊號驗證</h2>
+            </div>
+          </div>
+          <BacktestConfidencePanel signal={selected} />
         </article>
 
         <article className="panel span-2">

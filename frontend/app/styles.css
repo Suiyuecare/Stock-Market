@@ -648,6 +648,114 @@ th {
   font-size: 0.84rem;
 }
 
+.backtest-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.backtest-summary,
+.backtest-sections,
+.backtest-columns {
+  display: grid;
+  gap: 12px;
+}
+
+.backtest-summary {
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+}
+
+.backtest-summary > div,
+.confidence-badge,
+.backtest-sections > div,
+.backtest-columns > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 13px;
+  background: var(--soft);
+}
+
+.backtest-summary strong,
+.backtest-summary span,
+.backtest-summary small,
+.confidence-badge b,
+.confidence-badge span,
+.backtest-metrics span,
+.backtest-metrics b,
+.backtest-sections span,
+.backtest-sections b {
+  display: block;
+}
+
+.backtest-summary span,
+.backtest-summary small,
+.confidence-badge span,
+.backtest-metrics span,
+.backtest-sections span,
+.backtest-columns li {
+  color: var(--muted);
+}
+
+.backtest-summary strong {
+  margin: 7px 0 5px;
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.confidence-badge b {
+  margin-top: 7px;
+  color: var(--positive);
+  font-size: 1.1rem;
+}
+
+.backtest-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.backtest-metrics div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: #fff;
+}
+
+.backtest-metrics b {
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.backtest-sections {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.backtest-sections b {
+  margin-top: 6px;
+  color: var(--accent);
+}
+
+.backtest-columns {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.backtest-columns h3 {
+  margin: 0 0 8px;
+  font-size: 0.96rem;
+}
+
+.backtest-columns ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.backtest-columns li {
+  line-height: 1.45;
+}
+
 .muted-copy {
   margin: 10px 0 0;
   line-height: 1.55;
@@ -661,7 +769,10 @@ th {
   .two-column,
   .explain-grid,
   .decision-panel,
-  .reference-list {
+  .reference-list,
+  .backtest-summary,
+  .backtest-sections,
+  .backtest-columns {
     grid-template-columns: 1fr;
   }
 
@@ -690,7 +801,8 @@ th {
   .mini-row,
   .subscore-grid,
   .detail-grid,
-  .radar-grid {
+  .radar-grid,
+  .backtest-metrics {
     grid-template-columns: 1fr;
   }
 }

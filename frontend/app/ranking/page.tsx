@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { ScoreCard } from "@/components/ScoreCard";
 import { StockRankingTable } from "@/components/StockRankingTable";
 import { DISCLAIMER_TEXT, formatRatio, formatScore, sanitizeDisplayText } from "@/lib/view-model";
@@ -30,6 +31,16 @@ export default async function RankingPage() {
         <ScoreCard label="輸出類型" value="機率" detail="不提供個人化建議" />
       </section>
       <section className="grid">
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Strategy Evidence</p>
+              <h2>本排名採用的勝率篩選邏輯</h2>
+            </div>
+          </div>
+          <BacktestConfidencePanel signal={top} />
+        </article>
+
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
