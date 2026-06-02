@@ -44,12 +44,12 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
-      - ./backend/tests:/app/tests
+      - ./backend/app/tests:/app/app/tests
 
   worker:
     build:
       context: ./backend
-    command: ["python", "-m", "app.jobs.scheduler"]
+    command: ["python", "-m", "app.services.jobs.scheduler"]
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://stock_app:stock_app_password@postgres:5432/stock_prediction}

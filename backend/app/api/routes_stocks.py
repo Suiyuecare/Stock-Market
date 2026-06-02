@@ -1,28 +1,16 @@
 from fastapi import APIRouter
 
-from app.config import get_settings
-from app.schemas import HealthResponse, MarketSummary, NewsParseRequest, NewsParseResponse, RankingResponse, StockDetailResponse
-from app.services.factor_engine import DISCLAIMER
+from app.schemas import MarketSummary, RankingResponse, StockDetailResponse
 from app.services.market_data import get_market_summary, get_prediction_signals
-from app.services.mock_provider import TW_INSTRUMENTS
-from app.services.news_parser import NewsParser
+from app.services.scoring import DISCLAIMER
+from app.services.data_providers.mock_provider import TW_INSTRUMENTS
 
 router = APIRouter()
-
-
-@router.get("/health", response_model=HealthResponse)
-def health() -> HealthResponse:
-    return HealthResponse(status="ok", service=get_settings().app_name)
 
 
 @router.get("/market/summary", response_model=MarketSummary)
 def market_summary() -> MarketSummary:
     return get_market_summary()
-
-
-@router.get("/predictions/signals")
-def prediction_signals():
-    return get_prediction_signals()
 
 
 @router.get("/stocks/ranking", response_model=RankingResponse)
@@ -50,8 +38,3 @@ def stock_detail(symbol: str) -> StockDetailResponse:
             {"date": "2026-06-01", "composite_score": signals[normalized].composite_score, "risk_score": signals[normalized].risk_score.total},
         ],
     )
-
-
-@router.post("/news/parse", response_model=NewsParseResponse)
-def parse_news(request: NewsParseRequest) -> NewsParseResponse:
-    return NewsParser().parse(request)

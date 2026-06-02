@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import router
+from app.api.router import router
 
 app = FastAPI(title="TW-US Stock Prediction API", version="0.1.0")
 

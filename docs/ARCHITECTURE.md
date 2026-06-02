@@ -27,7 +27,11 @@ flowchart LR
 
 - FastAPI service under `/api`
 - Pydantic schemas as API contracts
-- Service layer for market summary, prediction signals, and news parsing
+- Route modules under `backend/app/api/`
+- Pydantic schemas under `backend/app/schemas/`
+- Scoring modules under `backend/app/services/scoring/`
+- Indicator modules under `backend/app/services/indicators/`
+- Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
 ### Database

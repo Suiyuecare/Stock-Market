@@ -27,6 +27,17 @@ Status: done
 - Add dashboard sections for ranking, linkage, detail, factor explanation, risk, and news
 - Add indicator and scoring tests
 
+## Task 1.6: Repository Structure Alignment
+
+Status: done
+
+- Move backend toward models/schemas/api/services/tests layout
+- Split scoring modules into separate files
+- Split technical indicators into separate files
+- Add provider interface placeholders
+- Add frontend page routes and reusable dashboard components
+- Add sample CSV data files
+
 ## Task 2: Database Access Layer
 
 Goal:

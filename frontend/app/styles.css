@@ -79,6 +79,10 @@ nav a:hover {
   padding: 28px;
 }
 
+.standalone {
+  min-height: 100vh;
+}
+
 .topbar,
 .panel-heading,
 .signal,

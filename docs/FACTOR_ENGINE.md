@@ -80,9 +80,9 @@ Only after baseline backtests are available should the project add ML models.
 
 ## Implemented MVP Modules
 
-- `app.services.technical_indicators`
-- `app.services.factor_engine`
-- `app.services.mock_provider`
+- `app.services.indicators`
+- `app.services.scoring`
+- `app.services.data_providers.mock_provider`
 
 Implemented indicators:
 

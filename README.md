@@ -35,6 +35,7 @@
 - `docs/DATABASE_SCHEMA.md`: database schema notes
 - `docs/DATA_SOURCES.md`: data-source policy and candidates
 - `docs/CODEX_TASKS.md`: implementation task backlog
+- `sample_data/`: mock CSV data for MVP development
 
 ## 本機啟動
 
@@ -69,7 +70,7 @@ docker compose up --build
 ## 測試
 
 ```bash
-PYTHONPATH=backend pytest backend/tests
+PYTHONPATH=backend pytest backend/app/tests
 ```
 
 ## 後續里程碑

@@ -1,4 +1,9 @@
-import { SignalChart } from "@/components/SignalChart";
+import { FactorBreakdown } from "@/components/FactorBreakdown";
+import { NewsTimeline } from "@/components/NewsTimeline";
+import { RiskPanel } from "@/components/RiskPanel";
+import { ScoreCard } from "@/components/ScoreCard";
+import { TechnicalChart } from "@/components/TechnicalChart";
+import { USMarketRadar } from "@/components/USMarketRadar";
 import { fetchMarketSummary, fetchRanking, fetchStockDetail } from "@/lib/api";
 
 export default async function Home() {
@@ -23,9 +28,9 @@ export default async function Home() {
         <nav>
           <a className="active" href="#overview">總覽</a>
           <a href="#ranking">台股排名</a>
-          <a href="#us-linkage">美股連動</a>
-          <a href="#detail">個股分析</a>
-          <a href="#news">事件時間線</a>
+          <a href="/us-radar">美股連動</a>
+          <a href="/stocks/2330">個股分析</a>
+          <a href="/risk">風險</a>
         </nav>
       </aside>
 
@@ -41,26 +46,10 @@ export default async function Home() {
         <div className="disclaimer">{summary.disclaimer}</div>
 
         <section id="overview" className="metric-grid">
-          <article className="metric">
-            <span>台股盤後狀態</span>
-            <strong>{summary.tw_status}</strong>
-            <small>{summary.session_date}</small>
-          </article>
-          <article className="metric">
-            <span>美股開盤前連動</span>
-            <strong>{summary.us_premarket_status}</strong>
-            <small>20:30 Asia/Taipei job</small>
-          </article>
-          <article className="metric">
-            <span>追蹤標的</span>
-            <strong>{summary.instruments.length}</strong>
-            <small>TW seed universe</small>
-          </article>
-          <article className="metric">
-            <span>最高機率訊號</span>
-            <strong>{signals[0].symbol}</strong>
-            <small>{Math.round(signals[0].probability_up * 100)}% probability style</small>
-          </article>
+          <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />
+          <ScoreCard label="美股開盤前連動" value={summary.us_premarket_status} detail="20:30 Asia/Taipei job" />
+          <ScoreCard label="追蹤標的" value={`${summary.instruments.length}`} detail="TW seed universe" />
+          <ScoreCard label="最高機率訊號" value={signals[0].symbol} detail={`${Math.round(signals[0].probability_up * 100)}% probability style`} />
         </section>
 
         <section className="grid">
@@ -71,7 +60,7 @@ export default async function Home() {
                 <h2>下一交易日訊號趨勢</h2>
               </div>
             </div>
-            <SignalChart />
+            <TechnicalChart />
           </article>
 
           <article id="ranking" className="panel">
@@ -102,14 +91,7 @@ export default async function Home() {
                 <h2>美股連動雷達</h2>
               </div>
             </div>
-            <div className="radar-grid">
-              {Object.entries(summary.us_linkage).map(([name, value]) => (
-                <div className="radar-item" key={name}>
-                  <span>{name}</span>
-                  <strong className={value >= 0 ? "positive" : "negative"}>{Math.round(value * 100)}</strong>
-                </div>
-              ))}
-            </div>
+            <USMarketRadar linkage={summary.us_linkage} />
           </article>
 
           <article id="detail" className="panel span-2">
@@ -119,18 +101,7 @@ export default async function Home() {
                 <h2>{selected.symbol} {selected.name}</h2>
               </div>
             </div>
-            <div className="detail-grid">
-              <div className="score-card">
-                <span>Probability-style signal</span>
-                <strong>{Math.round(selected.probability_up * 100)}%</strong>
-                <small>Composite {selected.composite_score}</small>
-              </div>
-              <div className="score-card risk">
-                <span>Risk score</span>
-                <strong>{Math.round(selected.risk_score.total * 100)}</strong>
-                <small>{selected.risk_score.explanation}</small>
-              </div>
-            </div>
+            <RiskPanel risk={selected.risk_score} />
           </article>
 
           <article className="panel">
@@ -140,20 +111,7 @@ export default async function Home() {
                 <h2>正向/負向因子</h2>
               </div>
             </div>
-            <div className="driver-list">
-              {selected.positive_drivers.map((driver) => (
-                <div className="driver positive-border" key={driver.name}>
-                  <strong>{driver.name}</strong>
-                  <span>{driver.explanation}</span>
-                </div>
-              ))}
-              {selected.negative_drivers.map((driver) => (
-                <div className="driver negative-border" key={driver.name}>
-                  <strong>{driver.name}</strong>
-                  <span>{driver.explanation}</span>
-                </div>
-              ))}
-            </div>
+            <FactorBreakdown positiveDrivers={selected.positive_drivers} negativeDrivers={selected.negative_drivers} />
           </article>
 
           <article id="news" className="panel">
@@ -163,14 +121,7 @@ export default async function Home() {
                 <h2>新聞/事件時間線</h2>
               </div>
             </div>
-            <div className="timeline">
-              {selected.news.map((event) => (
-                <div className="timeline-item" key={event.title}>
-                  <strong>{event.title}</strong>
-                  <span>{event.source} · {event.sentiment} · impact {event.impact_score}</span>
-                </div>
-              ))}
-            </div>
+            <NewsTimeline news={selected.news} />
           </article>
         </section>
       </section>

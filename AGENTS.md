@@ -117,10 +117,18 @@ Not in MVP:
 
 ## Before finishing work
 
+Validation:
+
+- Run tests.
+- Run type checks if configured.
+- Update docs if architecture or APIs changed.
+- Explain what changed.
+- Mention any assumptions or missing data.
+
 Run what is available locally:
 
 ```bash
-PYTHONPATH=backend pytest backend/tests
+PYTHONPATH=backend pytest backend/app/tests
 ```
 
 If frontend dependencies are installed:

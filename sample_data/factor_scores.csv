@@ -1,0 +1,6 @@
+symbol,signal_date,category,factor_name,score,weight,explanation
+2330,2026-06-01,fundamental,Fundamental quality,0.72,0.22,Mock financial quality and growth composite
+2330,2026-06-01,chip,Institutional flow,0.34,0.16,Mock institutional trading flow score
+2330,2026-06-01,technical,Technical structure,0.65,0.22,MA RSI KD MACD OBV volume-price composite
+2330,2026-06-01,us-linkage,US market linkage,0.36,0.24,US semiconductor and mega-cap linkage
+2330,2026-06-01,news,News sentiment,0.08,0.16,Structured event sentiment

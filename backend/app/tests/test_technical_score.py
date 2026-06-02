@@ -1,10 +1,4 @@
-from app.services.technical_indicators import (
-    build_technical_indicators,
-    moving_average,
-    obv,
-    rsi,
-    volume_price_divergence,
-)
+from app.services.indicators import build_technical_indicators, moving_average, obv, rsi, volume_price_divergence
 
 
 def test_moving_average() -> None:
