@@ -157,6 +157,27 @@ Implementation notes:
 - Store raw provider payloads only if license terms allow retention; otherwise store normalized event metadata needed for scoring and auditability.
 - Keep source attribution available in API responses so the UI can explain why a `NewsScore` was generated.
 
+## OpenAI API / News Parsing / Event Classification
+
+OpenAI can power the AI news parser interface for summarization, event classification, company/ticker matching, US-to-Taiwan supply-chain linkage reasoning, investor-conference summaries, and structured `NewsScore` inputs. The MVP keeps this as an optional provider and falls back to rule-based parsing when no API key is configured.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 86 | OpenAI Platform | Developer platform | `https://platform.openai.com/` |
+| 87 | OpenAI API Reference | API documentation | `https://platform.openai.com/docs/api-reference` |
+| 88 | OpenAI Responses API endpoint | News summarization, classification, reasoning | `https://api.openai.com/v1/responses` |
+| 89 | OpenAI API Keys | API key management | `https://platform.openai.com/api-keys` |
+| 90 | OpenAI Pricing | Cost estimation | `https://openai.com/api/pricing/` |
+
+Implementation notes:
+
+- Store OpenAI credentials only in local or deployment environment variables such as `OPENAI_API_KEY`; never commit plaintext API keys.
+- Use the Responses API behind the existing `NewsParser` interface so the app can keep a rule-based fallback for local tests and demos.
+- Request structured output for summary, tickers, related Taiwan stock IDs, related US symbols, event type, sentiment, impact score, confidence, and reasoning notes.
+- Keep prompts product-safe: classify research signals and risk events, but do not generate personalized investment advice or direct order instructions.
+- Add cost controls before production use: model selection, max output size, timeout, retry limits, caching, and batch/background processing for scheduled news jobs.
+- Keep source URLs and attribution from the original news provider; OpenAI should classify and summarize, not become the source of market facts.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
