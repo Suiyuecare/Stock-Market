@@ -68,6 +68,23 @@ NEXT_PUBLIC_API_BASE_URL=<production API base URL>
 
 如果前後端分開部署，`NEXT_PUBLIC_API_BASE_URL` 要指向 FastAPI production API。不要把 OpenAI API key 或任何 secrets commit 到 repo，請放在 Vercel Environment Variables 或本機 `.env.local`。
 
+Supabase / Google OAuth environment 建議設定：
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=<Supabase project URL>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<Supabase publishable key>
+SUPABASE_URL=<Supabase project URL>
+SUPABASE_PUBLISHABLE_KEY=<Supabase publishable key>
+```
+
+Supabase Dashboard 仍需要啟用 Google provider，並把正式網址加入允許的 redirect URL：
+
+```text
+https://stock.suiyuecare.com
+```
+
+遠端 repo 早期的靜態儀表板檔案已一併保留在根目錄，正式 MVP 前端以 `frontend/` 的 Next.js app 為主。
+
 ## 第一階段資料流
 
 1. 盤後任務拉取/匯入台股 OHLCV 與基本指標
