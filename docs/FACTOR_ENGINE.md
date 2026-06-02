@@ -259,6 +259,42 @@ The pipeline writes to:
 - `signal_outcomes`
 - `signal_performance_stats`
 
+### 0.9 Bullish Confluence Signal
+
+High-win-rate candidates should be treated as multi-factor confluence, not single-indicator triggers.
+
+Bullish confluence requires:
+
+- fundamental improvement
+- bullish institutional/chip score
+- bullish technical score
+- no high-level volume-price divergence
+- no MACD death cross or bearish MACD divergence
+- supportive US market linkage
+- no major negative news
+- RiskScore below the high-risk threshold
+- sufficient liquidity
+
+MVP thresholds:
+
+```yaml
+bullish_confluence:
+  min_fundamental_score: 60
+  min_chip_score: 65
+  min_technical_score: 65
+  min_us_market_score: 55
+  min_news_score: 50
+  max_risk_score: 55
+  min_liquidity_score: 50
+  reject_macd_death_cross: true
+  reject_macd_bearish_divergence: true
+  reject_high_price_volume_divergence: true
+  reject_three_institutions_sync_sell: true
+  reject_major_negative_news: true
+```
+
+This intentionally produces fewer signals than a single-factor system, but each accepted signal has more aligned evidence and fewer obvious risk conflicts.
+
 ### 0.7 MVP Initial Strategy Defaults
 
 The MVP starts with a conservative preset designed for 5-day relative win-rate reliability:

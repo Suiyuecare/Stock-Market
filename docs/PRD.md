@@ -148,6 +148,12 @@ The MVP pipeline should create an after-close feature snapshot, generate next-se
 
 The core persistence tables are `signals`, `signal_outcomes`, and `signal_performance_stats`.
 
+### Bullish Confluence Signals
+
+The primary watchlist should favor multi-factor confluence. A high-quality bullish signal requires improving fundamentals, positive institutional/chip behavior, constructive technicals, supportive US linkage, no major negative news, no obvious MACD or high-price volume divergence, acceptable RiskScore, and sufficient liquidity.
+
+This will reduce the number of daily candidates, but it is more stable than ranking stocks from a single indicator.
+
 ### MVP Strategy Defaults
 
 The initial preset targets 5-day relative win-rate reliability. It uses `up_5d_relative` as the main label against TAIEX, requires transaction costs and slippage, filters out low-liquidity and special-risk stocks, caps the daily list at 20 names, caps each industry at 5 names, rejects major negative news, rejects obvious MACD or high-price volume divergence, prefers foreign and investment-trust synchronized buying, and downgrades high-beta electronics exposure when US market conditions weaken.

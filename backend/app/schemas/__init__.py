@@ -29,6 +29,11 @@ from app.schemas.cost_model import (
     CostModelRequest,
     CostModelResult,
 )
+from app.schemas.confluence_signal import (
+    BullishConfluenceConfig,
+    BullishConfluenceInput,
+    BullishConfluenceResult,
+)
 from app.schemas.data_availability import (
     DataAvailabilityLedgerInput,
     DataAvailabilityLedgerRecord,
@@ -145,6 +150,9 @@ __all__ = [
     "BacktestObservation",
     "BacktestResult",
     "BacktestTrade",
+    "BullishConfluenceConfig",
+    "BullishConfluenceInput",
+    "BullishConfluenceResult",
     "CalibrationBucket",
     "CalibrationResult",
     "CalibrationSample",
