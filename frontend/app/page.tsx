@@ -7,17 +7,21 @@ import { StockRankingTable } from "@/components/StockRankingTable";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
 import { buildStockMetrics, DISCLAIMER_TEXT, sanitizeRiskScore } from "@/lib/view-model";
-import { fetchMarketSummary, fetchRanking, fetchStockDetail } from "@/lib/api";
+import { fetchHighRisk, fetchMarketSummary, fetchStockDetail, fetchStocks, fetchTopProbabilityRanking, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function Home() {
-  const [summary, ranking, detail] = await Promise.all([
+  const [summary, stocks, ranking, detail, radar, highRisk] = await Promise.all([
     fetchMarketSummary(),
-    fetchRanking(),
+    fetchStocks(),
+    fetchTopProbabilityRanking(),
     fetchStockDetail("2330"),
+    fetchUSMarketRadar(),
+    fetchHighRisk(),
   ]);
   const signals = ranking.signals;
   const selected = detail.signal;
   const metrics = buildStockMetrics(selected);
+  const topRisk = highRisk.signals[0];
 
   return (
     <AppShell active="/">
@@ -34,7 +38,7 @@ export default async function Home() {
       <section className="metric-grid">
         <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />
         <ScoreCard label="美股連動狀態" value={summary.us_premarket_status} detail="開盤前觀察訊號" />
-        <ScoreCard label="追蹤標的" value={`${summary.instruments.length}`} detail="台股樣本池" />
+        <ScoreCard label="追蹤標的" value={`${stocks.stocks.length}`} detail="台股樣本池" />
         <ScoreCard label="2330 上漲機率" value={`${metrics.probabilityUp1d}%`} detail="1D probability-style signal" tone="positive" />
       </section>
 
@@ -67,7 +71,7 @@ export default async function Home() {
               <h2>美股連動雷達</h2>
             </div>
           </div>
-          <USMarketRadar linkage={summary.us_linkage} />
+          <USMarketRadar linkage={radar.linkage} stocks={radar.stocks} />
         </article>
 
         <article className="panel">
@@ -78,6 +82,7 @@ export default async function Home() {
             </div>
           </div>
           <RiskPanel risk={sanitizeRiskScore(selected.risk_score)} />
+          {topRisk ? <p className="muted-copy">最高風險觀察：{topRisk.stock_id} {topRisk.stock_name}</p> : null}
         </article>
 
         <article className="panel">

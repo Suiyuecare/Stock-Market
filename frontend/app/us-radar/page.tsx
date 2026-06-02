@@ -1,11 +1,12 @@
 import { AppShell } from "@/components/AppShell";
 import { ScoreCard } from "@/components/ScoreCard";
 import { USMarketRadar } from "@/components/USMarketRadar";
-import { DISCLAIMER_TEXT, signedLabel } from "@/lib/view-model";
-import { fetchMarketSummary } from "@/lib/api";
+import { DISCLAIMER_TEXT, formatScore, signedLabel } from "@/lib/view-model";
+import { fetchMarketSummary, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function USRadarPage() {
-  const summary = await fetchMarketSummary();
+  const [summary, radar] = await Promise.all([fetchMarketSummary(), fetchUSMarketRadar()]);
+  const topLinked = radar.stocks[0];
 
   return (
     <AppShell active="/us-radar">
@@ -18,14 +19,14 @@ export default async function USRadarPage() {
       </header>
       <div className="disclaimer">{DISCLAIMER_TEXT}</div>
       <section className="metric-grid">
-        <ScoreCard label="NASDAQ" value={signedLabel(summary.us_linkage.NASDAQ ?? 0)} detail="美股科技指數" />
-        <ScoreCard label="SOX" value={signedLabel(summary.us_linkage.SOX ?? 0)} detail="半導體連動核心" />
-        <ScoreCard label="NVDA" value={signedLabel(summary.us_linkage.NVDA ?? 0)} detail="AI 供應鏈觀察" />
-        <ScoreCard label="VIX" value={signedLabel(summary.us_linkage.VIX ?? 0)} detail="風險係數代理" tone="risk" />
+        <ScoreCard label="NASDAQ" value={signedLabel(radar.linkage.NASDAQ ?? 0)} detail="美股科技指數" />
+        <ScoreCard label="SOX" value={signedLabel(radar.linkage.SOX ?? 0)} detail="半導體連動核心" />
+        <ScoreCard label="NVDA" value={signedLabel(radar.linkage.NVDA ?? 0)} detail="AI 供應鏈觀察" />
+        <ScoreCard label="最高連動標的" value={topLinked?.stock_id ?? "觀察中"} detail={topLinked ? `${topLinked.stock_name} · ${formatScore(topLinked.score)}` : "等待資料"} />
       </section>
       <section className="grid">
         <article className="panel span-2">
-          <USMarketRadar linkage={summary.us_linkage} />
+          <USMarketRadar linkage={radar.linkage} stocks={radar.stocks} />
         </article>
         <article className="panel span-2">
           <div className="panel-heading">

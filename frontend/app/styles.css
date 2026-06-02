@@ -271,6 +271,11 @@ th {
   margin-top: 16px;
 }
 
+.radar-stack {
+  display: grid;
+  gap: 14px;
+}
+
 .radar-item,
 .score-card,
 .driver,
@@ -437,6 +442,54 @@ th {
   display: block;
 }
 
+.mini-table,
+.subscore-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.mini-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto;
+  gap: 4px 14px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfc;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mini-row span {
+  font-weight: 700;
+}
+
+.mini-row b {
+  color: var(--accent);
+}
+
+.mini-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.subscore-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.subscore-grid span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fbfcfc;
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
 .pill-row {
   display: flex;
   flex-wrap: wrap;
@@ -488,6 +541,8 @@ th {
   }
 
   .mini-metrics,
+  .mini-row,
+  .subscore-grid,
   .detail-grid,
   .radar-grid {
     grid-template-columns: 1fr;

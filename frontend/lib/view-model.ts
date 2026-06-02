@@ -73,6 +73,8 @@ export function scoreTone(score: number): "positive" | "negative" | "neutral" {
 export function sanitizeDisplayText(text: string): string {
   return text
     .replace(/not a buy\/sell recommendation/gi, "不構成個人化投資建議")
+    .replace(/\bbuying\b/gi, "正向籌碼")
+    .replace(/\bselling\b/gi, "負向籌碼")
     .replace(/\bbuy\b/gi, "正向訊號")
     .replace(/\bsell\b/gi, "負向訊號");
 }
@@ -82,4 +84,14 @@ export function sanitizeRiskScore(risk: RiskScore): RiskScore {
     ...risk,
     explanation: sanitizeDisplayText(risk.explanation),
   };
+}
+
+export function formatRatio(value: number | boolean | null | undefined): string {
+  if (typeof value !== "number") return "觀察中";
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+export function formatScore(value: number | null | undefined): string {
+  if (typeof value !== "number") return "觀察中";
+  return `${Math.round(value)}`;
 }

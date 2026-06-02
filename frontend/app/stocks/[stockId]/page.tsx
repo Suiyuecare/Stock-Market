@@ -8,21 +8,33 @@ import { ScoreCard } from "@/components/ScoreCard";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
 import { VolumePriceDivergenceBadge } from "@/components/VolumePriceDivergenceBadge";
-import { buildStockMetrics, DISCLAIMER_TEXT, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
-import { fetchMarketSummary, fetchStockDetail } from "@/lib/api";
+import { buildStockMetrics, DISCLAIMER_TEXT, formatScore, sanitizeDisplayText, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
+import { fetchStockDetail, fetchStockInstitutional, fetchStockNews, fetchStockScores, fetchStockTechnical, fetchUSMarketRadar } from "@/lib/api";
 
 export default async function StockDetailPage({ params }: { params: Promise<{ stockId: string }> }) {
   const { stockId } = await params;
-  const [detail, summary] = await Promise.all([fetchStockDetail(stockId), fetchMarketSummary()]);
+  const [detail, scores, technical, institutional, stockNews, radar] = await Promise.all([
+    fetchStockDetail(stockId),
+    fetchStockScores(stockId),
+    fetchStockTechnical(stockId),
+    fetchStockInstitutional(stockId),
+    fetchStockNews(stockId),
+    fetchUSMarketRadar(),
+  ]);
   const signal = {
     ...detail.signal,
+    technicals: technical.latest_indicators,
+    news: stockNews.news,
     risk_score: sanitizeRiskScore(detail.signal.risk_score),
   };
   const metrics = buildStockMetrics(signal);
+  const macdSignal = technical.signals.macd;
+  const volumePriceSignal = technical.signals.volume_price_divergence;
   const riskFactors = [
     `波動風險 ${Math.round(signal.risk_score.volatility * 100)}`,
     `流動性風險 ${Math.round(signal.risk_score.liquidity * 100)}`,
     `事件風險 ${Math.round(signal.risk_score.event * 100)}`,
+    ...((scores.explanation?.top_risk_factors ?? []).map((factor) => sanitizeDisplayText(factor))),
   ];
 
   return (
@@ -40,7 +52,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <ScoreCard label="上漲機率 1D" value={`${metrics.probabilityUp1d}%`} detail="下一交易日觀察訊號" tone={scoreTone(metrics.probabilityUp1d)} />
         <ScoreCard label="上漲機率 5D" value={`${metrics.probabilityUp5d}%`} detail="短週期推估訊號" tone={scoreTone(metrics.probabilityUp5d)} />
         <ScoreCard label="上漲機率 20D" value={`${metrics.probabilityUp20d}%`} detail="中週期研究訊號" tone={scoreTone(metrics.probabilityUp20d)} />
-        <ScoreCard label="風險調整分數" value={`${metrics.riskAdjustedScore}`} detail="BullishScore 扣除風險係數" />
+        <ScoreCard label="風險調整分數" value={formatScore(scores.RiskAdjustedScore)} detail="BullishScore 扣除風險係數" />
       </section>
 
       <section className="grid">
@@ -52,11 +64,11 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
             </div>
           </div>
           <div className="score-matrix">
-            <ScoreCard label="BullishScore" value={`${metrics.bullishScore}`} detail="多因子綜合研究分數" />
+            <ScoreCard label="BullishScore" value={formatScore(scores.BullishScore)} detail="多因子綜合研究分數" />
             <ScoreCard label="RiskScore" value={`${metrics.riskScore}`} detail="風險係數" tone="risk" />
             <ScoreCard label="FundamentalScore" value={`${metrics.fundamentalScore}`} detail="基本面因子分數" />
-            <ScoreCard label="ChipScore" value={`${metrics.chipScore}`} detail="法人籌碼因子分數" />
-            <ScoreCard label="TechnicalScore" value={`${metrics.technicalScore}`} detail="技術因子分數" />
+            <ScoreCard label="ChipScore" value={formatScore(institutional.chip_score.score)} detail="法人籌碼因子分數" />
+            <ScoreCard label="TechnicalScore" value={formatScore(technical.technical_score.score)} detail="技術因子分數" />
             <ScoreCard label="USMarketScore" value={`${metrics.usMarketScore}`} detail="美股連動因子分數" />
             <ScoreCard label="NewsScore" value={`${metrics.newsScore}`} detail="新聞情緒因子分數" />
             <ScoreCard label="TargetPriceScore" value={`${metrics.targetPriceScore}`} detail="目標價資料待接入" />
@@ -71,9 +83,22 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
             </div>
           </div>
           <TechnicalChart />
+          <div className="subscore-grid">
+            <span>趨勢 {formatScore(technical.technical_score.trend_score)}</span>
+            <span>量價 {formatScore(technical.technical_score.volume_price_score)}</span>
+            <span>MACD {formatScore(technical.technical_score.macd_score)}</span>
+            <span>RSI {formatScore(technical.technical_score.rsi_score)}</span>
+            <span>KD {formatScore(technical.technical_score.kd_score)}</span>
+            <span>突破 {formatScore(technical.technical_score.breakout_score)}</span>
+          </div>
           <div className="two-column">
             <MACDPanel signal={signal} />
             <VolumePriceDivergenceBadge signal={signal} />
+          </div>
+          <div className="pill-row">
+            <span>MACD 黃金交叉：{macdSignal.golden_cross ? "已觸發" : "觀察中"}</span>
+            <span>MACD 死亡交叉：{macdSignal.death_cross ? "已觸發" : "未觸發"}</span>
+            <span>量價狀態：{volumePriceSignal.state ?? "觀察中"}</span>
           </div>
         </article>
 
@@ -84,7 +109,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
               <h2>法人籌碼摘要</h2>
             </div>
           </div>
-          <InstitutionalTradingPanel signal={signal} />
+          <InstitutionalTradingPanel signal={signal} institutional={institutional} />
         </article>
 
         <article className="panel">
@@ -114,7 +139,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
               <h2>美股連動解釋</h2>
             </div>
           </div>
-          <USMarketRadar linkage={summary.us_linkage} />
+          <USMarketRadar linkage={radar.linkage} stocks={radar.stocks} />
           <p className="muted-copy">此區以 SOX、TSM ADR、NVDA、AAPL、VIX 與供應鏈標籤估算美股連動觀察訊號。</p>
         </article>
 
