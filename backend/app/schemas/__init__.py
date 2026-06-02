@@ -13,6 +13,12 @@ from app.schemas.core import (
     TechnicalIndicators,
 )
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
+from app.schemas.us_market import (
+    TaiwanStockProfile,
+    USMarketScoreRequest,
+    USMarketScoreResponse,
+    USTWSensitivityInput,
+)
 
 __all__ = [
     "ChipScoreRequest",
@@ -30,4 +36,8 @@ __all__ = [
     "RiskScore",
     "StockDetailResponse",
     "TechnicalIndicators",
+    "TaiwanStockProfile",
+    "USMarketScoreRequest",
+    "USMarketScoreResponse",
+    "USTWSensitivityInput",
 ]

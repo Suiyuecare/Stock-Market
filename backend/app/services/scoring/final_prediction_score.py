@@ -48,12 +48,13 @@ def build_factor_scores(
     linkage: dict,
     events: List[NewsEvent],
     volumes: Optional[List[float]] = None,
+    stock_profile: Optional[dict] = None,
 ) -> List[FactorScore]:
     return [
         _factor("Fundamental quality", "fundamental", calculate_fundamental_score(symbol), 0.22, "Mock financial quality, valuation, and growth composite."),
         _factor("Institutional flow", "chip", calculate_chip_score(symbol), 0.16, "Mock foreign/institutional trading flow score."),
         _factor("Technical structure", "technical", calculate_technical_score(indicators, closes, volumes), 0.22, "MA, RSI, KD, MACD, OBV, and volume-price divergence composite."),
-        _factor("US market linkage", "us-linkage", calculate_us_market_score(linkage), 0.24, "Nasdaq, SOX, S&P 500, VIX, TSM ADR, and US mega-cap/semiconductor linkage."),
+        _factor("US market linkage", "us-linkage", calculate_us_market_score(linkage, stock_profile), 0.24, "Nasdaq, SOX, S&P 500, VIX, TSM ADR, and US mega-cap/semiconductor linkage."),
         _factor("News sentiment", "news", calculate_news_score(events), 0.16, "Structured event sentiment from the mock LLM parser interface."),
     ]
 
@@ -70,7 +71,13 @@ def build_signal(instrument: dict) -> PredictionSignal:
     linkage = get_mock_us_linkage()
     events = [NewsEvent(**event) for event in get_mock_news(instrument["symbol"])]
     risk = build_risk_score(indicators, linkage, events)
-    factors = build_factor_scores(instrument["symbol"], indicators, series["closes"], linkage, events, series["volumes"])
+    stock_profile = {
+        "stock_id": instrument["symbol"],
+        "stock_name": instrument["name"],
+        "industry": instrument.get("sector"),
+        "supply_chain_tags": instrument.get("supply_chain_tags", []),
+    }
+    factors = build_factor_scores(instrument["symbol"], indicators, series["closes"], linkage, events, series["volumes"], stock_profile)
     score = composite_score(factors, risk.total)
     sorted_factors = sorted(factors, key=lambda item: item.score * item.weight, reverse=True)
 

@@ -64,6 +64,27 @@ Inputs:
 - US news sentiment
 - US-Taiwan supply chain sensitivity
 
+MVP formula:
+
+```text
+USMarketScore =
+  0.20 * USIndexScore
++ 0.25 * USSemiconductorAIScore
++ 0.20 * USSupplyChainStockScore
++ 0.15 * ADRScore
++ 0.10 * USMacroLiquidityScore
++ 0.10 * USNewsSentimentScore
+```
+
+Industry rules:
+
+- Semiconductor stocks use high sensitivity to SOX, SMH/SOXX, TSM ADR, NVDA, AMD, AVGO, ASML, and AMAT.
+- AI server stocks use high sensitivity to NVDA, AMD, AVGO, MSFT, META, GOOGL, and AMZN.
+- Apple supply chain stocks use high sensitivity to AAPL and Apple guidance/news.
+- Memory stocks use high sensitivity to MU and memory-related news.
+- Financial stocks use higher sensitivity to US yields, Fed/liquidity proxies, S&P 500, and VIX.
+- Domestic demand stocks use lower US market sensitivity, so strong US moves only add a small score impact.
+
 ### 5. NewsScore
 
 Inputs:
@@ -214,6 +235,17 @@ Implemented factor categories:
 - US market linkage
 - News sentiment
 - Risk score adjustment
+
+Implemented US market linkage factors:
+
+- Nasdaq, QQQ, S&P 500, US futures
+- SOX, SMH/SOXX, NVDA, AMD, AVGO, ASML, AMAT, MU
+- AAPL, MSFT, META, GOOGL, AMZN
+- TSM ADR return and implied premium/discount
+- VIX and US yield/liquidity proxies
+- US news sentiment, Apple guidance, and memory news sentiment
+- Taiwan stock supply-chain tags
+- US-TW sensitivity mapping with confidence weighting
 
 Implemented institutional/chip factors:
 
