@@ -1,6 +1,8 @@
 import csv
+import json
 from decimal import Decimal, InvalidOperation
 from io import StringIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -8,6 +10,7 @@ import httpx
 from app.services.data_providers.base import MarketDataProvider
 
 TWSE_OPENAPI_BASE_URL = "https://openapi.twse.com.tw/v1"
+TWSE_OPENAPI_CATALOG_FILE = Path(__file__).with_name("twse_openapi_catalog.json")
 
 TWSE_ENDPOINTS = {
     "openapi_home": "https://openapi.twse.com.tw/",
@@ -24,6 +27,31 @@ TWSE_ENDPOINTS = {
     "twse_delayed_license": "https://www.twse.com.tw/zh/products/information/delayed.html",
     "twse_usage_rules": "https://www.twse.com.tw/zh/products/information/use.html",
 }
+
+
+def load_twse_openapi_catalog() -> Dict[str, Any]:
+    """Load the static catalog generated from TWSE's official Swagger JSON."""
+
+    return json.loads(TWSE_OPENAPI_CATALOG_FILE.read_text(encoding="utf-8"))
+
+
+def list_twse_openapi_endpoints(tag: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Return all documented TWSE OpenAPI endpoints, optionally filtered by tag."""
+
+    endpoints = load_twse_openapi_catalog().get("endpoints", [])
+    if tag is None:
+        return list(endpoints)
+    return [endpoint for endpoint in endpoints if tag in endpoint.get("tags", [])]
+
+
+def get_twse_openapi_endpoint(path_or_id: str) -> Optional[Dict[str, Any]]:
+    """Find a TWSE endpoint by full path, generated id, or absolute URL."""
+
+    normalized = path_or_id.strip()
+    for endpoint in list_twse_openapi_endpoints():
+        if normalized in {endpoint.get("id"), endpoint.get("path"), endpoint.get("url")}:
+            return endpoint
+    return None
 
 
 class TWSEProvider(MarketDataProvider):
@@ -60,6 +88,35 @@ class TWSEProvider(MarketDataProvider):
         response = self.client.get(self.endpoints["listed_monthly_revenue_csv"])
         response.raise_for_status()
         return parse_monthly_revenue_csv(_decode_response(response))
+
+    def list_openapi_endpoints(self, tag: Optional[str] = None) -> List[Dict[str, Any]]:
+        return list_twse_openapi_endpoints(tag=tag)
+
+    def get_openapi_endpoint(self, path_or_id: str) -> Optional[Dict[str, Any]]:
+        return get_twse_openapi_endpoint(path_or_id)
+
+    def fetch_openapi_endpoint(self, path_or_id: str, accept: str = "application/json") -> Any:
+        """Fetch any cataloged TWSE OpenAPI endpoint.
+
+        This generic helper is intended for ingestion experiments and mapping
+        work. Production jobs should still normalize each dataset into explicit
+        application tables and record data-availability timestamps.
+        """
+
+        endpoint = self.get_openapi_endpoint(path_or_id)
+        if endpoint is None:
+            raise ValueError(f"Unknown TWSE OpenAPI endpoint: {path_or_id}")
+        response = self.client.get(endpoint["url"], headers={"Accept": accept})
+        response.raise_for_status()
+        if "json" in accept:
+            return response.json()
+        return _decode_response(response)
+
+    def fetch_openapi_swagger_json(self) -> Dict[str, Any]:
+        response = self.client.get(self.endpoints["swagger_json"])
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
 
 
 def parse_company_profile_csv(csv_text: str) -> List[Dict[str, Any]]:

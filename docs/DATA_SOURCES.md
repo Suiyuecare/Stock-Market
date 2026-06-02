@@ -292,6 +292,35 @@ Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equit
 | 31 | DGBAS API documentation PDF | API-JSON specification | `https://nstatdb.dgbas.gov.tw/dgbasall/download/API說明文件.pdf` |
 | 32 | Government Open Data Platform | Supplemental Taiwan open-data source | `https://data.gov.tw/` |
 
+### TWSE OpenAPI Catalog
+
+The full TWSE Swagger endpoint catalog from `https://openapi.twse.com.tw/#/` is now stored in:
+
+- `backend/app/services/data_providers/twse_openapi_catalog.json`
+- `docs/TWSE_OPENAPI_CATALOG.md`
+
+Current official catalog coverage:
+
+| Category | Endpoint count |
+| --- | ---: |
+| 證券交易 | 36 |
+| 財務報表 | 30 |
+| 公司治理 | 56 |
+| 券商資料 | 9 |
+| 指數 | 5 |
+| 權證 | 3 |
+| 其他 | 4 |
+| Total | 143 |
+
+Provider helpers:
+
+- `load_twse_openapi_catalog()`: load the full static catalog.
+- `list_twse_openapi_endpoints(tag=None)`: list all TWSE OpenAPI endpoints or filter by official Swagger tag.
+- `get_twse_openapi_endpoint(path_or_id)`: find an endpoint by path, generated id, or URL.
+- `TWSEProvider.fetch_openapi_endpoint(path_or_id)`: fetch any cataloged TWSE endpoint using an injectable HTTP client.
+
+Use the catalog as the source of endpoint truth, then implement explicit normalization into application tables for each dataset used by scores or UI pages.
+
 Implementation notes:
 
 - For MVP, prefer after-market/open data endpoints over real-time feeds.
