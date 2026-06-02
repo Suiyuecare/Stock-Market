@@ -31,6 +31,7 @@ flowchart LR
 - Pydantic schemas under `backend/app/schemas/`
 - Scoring modules under `backend/app/services/scoring/`
 - Indicator modules under `backend/app/services/indicators/`
+- Backtest Lab under `backend/app/services/backtest_lab.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -78,6 +79,23 @@ Implemented MVP job behavior uses mock providers first:
 - `news_ingestion_job` ingests mock provider news, classifies events through the parser interface, and calculates NewsScore payloads.
 
 The jobs currently return write-ready artifacts instead of persisting to PostgreSQL directly. The next provider/database phase should replace the mock provider with licensed data sources and write these artifacts into the schema tables.
+
+### Backtest Lab
+
+Backtesting is intentionally separate from the live scoring modules. The lab consumes point-in-time signal observations, applies an explicit configuration, and reports research metrics without changing model logic.
+
+Supported MVP controls:
+
+- holding period
+- entry probability threshold
+- transaction cost and slippage
+- take-profit and stop-loss exits
+- market state, sector, market-cap, and liquidity filters
+- chronological time-series split windows
+
+Required result metrics include win rate, trade count, average and median return, expectancy, max drawdown, Profit Factor, Sharpe Ratio, Sortino Ratio, max single loss, max consecutive losses, average holding days, turnover, sector win rate, and market-state win rate.
+
+Backtests must use features and labels that were available at the signal timestamp. Do not use revised fundamentals, later-published labels, or future market data when simulating historical signals.
 
 ## Runtime
 

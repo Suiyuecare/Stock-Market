@@ -12,6 +12,13 @@ from app.schemas.core import (
     StockDetailResponse,
     TechnicalIndicators,
 )
+from app.schemas.backtest import (
+    BacktestConfig,
+    BacktestObservation,
+    BacktestResult,
+    BacktestTrade,
+    TimeSeriesSplitWindow,
+)
 from app.schemas.data_availability import (
     DataAvailabilityLedgerInput,
     DataAvailabilityLedgerRecord,
@@ -34,6 +41,10 @@ from app.schemas.us_market import (
 __all__ = [
     "ChipScoreRequest",
     "ChipScoreResponse",
+    "BacktestConfig",
+    "BacktestObservation",
+    "BacktestResult",
+    "BacktestTrade",
     "DataAvailabilityLedgerInput",
     "DataAvailabilityLedgerRecord",
     "FactorScore",
@@ -55,6 +66,7 @@ __all__ = [
     "SignalDataAvailabilityCheck",
     "StockDetailResponse",
     "TechnicalIndicators",
+    "TimeSeriesSplitWindow",
     "TaiwanStockProfile",
     "USMarketScoreRequest",
     "USMarketScoreResponse",
