@@ -46,7 +46,7 @@ These are candidates to evaluate, not final commitments:
 
 ## Official Taiwan Data Sources
 
-Use official TWSE/MOPS/TPEx/TAIFEX/TDCC sources first for Taiwan equities, derivatives, ownership concentration, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
+Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
 
 | # | API / Source | Purpose | URL |
 | -: | --- | --- | --- |
@@ -76,17 +76,24 @@ Use official TWSE/MOPS/TPEx/TAIFEX/TDCC sources first for Taiwan equities, deriv
 | 24 | TDCC OpenData API Docs | TDCC OAS documentation entry point | `https://openapi.tdcc.com.tw/tdcc-opendata-api-docs` |
 | 25 | TDCC OpenData legacy download | TDCC CSV / OpenData download entry | `https://smart.tdcc.com.tw/opendata/` |
 | 26 | TDCC ownership distribution endpoint | Holding brackets, major holders, ownership concentration | `https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5` |
+| 27 | CBC statistics database | FX, rates, financial statistics, M2, FX reserves | `https://cpx.cbc.gov.tw/` |
+| 28 | CBC API documentation | CBC API-JSON documentation | `https://cpx.cbc.gov.tw/Data/ExportToAPIInfo` |
+| 29 | CBC API endpoint format | Programmatic API format | `https://cpx.cbc.gov.tw/API/DataAPI/Get?FileName={ITEM_CODE}` |
+| 30 | DGBAS macro statistics database | CPI, GDP, unemployment, wages, export orders | `https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?k=main` |
+| 31 | DGBAS API documentation PDF | API-JSON specification | `https://nstatdb.dgbas.gov.tw/dgbasall/download/API說明文件.pdf` |
+| 32 | Government Open Data Platform | Supplemental Taiwan open-data source | `https://data.gov.tw/` |
 
 Implementation notes:
 
 - For MVP, prefer after-market/open data endpoints over real-time feeds.
-- Keep TWSE/MOPS/TPEx/TAIFEX/TDCC ingestion behind provider interfaces.
+- Keep TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS ingestion behind provider interfaces.
 - Do not redistribute real-time or delayed trading data without confirming license terms.
 - Use `swagger.json` to generate or validate endpoint mappings before adding new fetch methods.
 - Use MOPS CSV endpoints as fallback sources when an equivalent OpenAPI endpoint is unavailable.
 - Use TPEx OpenAPI for OTC and emerging stock coverage once the field mapping is implemented.
 - Use TAIFEX OpenAPI for Taiwan futures/options linkage, futures institutional positioning, and market position factors once endpoint field mapping is implemented.
 - Use TDCC OpenData for ownership distribution, large-holder concentration, and chip concentration risk factors once endpoint field mapping is implemented.
+- Use CBC and DGBAS official statistics for MacroScore inputs such as FX, rates, M2, CPI, GDP, unemployment, wages, and export orders once item-code mappings are implemented.
 
 ## Provider Evaluation Checklist
 
