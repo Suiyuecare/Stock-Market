@@ -1,4 +1,6 @@
 from app.services.indicators import build_technical_indicators, moving_average, obv, rsi, volume_price_divergence
+from app.schemas import TechnicalIndicators
+from app.services.scoring.technical_score import calculate_technical_score
 
 
 def test_moving_average() -> None:
@@ -34,3 +36,34 @@ def test_build_technical_indicators_contract() -> None:
     assert indicators["rsi_14"] == 100
     assert indicators["macd"] is not None
     assert indicators["obv"] is not None
+
+
+def test_technical_score_returns_zero_to_one_hundred_contract() -> None:
+    highs = [value + 2 for value in range(1, 81)]
+    lows = [value - 1 for value in range(1, 81)]
+    closes = [float(value) for value in range(1, 81)]
+    volumes = [1000 + value * 12 for value in range(1, 81)]
+    indicators = TechnicalIndicators(**build_technical_indicators(highs, lows, closes, volumes))
+    payload = calculate_technical_score(indicators, closes, volumes)
+
+    assert 0 <= payload["score"] <= 100
+    assert 0 <= payload["confidence"] <= 100
+    assert payload["positive_factors"]
+    assert "trend_score" in payload
+    assert "volume_price_score" in payload
+    assert "macd_score" in payload
+    assert "rsi_score" in payload
+    assert "kd_score" in payload
+    assert "breakout_score" in payload
+
+
+def test_technical_score_flags_breakdown_risk() -> None:
+    closes = [80, 81, 82, 83, 84, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 60]
+    highs = [value + 1 for value in closes]
+    lows = [value - 1 for value in closes]
+    volumes = [1000 + index * 20 for index, _ in enumerate(closes)]
+    indicators = TechnicalIndicators(**build_technical_indicators(highs, lows, closes, volumes))
+    payload = calculate_technical_score(indicators, closes, volumes)
+
+    assert 0 <= payload["score"] <= 100
+    assert "price breakdown below recent range" in payload["negative_factors"]

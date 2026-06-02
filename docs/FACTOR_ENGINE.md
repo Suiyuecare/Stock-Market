@@ -176,6 +176,36 @@ Implemented indicators:
 - OBV
 - Volume-price divergence
 
+Implemented MACD outputs:
+
+- EMA12
+- EMA26
+- DIF
+- DEA
+- MACD histogram
+- Taiwan-style MACD bar, calculated as `2 * (DIF - DEA)`
+- Golden cross / death cross
+- Zero-axis cross up / zero-axis cross down
+- Bullish MACD divergence / bearish MACD divergence
+
+Implemented volume-price states:
+
+- Price up + volume up
+- Price up + volume down
+- Price down + volume down
+- Price down + volume up
+- Price new high without volume/OBV/MACD confirmation
+- Price new low without MACD/OBV making a new low
+
+Implemented technical score sub-scores:
+
+- `trend_score`
+- `volume_price_score`
+- `macd_score`
+- `rsi_score`
+- `kd_score`
+- `breakout_score`
+
 Implemented factor categories:
 
 - Fundamental quality

@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 from app.schemas import FactorScore, NewsEvent, PredictionSignal, TechnicalIndicators
 from app.services.data_providers.mock_provider import TW_INSTRUMENTS, get_mock_news, get_mock_price_series, get_mock_us_linkage
@@ -22,23 +22,37 @@ def probability_from_score(score: float) -> float:
     return round(clamp(0.5 + score * 0.32), 4)
 
 
+def _normalize_factor_score(score: float) -> float:
+    if 0 <= score <= 100 and score > 1:
+        return (score - 50) / 50
+    return score
+
+
 def _factor(name: str, category: str, score_payload: dict, weight: float, explanation: str) -> FactorScore:
     score = float(score_payload["score"])
+    normalized_score = _normalize_factor_score(score)
     return FactorScore(
         name=name,
         category=category,
-        score=score,
+        score=round(normalized_score, 4),
         weight=weight,
-        direction="positive" if score >= 0 else "negative",
+        direction="positive" if normalized_score >= 0 else "negative",
         explanation=explanation,
     )
 
 
-def build_factor_scores(symbol: str, indicators: TechnicalIndicators, closes: List[float], linkage: dict, events: List[NewsEvent]) -> List[FactorScore]:
+def build_factor_scores(
+    symbol: str,
+    indicators: TechnicalIndicators,
+    closes: List[float],
+    linkage: dict,
+    events: List[NewsEvent],
+    volumes: Optional[List[float]] = None,
+) -> List[FactorScore]:
     return [
         _factor("Fundamental quality", "fundamental", calculate_fundamental_score(symbol), 0.22, "Mock financial quality, valuation, and growth composite."),
         _factor("Institutional flow", "chip", calculate_chip_score(symbol), 0.16, "Mock foreign/institutional trading flow score."),
-        _factor("Technical structure", "technical", calculate_technical_score(indicators, closes), 0.22, "MA, RSI, KD, MACD, OBV, and volume-price divergence composite."),
+        _factor("Technical structure", "technical", calculate_technical_score(indicators, closes, volumes), 0.22, "MA, RSI, KD, MACD, OBV, and volume-price divergence composite."),
         _factor("US market linkage", "us-linkage", calculate_us_market_score(linkage), 0.24, "Nasdaq, SOX, S&P 500, VIX, TSM ADR, and US mega-cap/semiconductor linkage."),
         _factor("News sentiment", "news", calculate_news_score(events), 0.16, "Structured event sentiment from the mock LLM parser interface."),
     ]
@@ -56,7 +70,7 @@ def build_signal(instrument: dict) -> PredictionSignal:
     linkage = get_mock_us_linkage()
     events = [NewsEvent(**event) for event in get_mock_news(instrument["symbol"])]
     risk = build_risk_score(indicators, linkage, events)
-    factors = build_factor_scores(instrument["symbol"], indicators, series["closes"], linkage, events)
+    factors = build_factor_scores(instrument["symbol"], indicators, series["closes"], linkage, events, series["volumes"])
     score = composite_score(factors, risk.total)
     sorted_factors = sorted(factors, key=lambda item: item.score * item.weight, reverse=True)
 
