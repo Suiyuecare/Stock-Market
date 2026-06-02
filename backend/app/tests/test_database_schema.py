@@ -8,6 +8,7 @@ from app.models import (
     Base,
     DataAvailabilityLedger,
     FactorScoresDaily,
+    FeatureStoreDaily,
     InstitutionalTradingDaily,
     NewsEvent,
     PriceDaily,
@@ -29,6 +30,7 @@ EXPECTED_TABLES = {
     "news_events",
     "factor_scores_daily",
     "data_availability_ledger",
+    "feature_store_daily",
 }
 
 
@@ -105,3 +107,49 @@ def test_data_availability_ledger_enforces_point_in_time_usage() -> None:
         ).all()
 
         assert [row.dataset_name for row in usable_rows] == ["price_daily"]
+
+
+def test_feature_store_daily_preserves_point_in_time_feature_versions() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    signal_generated_at = datetime(2026, 6, 5, 9, 0, tzinfo=timezone.utc)
+
+    with Session(engine) as session:
+        session.add(StockMaster(stock_id="2330", stock_name="台積電", market_type="TWSE", is_listed=True, is_otc=False))
+        session.add_all(
+            [
+                FeatureStoreDaily(
+                    trade_date=date(2026, 6, 4),
+                    stock_id="2330",
+                    feature_group="technical",
+                    feature_name="rsi14",
+                    feature_value=61.25,
+                    feature_version="technical-v1",
+                    calculated_at=datetime(2026, 6, 4, 15, 0, tzinfo=timezone.utc),
+                    available_for_signal_at=datetime(2026, 6, 4, 15, 5, tzinfo=timezone.utc),
+                ),
+                FeatureStoreDaily(
+                    trade_date=date(2026, 6, 4),
+                    stock_id="2330",
+                    feature_group="technical",
+                    feature_name="rsi14",
+                    feature_value=63.75,
+                    feature_version="technical-v2",
+                    calculated_at=datetime(2026, 6, 6, 15, 0, tzinfo=timezone.utc),
+                    available_for_signal_at=datetime(2026, 6, 6, 15, 5, tzinfo=timezone.utc),
+                ),
+            ]
+        )
+        session.commit()
+
+        usable_features = session.scalars(
+            select(FeatureStoreDaily).where(
+                FeatureStoreDaily.stock_id == "2330",
+                FeatureStoreDaily.trade_date == date(2026, 6, 4),
+                FeatureStoreDaily.available_for_signal_at <= signal_generated_at,
+            )
+        ).all()
+
+        assert len(usable_features) == 1
+        assert usable_features[0].feature_version == "technical-v1"

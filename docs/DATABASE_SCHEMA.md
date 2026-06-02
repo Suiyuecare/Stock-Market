@@ -39,6 +39,33 @@ Uniqueness:
 
 - `(source, dataset_name, symbol, data_date, revision_number)`
 
+## `feature_store_daily`
+
+Point-in-time feature store for daily factor values.
+
+All factor inputs should be materialized here before scoring. Signal generation
+and backtests should read the feature values that were available at the signal
+time instead of recalculating against mutable source data.
+
+Backtests and signal jobs must only use rows where:
+
+```text
+available_for_signal_at <= signal_generated_at
+```
+
+- `trade_date`
+- `stock_id`
+- `feature_group`
+- `feature_name`
+- `feature_value`
+- `feature_version`
+- `calculated_at`
+- `available_for_signal_at`
+
+Primary key:
+
+- `(trade_date, stock_id, feature_group, feature_name, feature_version)`
+
 ## `stock_master`
 
 Taiwan stock master.

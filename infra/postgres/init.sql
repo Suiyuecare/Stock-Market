@@ -42,6 +42,24 @@ create table if not exists stock_master (
   is_otc boolean not null default false
 );
 
+create table if not exists feature_store_daily (
+  trade_date date not null,
+  stock_id text not null references stock_master(stock_id) on delete cascade,
+  feature_group text not null,
+  feature_name text not null,
+  feature_value numeric(24, 8) not null,
+  feature_version text not null,
+  calculated_at timestamptz not null,
+  available_for_signal_at timestamptz not null,
+  primary key (trade_date, stock_id, feature_group, feature_name, feature_version)
+);
+
+create index if not exists ix_feature_store_signal_time
+  on feature_store_daily (stock_id, trade_date, available_for_signal_at);
+
+create index if not exists ix_feature_store_feature_lookup
+  on feature_store_daily (feature_group, feature_name, feature_version);
+
 create table if not exists price_daily (
   trade_date date not null,
   stock_id text not null references stock_master(stock_id) on delete cascade,

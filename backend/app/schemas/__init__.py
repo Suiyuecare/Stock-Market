@@ -17,6 +17,11 @@ from app.schemas.data_availability import (
     DataAvailabilityLedgerRecord,
     SignalDataAvailabilityCheck,
 )
+from app.schemas.feature_store import (
+    FeatureStoreDailyInput,
+    FeatureStoreDailyRecord,
+    FeatureStoreQuery,
+)
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.us_market import (
     TaiwanStockProfile,
@@ -31,6 +36,9 @@ __all__ = [
     "DataAvailabilityLedgerInput",
     "DataAvailabilityLedgerRecord",
     "FactorScore",
+    "FeatureStoreDailyInput",
+    "FeatureStoreDailyRecord",
+    "FeatureStoreQuery",
     "HealthResponse",
     "Instrument",
     "InstitutionalTradingInput",
