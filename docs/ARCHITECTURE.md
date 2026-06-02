@@ -33,6 +33,7 @@ flowchart LR
 - Indicator modules under `backend/app/services/indicators/`
 - Backtest Lab under `backend/app/services/backtest_lab.py`
 - Probability Calibration under `backend/app/services/probability_calibration.py`
+- Market Regime Engine under `backend/app/services/market_regime_engine.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -110,6 +111,27 @@ Supported MVP outputs:
 - segment filters for horizon, sector, and market state
 
 If a bucket predicts 80% but the realized win rate is near 55%, the bucket should be marked overconfident and reviewed before showing high-confidence language in the UI.
+
+### Market Regime Engine
+
+The market regime engine classifies the current environment and emits dynamic factor-weight guidance. It is separate from the raw scoring modules so the app can change factor emphasis without rewriting each factor.
+
+MVP regimes:
+
+- bull market
+- bear market
+- range market
+- high-volatility market
+- low-volatility market
+- foreign inflow and foreign outflow
+- US technology strength and weakness
+
+Examples:
+
+- bull markets increase technical breakout, institutional flow, and fundamental momentum weights
+- bear markets increase the RiskScore multiplier and reduce trend-following confidence
+- range markets emphasize technical structure, volume-price divergence, and support/resistance context
+- US technology strength increases USMarketScore sensitivity for semiconductor and electronics supply-chain names
 
 ## Runtime
 

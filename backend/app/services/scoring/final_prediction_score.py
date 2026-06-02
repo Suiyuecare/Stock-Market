@@ -13,6 +13,7 @@ from app.services.scoring.target_price_score import calculate_target_price_score
 from app.services.scoring.technical_score import calculate_technical_score
 from app.services.scoring.us_market_score import calculate_us_market_score, us_linkage_score
 from app.services.indicators import build_technical_indicators
+from app.services.market_regime_engine import adjusted_factor_weights
 
 DISCLAIMER = "Outputs are for research and education only, not personalized investment advice."
 FINAL_SCORE_WEIGHTS = {
@@ -68,6 +69,7 @@ def probability_from_risk_adjusted_score(score: float, horizon_bias: float = 0.0
 def calculate_final_prediction_score(
     scores: Mapping[str, Union[float, int, Mapping[str, object]]],
     risk_score: Union[float, int, object],
+    market_regime: Optional[object] = None,
 ) -> Dict[str, object]:
     normalized = {
         "fundamental": normalize_to_100(_extract_score(scores.get("fundamental", 50))),
@@ -81,8 +83,10 @@ def calculate_final_prediction_score(
     }
     risk_value = float(getattr(risk_score, "total", risk_score))
     risk_normalized = normalize_to_100(risk_value)
-    bullish_score = sum(normalized[key] * weight for key, weight in FINAL_SCORE_WEIGHTS.items())
-    risk_adjusted_score = bullish_score - 0.35 * risk_normalized
+    factor_weights = _weights_for_regime(market_regime)
+    risk_multiplier = _risk_multiplier_for_regime(market_regime)
+    bullish_score = sum(normalized[key] * weight for key, weight in factor_weights.items())
+    risk_adjusted_score = bullish_score - 0.35 * risk_multiplier * risk_normalized
     confidence_values = [_extract_confidence(value) for value in scores.values()]
     confidence_numbers = [value for value in confidence_values if value is not None]
     confidence = sum(confidence_numbers) / len(confidence_numbers) if confidence_numbers else 50.0
@@ -94,6 +98,9 @@ def calculate_final_prediction_score(
         "top_negative_factors": [name for name, score in sorted_negative if score < 50],
         "top_risk_factors": ["risk_score"] if risk_normalized >= 60 else [],
         "component_scores": normalized,
+        "factor_weights": factor_weights,
+        "market_regime": _regime_name(market_regime),
+        "risk_weight_multiplier": round(risk_multiplier, 4),
     }
 
     return {
@@ -106,6 +113,41 @@ def calculate_final_prediction_score(
         "explanation": explanation,
         "confidence": clamp_100(confidence),
     }
+
+
+def _weights_for_regime(market_regime: Optional[object]) -> Dict[str, float]:
+    adjustments = _regime_adjustments(market_regime)
+    if not adjustments:
+        return dict(FINAL_SCORE_WEIGHTS)
+    return adjusted_factor_weights(FINAL_SCORE_WEIGHTS, adjustments)
+
+
+def _regime_adjustments(market_regime: Optional[object]) -> Mapping[str, float]:
+    if market_regime is None:
+        return {}
+    if isinstance(market_regime, Mapping):
+        value = market_regime.get("factor_weight_adjustments", {})
+        return value if isinstance(value, Mapping) else {}
+    value = getattr(market_regime, "factor_weight_adjustments", {})
+    return value if isinstance(value, Mapping) else {}
+
+
+def _risk_multiplier_for_regime(market_regime: Optional[object]) -> float:
+    if market_regime is None:
+        return 1.0
+    if isinstance(market_regime, Mapping):
+        return float(market_regime.get("risk_weight_multiplier", 1.0))
+    return float(getattr(market_regime, "risk_weight_multiplier", 1.0))
+
+
+def _regime_name(market_regime: Optional[object]) -> Optional[str]:
+    if market_regime is None:
+        return None
+    if isinstance(market_regime, Mapping):
+        value = market_regime.get("primary_regime")
+        return str(value) if value is not None else None
+    value = getattr(market_regime, "primary_regime", None)
+    return str(value) if value is not None else None
 
 
 def _normalize_factor_score(score: float) -> float:

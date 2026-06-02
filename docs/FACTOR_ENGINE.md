@@ -127,6 +127,30 @@ Inputs:
 - LiquidityScore
 - RiskScore
 
+### 8. MarketRegimeEngine
+
+Inputs:
+
+- Taiwan index 20-day and 60-day return
+- Taiwan index MA60 trend state
+- 20-day volatility and volatility percentile
+- Foreign investor 20-day net flow
+- Nasdaq, SOX, VIX, and TSM ADR momentum
+
+Regimes:
+
+- bull market
+- bear market
+- range market
+- high-volatility market
+- low-volatility market
+- foreign inflow market
+- foreign outflow market
+- US technology strength
+- US technology weakness
+
+The regime engine returns factor-weight adjustments instead of direct investment advice. For example, bear markets raise the RiskScore multiplier, range markets increase technical/volume-price context, and US technology strength increases USMarketScore impact for electronics and semiconductor-linked stocks.
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.

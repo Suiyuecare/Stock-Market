@@ -36,6 +36,7 @@ from app.schemas.feature_store import (
 )
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.label import LabelEngineRequest, LabelResult
+from app.schemas.market_regime import MarketRegimeInput, MarketRegimeResult
 from app.schemas.us_market import (
     TaiwanStockProfile,
     USMarketScoreRequest,
@@ -65,6 +66,8 @@ __all__ = [
     "LabelEngineRequest",
     "LabelResult",
     "MarketSummary",
+    "MarketRegimeInput",
+    "MarketRegimeResult",
     "NewsEvent",
     "NewsParseRequest",
     "NewsParseResponse",
