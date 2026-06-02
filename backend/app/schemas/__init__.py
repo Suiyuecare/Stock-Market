@@ -34,6 +34,11 @@ from app.schemas.feature_store import (
     FeatureStoreDailyRecord,
     FeatureStoreQuery,
 )
+from app.schemas.feature_variables import (
+    ChipFeatureInput,
+    FeatureVectorResult,
+    FundamentalFeatureInput,
+)
 from app.schemas.explainability import (
     ExplainabilityDataSource,
     ExplainabilityFactorContribution,
@@ -103,8 +108,11 @@ __all__ = [
     "FeatureStoreDailyInput",
     "FeatureStoreDailyRecord",
     "FeatureStoreQuery",
+    "FeatureVectorResult",
     "HealthResponse",
+    "FundamentalFeatureInput",
     "Instrument",
+    "ChipFeatureInput",
     "InstitutionalTradingInput",
     "LabelEngineRequest",
     "LabelResult",

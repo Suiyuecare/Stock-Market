@@ -72,6 +72,25 @@ Inputs:
 - Operating cash flow
 - Industry momentum
 
+Core feature variables:
+
+- `revenue_yoy`
+- `revenue_mom`
+- `revenue_yoy_acceleration`
+- `revenue_3m_yoy_avg`
+- `eps_yoy`
+- `eps_qoq`
+- `gross_margin_delta_qoq`
+- `gross_margin_delta_yoy`
+- `operating_margin_delta`
+- `debt_ratio`
+- `operating_cash_flow_quality`
+- `inventory_growth_vs_revenue_growth`
+- `accounts_receivable_growth_vs_revenue_growth`
+- `industry_growth_score`
+- `fundamental_turnaround`
+- `quality_growth`
+
 ### 2. ChipScore
 
 Inputs:
@@ -83,6 +102,29 @@ Inputs:
 - Net buy ratio relative to volume
 - Margin trading if available
 - Institutional synchronization
+
+Core feature variables:
+
+- `foreign_net_ratio`
+- `investment_trust_net_ratio`
+- `dealer_net_ratio`
+- `institutional_net_ratio`
+- `foreign_consecutive_buy_days`
+- `trust_consecutive_buy_days`
+- `dealer_consecutive_buy_days`
+- `institutional_sync_buy`
+- `institutional_sync_sell`
+- `foreign_reversal_to_buy`
+- `trust_accumulation_score`
+- `dealer_hedge_pressure`
+- `tdcc_large_holder_ratio`
+- `tdcc_large_holder_ratio_delta`
+- `margin_balance_delta`
+- `short_interest_delta`
+- `borrow_sell_balance_delta`
+- `chip_alignment_score`
+
+`chip_alignment_score` captures multi-factor resonance across foreign buying, investment trust buying, dealer not selling, institutional buy ratio, and rising large-holder ratio.
 
 ### 3. TechnicalScore
 

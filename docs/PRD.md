@@ -63,6 +63,15 @@ Before a stock enters training, backtesting, ranking, or signal generation, the 
 
 The goal is to avoid inflated backtests and unstable signals from stocks that are hard to trade, newly listed, special-risk, low-priced, or missing critical data.
 
+### Feature Variables
+
+The MVP should store raw and derived feature variables in the feature store. Early priority groups:
+
+- fundamental variables such as revenue growth, EPS growth, margin deltas, cash-flow quality, and industry growth
+- chip/institutional variables such as institutional net ratios, consecutive buy days, TDCC large-holder changes, margin/short changes, and chip alignment
+
+Derived resonance variables such as `fundamental_turnaround`, `quality_growth`, and `chip_alignment_score` help the system find conditions where multiple factors point in the same direction.
+
 ### Dashboard
 
 - Market status cards
