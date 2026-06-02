@@ -34,6 +34,25 @@ flowchart LR
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
+### API Surface
+
+The MVP API uses mock/sample data until licensed market providers are connected.
+
+- `GET /api/stocks`
+- `GET /api/stocks/{stock_id}`
+- `GET /api/stocks/{stock_id}/scores`
+- `GET /api/stocks/{stock_id}/technical`
+- `GET /api/stocks/{stock_id}/institutional`
+- `GET /api/stocks/{stock_id}/news`
+- `GET /api/rankings/top-probability`
+- `GET /api/rankings/institutional-buying`
+- `GET /api/rankings/macd-golden-cross`
+- `GET /api/rankings/volume-price-divergence`
+- `GET /api/us-market/radar`
+- `GET /api/risk/high-risk`
+
+All scoring endpoints return explainable research payloads and the standard disclaimer. They must not return direct investment advice.
+
 ### Database
 
 - PostgreSQL
