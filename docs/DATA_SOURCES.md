@@ -47,6 +47,14 @@ These providers can feed USMarketScore, pre-open radar, futures linkage, FX, com
 | 53 | Intrinio Docs | US stocks, fundamentals, options, news backup source | `https://docs.intrinio.com/documentation/api_v2/getting_started` |
 | 54 | Twelve Data Docs | US stocks, FX, crypto, technical indicator backup | `https://twelvedata.com/docs` |
 | 55 | EODHD API | Global stocks, ETFs, FX, news, technical indicator backup | `https://eodhd.com/` |
+| 56 | FRED API Docs | US macro, Treasury yields, Fed Funds, USD, credit spreads | `https://fred.stlouisfed.org/docs/api/fred/` |
+| 57 | FRED observations endpoint | Time-series observations | `https://api.stlouisfed.org/fred/series/observations` |
+| 58 | BLS API Docs | CPI, PPI, unemployment, nonfarm payrolls, wages | `https://www.bls.gov/developers/home.htm` |
+| 59 | BLS API v2 endpoint | BLS time-series API | `https://api.bls.gov/publicAPI/v2/timeseries/data/` |
+| 60 | SEC EDGAR API Docs | SEC filings and XBRL data | `https://www.sec.gov/search-filings/edgar-application-programming-interfaces` |
+| 61 | SEC submissions endpoint | Company filing history | `https://data.sec.gov/submissions/CIK{CIK}.json` |
+| 62 | SEC company facts endpoint | XBRL company financial facts | `https://data.sec.gov/api/xbrl/companyfacts/CIK{CIK}.json` |
+| 63 | SEC ticker-to-CIK | US ticker to CIK mapping | `https://www.sec.gov/files/company_tickers.json` |
 
 Implementation notes:
 
@@ -55,6 +63,8 @@ Implementation notes:
 - Use CME for NQ/ES futures and Fed/futures-related pre-open signals.
 - Use Nasdaq Data Link, ICE, Intrinio, Twelve Data, Alpha Vantage, and EODHD as evaluated backup/enrichment sources.
 - Do not enable WebSocket streaming in the MVP until real-time licensing, cost, and reliability requirements are clear.
+- Use FRED and BLS for US macro factors such as yields, Fed Funds, credit spreads, CPI, PPI, unemployment, nonfarm payrolls, and wages.
+- Use SEC EDGAR JSON APIs for US company filing events, 10-K, 10-Q, 8-K, and XBRL company facts. SEC APIs do not require an API key, but requests should include a compliant User-Agent.
 
 ### News and Events
 
