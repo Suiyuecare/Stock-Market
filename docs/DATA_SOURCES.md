@@ -128,6 +128,35 @@ Implementation notes:
 - Keep these integrations behind a TargetPrice/AnalystEstimates provider so `TargetPriceScore` can remain a neutral placeholder when no license is configured.
 - Normalize provider payloads into EPS consensus, revenue consensus, target price mean/high/low, recommendation revisions, estimate revision direction, analyst count, and data freshness.
 
+## News / RSS / Financial News Data Sources
+
+These providers can feed NewsScore, event timelines, earnings/revenue news classification, sector sentiment, US linkage news, and risk-event detection. RSS and free/news-trial APIs still require terms-of-use review before production ingestion or redistribution.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 73 | CNA RSS documentation | Taiwan news RSS documentation | `https://www.cna.com.tw/about/rss.aspx` |
+| 74 | CNA finance and securities RSS | Taiwan stock / industry news | `https://feeds.feedburner.com/rsscna/finance` |
+| 75 | CNA technology RSS | Technology / AI / semiconductor news | `https://feeds.feedburner.com/rsscna/technology` |
+| 76 | Anue Cnyes Open API documentation | Taiwan stocks, US stocks, financial news and market data; commercial cooperation required | `https://openapi.api.cnyes.com/swagger-ui.html` |
+| 77 | Anue Cnyes OpenAPI base | Cnyes API base | `https://openapi.api.cnyes.com/` |
+| 78 | NewsAPI documentation | Global news search backup | `https://newsapi.org/docs` |
+| 79 | NewsAPI REST base | NewsAPI base | `https://newsapi.org/v2` |
+| 80 | NewsAPI Everything endpoint | Search news articles | `https://newsapi.org/v2/everything` |
+| 81 | Reuters API Integrations | Reuters international financial news | `https://reutersagency.com/content-delivery-platforms/api-integrations/` |
+| 82 | LSEG News API | Reuters / LSEG News API | `https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/news-API` |
+| 83 | Thomson Reuters Developer Portal | Reuters / TR developer entry point | `https://developers.thomsonreuters.com/` |
+| 84 | NewsData.io documentation | Multi-country news backup | `https://newsdata.io/documentation` |
+| 85 | TheNewsAPI documentation | Multi-country news backup | `https://www.thenewsapi.com/documentation` |
+
+Implementation notes:
+
+- Start MVP news ingestion with mock data and optional CNA RSS feeds where terms allow parsing.
+- Treat Cnyes, Reuters/LSEG, NewsAPI, NewsData.io, and TheNewsAPI as licensed or key-based integrations; do not commit credentials.
+- Cnyes Open API is not assumed free for production use. Confirm commercial cooperation, data scope, display rights, and redistribution terms before enabling it.
+- Normalize all provider payloads into event time, market, stock ID or related symbol, source, title, summary, sentiment score, event type, impact score, confidence, and URL.
+- Store raw provider payloads only if license terms allow retention; otherwise store normalized event metadata needed for scoring and auditability.
+- Keep source attribution available in API responses so the UI can explain why a `NewsScore` was generated.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
