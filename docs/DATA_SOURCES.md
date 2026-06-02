@@ -105,6 +105,29 @@ Implementation notes:
 - Use TEJ as an optional enrichment provider for fundamentals, financial statements, adjusted prices, corporate actions, events, and historical data coverage.
 - Keep TEJ behind provider interfaces so the app can still run with official open data and mock data when no commercial key is configured.
 
+## Analyst Estimates / Target Price Data Sources
+
+These commercial providers can feed TargetPriceScore, EPS consensus, target price changes, rating revisions, analyst hit-rate studies, and valuation forecast factors.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 64 | FactSet Developer | FactSet API portal | `https://developer.factset.com/` |
+| 65 | FactSet Estimates API | EPS estimates, consensus estimates, financial forecasts | `https://developer.factset.com/api-catalog/factset-estimates-api` |
+| 66 | FactSet Estimates Report Builder | Report-ready consensus estimate data | `https://developer.factset.com/api-catalog/factset-estimates-report-builder-api` |
+| 67 | LSEG I/B/E/S Estimates | Analyst estimates, target prices, ratings, consensus data | `https://www.lseg.com/en/data-analytics/financial-data/company-data/ibes-estimates` |
+| 68 | LSEG Estimates API for Wealth | I/B/E/S API documentation entry | `https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/estimates-API` |
+| 69 | Bloomberg B-PIPE | High-end real-time global market data | `https://professional.bloomberg.com/products/data/enterprise-catalog/real-time-data-feed/` |
+| 70 | Bloomberg Server API SAPI | Bloomberg real-time / historical / reference API | `https://professional.bloomberg.com/products/data/data-connectivity/server-api/` |
+| 71 | Bloomberg Data License | Bloomberg REST API / SFTP / cloud data license | `https://professional.bloomberg.com/products/data/data-management/data-license/` |
+| 72 | Bloomberg Web API host | Bloomberg Web API host, requires license | `https://api.bloomberg.com` |
+
+Implementation notes:
+
+- Use these sources only after commercial contract, redistribution rights, and analyst-data display rights are confirmed.
+- Do not commit FactSet, LSEG, or Bloomberg credentials.
+- Keep these integrations behind a TargetPrice/AnalystEstimates provider so `TargetPriceScore` can remain a neutral placeholder when no license is configured.
+- Normalize provider payloads into EPS consensus, revenue consensus, target price mean/high/low, recommendation revisions, estimate revision direction, analyst count, and data freshness.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
