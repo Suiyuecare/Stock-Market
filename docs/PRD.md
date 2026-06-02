@@ -81,6 +81,23 @@ Additional feature groups:
 
 Hard risk gates should prevent weak samples from entering the primary research signal list when risk is too high, liquidity is too poor, major negative news is active, high-level volume-price divergence appears with institutional selling, or US futures sharply weaken electronics exposure.
 
+### Signal Selection Thresholds
+
+After probability scoring, the system should decide whether a stock enters the research watchlist using configurable thresholds:
+
+- minimum 1-day, 5-day, and 20-day probability
+- minimum confidence
+- maximum RiskScore
+- minimum BullishScore and RiskAdjustedScore
+- top-k limit per day
+- maximum count per industry
+- minimum expected 5-day return
+- minimum historical sample count
+- positive chip score requirement
+- no-major-negative-news requirement
+
+These thresholds should be selected through walk-forward backtests rather than treated as permanent constants. The system must reject configurations with too few historical trades, because a tiny sample can show 100% win rate without statistical meaning.
+
 ### Dashboard
 
 - Market status cards

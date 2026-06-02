@@ -332,6 +332,27 @@ Examples:
 - high probability and poor liquidity: excluded
 - US linkage positive but Taiwan chip score weak: low-confidence watchlist
 
+Signal selection variables:
+
+```yaml
+signal_selection:
+  min_probability_up_1d: 0.56
+  min_probability_up_5d: 0.60
+  min_probability_up_20d: 0.58
+  min_confidence: 0.60
+  max_risk_score: 55
+  min_bullish_score: 65
+  min_risk_adjusted_score: 50
+  top_k_per_day: 20
+  max_per_industry: 5
+  min_expected_return_5d: 0.015
+  min_trade_sample_count: 30
+  require_positive_chip_score: true
+  require_no_major_negative_news: true
+```
+
+These thresholds should be tuned with walk-forward backtests. Lower thresholds create more signals but usually reduce win rate; higher thresholds create fewer signals and can improve win rate, but may leave too few samples to be statistically meaningful.
+
 ### 10. PortfolioRiskEngine
 
 Inputs:

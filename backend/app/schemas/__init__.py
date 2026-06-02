@@ -66,9 +66,12 @@ from app.schemas.portfolio_risk import (
     PortfolioRiskState,
 )
 from app.schemas.signal_selection import (
+    SignalSelectionBatchResult,
+    SignalSelectionCandidate,
     SignalSelectionConfig,
     SignalSelectionInput,
     SignalSelectionResult,
+    SignalSelectionThresholds,
 )
 from app.schemas.signal_quality import (
     SignalQualityInput,
@@ -143,9 +146,12 @@ __all__ = [
     "RankingResponse",
     "RiskScore",
     "SignalDataAvailabilityCheck",
+    "SignalSelectionBatchResult",
+    "SignalSelectionCandidate",
     "SignalSelectionConfig",
     "SignalSelectionInput",
     "SignalSelectionResult",
+    "SignalSelectionThresholds",
     "SignalQualityInput",
     "SignalQualityResult",
     "SignalQualityThresholds",

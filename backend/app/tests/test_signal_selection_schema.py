@@ -1,6 +1,13 @@
 from datetime import date
 
-from app.schemas import SignalSelectionConfig, SignalSelectionInput, SignalSelectionResult
+from app.schemas import (
+    SignalSelectionBatchResult,
+    SignalSelectionCandidate,
+    SignalSelectionConfig,
+    SignalSelectionInput,
+    SignalSelectionResult,
+    SignalSelectionThresholds,
+)
 
 
 def test_signal_selection_input_schema_tracks_filter_features() -> None:
@@ -49,3 +56,56 @@ def test_signal_selection_config_schema_can_tune_thresholds() -> None:
 
     assert config.minimum_probability == 0.7
     assert config.minimum_sample_count == 50
+
+
+def test_signal_selection_threshold_schema_tracks_advanced_variables() -> None:
+    thresholds = SignalSelectionThresholds()
+
+    assert thresholds.min_probability_up_1d == 0.56
+    assert thresholds.min_probability_up_5d == 0.60
+    assert thresholds.max_risk_score == 55
+    assert thresholds.top_k_per_day == 20
+    assert thresholds.max_per_industry == 5
+    assert thresholds.min_trade_sample_count == 30
+
+
+def test_signal_selection_candidate_schema_tracks_scores_and_samples() -> None:
+    candidate = SignalSelectionCandidate(
+        stock_id="2330",
+        signal_date=date(2026, 6, 2),
+        industry="semiconductor",
+        probability_up_1d=0.58,
+        probability_up_5d=0.64,
+        probability_up_20d=0.6,
+        confidence=0.72,
+        risk_score=42,
+        bullish_score=72,
+        risk_adjusted_score=58,
+        expected_return_5d=0.025,
+        chip_score=62,
+        trade_sample_count=80,
+    )
+
+    assert candidate.industry == "semiconductor"
+    assert candidate.trade_sample_count == 80
+
+
+def test_signal_selection_batch_result_schema_keeps_selected_and_rejected() -> None:
+    result = SignalSelectionBatchResult(
+        selected=[],
+        rejected=[
+            SignalSelectionResult(
+                stock_id="2330",
+                signal_date=date(2026, 6, 2),
+                selected=False,
+                decision="excluded",
+                priority=0,
+                reasons=[],
+                warnings=["Signal failed selection thresholds."],
+                risk_flags=["sample_count_below_threshold"],
+            )
+        ],
+        thresholds=SignalSelectionThresholds(),
+    )
+
+    assert result.rejected[0].risk_flags == ["sample_count_below_threshold"]
