@@ -44,6 +44,24 @@ These are candidates to evaluate, not final commitments:
 - NewsAPI or licensed news feeds
 - RSS feeds where terms allow processing
 
+## Commercial Taiwan Data Sources
+
+Commercial providers require a paid contract or trial key before use. Never commit provider API keys; store them in `.env.local` or deployment environment variables.
+
+| # | API / Source | Purpose | URL |
+| -: | --- | --- | --- |
+| 33 | TEJ API official portal | Main Taiwan commercial data API | `https://api.tej.com.tw/` |
+| 34 | TEJ API documentation | API usage guide | `https://www.tejwin.com/en/insight/tej-api-document/` |
+| 35 | TEJ REST API documentation | REST API integration guide | `https://www.tejwin.com/en/insight/tej-rest-api-document/` |
+| 36 | TEJ Taiwan Stock Data Solutions | Taiwan market, financial, fundamental, event data solutions | `https://www.tejwin.com/en/solution/taiwan-stock-data/` |
+| 37 | TEJ REST base URL | Programmatic REST base URL | `https://api.tej.com.tw/api/` |
+
+Implementation notes:
+
+- Use TEJ only after license scope, redistribution rights, and API limits are confirmed.
+- Use TEJ as an optional enrichment provider for fundamentals, financial statements, adjusted prices, corporate actions, events, and historical data coverage.
+- Keep TEJ behind provider interfaces so the app can still run with official open data and mock data when no commercial key is configured.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
