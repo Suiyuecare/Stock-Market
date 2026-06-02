@@ -73,8 +73,14 @@ class PredictionSignal(BaseModel):
     signal_date: date
     horizon: str
     probability_up: float
+    probability_up_1d: Optional[float] = None
+    probability_up_5d: Optional[float] = None
+    probability_up_20d: Optional[float] = None
     confidence: float
     composite_score: float
+    bullish_score: Optional[float] = None
+    risk_adjusted_score: Optional[float] = None
+    explanation: Optional[Dict[str, Any]] = None
     risk_score: RiskScore
     technicals: TechnicalIndicators
     factor_scores: List[FactorScore]

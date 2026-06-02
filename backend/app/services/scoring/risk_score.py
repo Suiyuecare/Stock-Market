@@ -18,5 +18,5 @@ def build_risk_score(indicators: TechnicalIndicators, linkage: Dict[str, float],
         liquidity=round(liquidity, 4),
         concentration=round(concentration, 4),
         event=round(event, 4),
-        explanation="Higher scores indicate higher research risk; this is not a buy/sell recommendation.",
+        explanation="Higher scores indicate higher research risk; outputs are for research and education only.",
     )

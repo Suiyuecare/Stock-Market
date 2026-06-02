@@ -258,6 +258,16 @@ Implemented US market linkage factors:
 - Taiwan stock supply-chain tags
 - US-TW sensitivity mapping with confidence weighting
 
+Implemented final prediction score:
+
+- `calculate_final_prediction_score` combines FundamentalScore, ChipScore, TechnicalScore, USMarketScore, NewsScore, MacroScore, TargetPriceScore, LiquidityScore, and RiskScore.
+- Component inputs are normalized to `0` to `100`, including legacy `-1` to `1` score payloads.
+- `BullishScore` follows the MVP weighted formula.
+- `RiskAdjustedScore` subtracts `0.35 * RiskScore`.
+- `probability_up_1d`, `probability_up_5d`, and `probability_up_20d` are mapped from `RiskAdjustedScore` with an MVP logistic curve.
+- API signal payloads keep the legacy `probability_up` field mapped to `probability_up_1d` for frontend compatibility.
+- The response includes `explanation.component_scores`, `top_positive_factors`, `top_negative_factors`, `top_risk_factors`, and normalized confidence.
+
 Implemented institutional/chip factors:
 
 - `foreign_net_ratio = foreign_net / volume`

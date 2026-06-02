@@ -53,8 +53,19 @@ export type PredictionSignal = {
   signal_date: string;
   horizon: string;
   probability_up: number;
+  probability_up_1d?: number | null;
+  probability_up_5d?: number | null;
+  probability_up_20d?: number | null;
   confidence: number;
   composite_score: number;
+  bullish_score?: number | null;
+  risk_adjusted_score?: number | null;
+  explanation?: {
+    top_positive_factors?: string[];
+    top_negative_factors?: string[];
+    top_risk_factors?: string[];
+    component_scores?: Record<string, number>;
+  } | null;
   risk_score: RiskScore;
   technicals: TechnicalIndicators;
   factor_scores: FactorScore[];

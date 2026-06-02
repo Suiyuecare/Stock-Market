@@ -37,16 +37,16 @@ export function getFactorDisplayScore(signal: PredictionSignal, category: string
 }
 
 export function buildStockMetrics(signal: PredictionSignal): StockDisplayMetrics {
-  const probability1d = toPercent(signal.probability_up);
+  const probability1d = toPercent(signal.probability_up_1d ?? signal.probability_up);
   const confidenceOffset = Math.round((signal.confidence - 0.5) * 10);
   const riskScore = toFactorScore(signal.risk_score.total);
-  const bullishScore = toFactorScore(signal.composite_score);
-  const riskAdjustedScore = Math.max(0, Math.min(100, bullishScore - Math.round(riskScore * 0.35)));
+  const bullishScore = signal.bullish_score ?? toFactorScore(signal.composite_score);
+  const riskAdjustedScore = signal.risk_adjusted_score ?? Math.max(0, Math.min(100, bullishScore - Math.round(riskScore * 0.35)));
 
   return {
     probabilityUp1d: probability1d,
-    probabilityUp5d: Math.max(0, Math.min(100, probability1d + confidenceOffset)),
-    probabilityUp20d: Math.max(0, Math.min(100, Math.round((probability1d + bullishScore) / 2))),
+    probabilityUp5d: signal.probability_up_5d ? toPercent(signal.probability_up_5d) : Math.max(0, Math.min(100, probability1d + confidenceOffset)),
+    probabilityUp20d: signal.probability_up_20d ? toPercent(signal.probability_up_20d) : Math.max(0, Math.min(100, Math.round((probability1d + bullishScore) / 2))),
     bullishScore,
     riskScore,
     riskAdjustedScore,
