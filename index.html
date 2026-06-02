@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stock Market 投資儀表板</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">SM</span>
+        <div>
+          <strong>Stock Market</strong>
+          <small>Investment Desk</small>
+        </div>
+      </div>
+      <nav aria-label="主要功能">
+        <a href="#overview" class="active">總覽</a>
+        <a href="#watchlist">關注清單</a>
+        <a href="#portfolio">持倉</a>
+        <a href="#plan">交易計畫</a>
+        <a href="#journal">投資筆記</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">2026 投資工作台</p>
+          <h1>股票決策儀表板</h1>
+        </div>
+        <button id="refreshButton" type="button">更新示範數據</button>
+      </header>
+
+      <section id="overview" class="summary-grid" aria-label="投資組合總覽">
+        <article class="metric">
+          <span>總資產</span>
+          <strong id="totalAssets">$1,286,400</strong>
+          <small>今日 +1.8%</small>
+        </article>
+        <article class="metric">
+          <span>現金水位</span>
+          <strong id="cashLevel">18.5%</strong>
+          <small>保留加碼彈性</small>
+        </article>
+        <article class="metric">
+          <span>未實現損益</span>
+          <strong id="unrealizedPnl">+$42,680</strong>
+          <small>近 30 日</small>
+        </article>
+        <article class="metric">
+          <span>風險分數</span>
+          <strong id="riskScore">低</strong>
+          <small>單一持股低於 25%</small>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article id="watchlist" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Watchlist</p>
+              <h2>關注清單</h2>
+            </div>
+            <button id="addSymbolButton" type="button">新增股票</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>代號</th>
+                  <th>名稱</th>
+                  <th>價格</th>
+                  <th>漲跌</th>
+                  <th>目標</th>
+                </tr>
+              </thead>
+              <tbody id="watchlistTable"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article id="portfolio" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Portfolio</p>
+              <h2>持倉配置</h2>
+            </div>
+          </div>
+          <div id="portfolioBars" class="bars"></div>
+        </article>
+
+        <article id="plan" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Trading Plan</p>
+              <h2>交易計畫</h2>
+            </div>
+          </div>
+          <ul class="check-list">
+            <li>每筆交易風險控制在總資產 2% 以內</li>
+            <li>突破買進需搭配成交量放大</li>
+            <li>財報公布前降低短線槓桿</li>
+            <li>跌破停損價立即檢討，不攤平虧損</li>
+          </ul>
+        </article>
+
+        <article id="journal" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Journal</p>
+              <h2>今日筆記</h2>
+            </div>
+          </div>
+          <textarea id="journalText" aria-label="今日投資筆記" placeholder="寫下今天的觀察、進出場理由或風險提醒..."></textarea>
+          <div class="journal-actions">
+            <small id="saveStatus">尚未儲存</small>
+            <button id="saveJournalButton" type="button">儲存筆記</button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
