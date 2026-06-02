@@ -6,9 +6,11 @@ import { InstitutionalTradingPanel } from "@/components/InstitutionalTradingPane
 import { MACDPanel } from "@/components/MACDPanel";
 import { NewsTimeline } from "@/components/NewsTimeline";
 import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
+import { ProfessionalInfoDeck } from "@/components/ProfessionalInfoDeck";
 import { ReferencePanel } from "@/components/ReferencePanel";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
+import { StockQuoteOverview } from "@/components/StockQuoteOverview";
 import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
@@ -52,6 +54,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <div className="status">5D 上漲機率 {metrics.probabilityUp5d}%</div>
       </header>
       <div className="disclaimer">{DISCLAIMER_TEXT}</div>
+
+      <StockQuoteOverview signal={signal} />
 
       <section className="metric-grid">
         <ScoreCard label="上漲機率 1D" value={`${metrics.probabilityUp1d}%`} detail="下一交易日觀察訊號" tone={scoreTone(metrics.probabilityUp1d)} />
@@ -109,6 +113,16 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
             </div>
           </div>
           <BacktestConfidencePanel signal={signal} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Complete Stock Data</p>
+              <h2>該個股完整相關資訊</h2>
+            </div>
+          </div>
+          <ProfessionalInfoDeck signal={signal} />
         </article>
 
         <article className="panel span-2">

@@ -55,6 +55,42 @@ export type BacktestConfidenceProfile = {
   topFailurePatterns: string[];
 };
 
+export type QuoteOverview = {
+  currentPrice: number;
+  change: number;
+  changePercent: number;
+  marketStatus: string;
+  quoteTime: string;
+  open: number;
+  high: number;
+  low: number;
+  previousClose: number;
+  averagePrice: number;
+  volumeLots: number;
+  turnoverTwd: number;
+  amplitude: number;
+  turnoverRate: number;
+  marketCapTwd: number;
+  peRatio: number;
+  epsTtm: number;
+  grossMargin: number;
+  operatingMargin: number;
+  netMargin: number;
+  dividendYield: number;
+  limitUp: number;
+  limitDown: number;
+  high52w: number;
+  low52w: number;
+  innerVolumeLots: number;
+  outerVolumeLots: number;
+};
+
+export type ProfessionalInfoSection = {
+  title: string;
+  description: string;
+  rows: Array<{ label: string; value: string; note: string }>;
+};
+
 export function toPercent(value: number): number {
   return Math.round(Math.max(0, Math.min(1, value)) * 100);
 }
@@ -255,4 +291,110 @@ export function buildBacktestConfidenceProfile(signal: PredictionSignal): Backte
       "低流動性標的造成回測與實際觀察落差",
     ],
   };
+}
+
+export function buildQuoteOverview(signal: PredictionSignal): QuoteOverview {
+  const target = buildTargetPriceRange(signal);
+  const metrics = buildStockMetrics(signal);
+  const previousClose = Math.max(10, Math.round(target.currentPrice * (1 - (metrics.riskAdjustedScore - 50) / 1800)));
+  const change = target.currentPrice - previousClose;
+  const changePercent = previousClose ? (change / previousClose) * 100 : 0;
+  const high = Math.round(target.currentPrice * 1.025);
+  const low = Math.round(target.currentPrice * 0.975);
+  const volumeLots = Math.round(8000 + metrics.chipScore * 92 + metrics.technicalScore * 40);
+  const turnoverTwd = Math.round((target.currentPrice * volumeLots * 1000) / 100000000);
+
+  return {
+    currentPrice: target.currentPrice,
+    change,
+    changePercent,
+    marketStatus: "市場收盤",
+    quoteTime: `${signal.signal_date} 盤後`,
+    open: Math.round((target.currentPrice + previousClose) / 2),
+    high,
+    low,
+    previousClose,
+    averagePrice: Math.round((high + low + target.currentPrice) / 3),
+    volumeLots,
+    turnoverTwd,
+    amplitude: ((high - low) / previousClose) * 100,
+    turnoverRate: Math.max(0.4, Math.min(8, volumeLots / 4200)),
+    marketCapTwd: Math.round(target.currentPrice * (40 + metrics.fundamentalScore / 2)),
+    peRatio: Number(Math.max(10, 120 - metrics.fundamentalScore + metrics.riskScore / 2).toFixed(2)),
+    epsTtm: Number(Math.max(0.8, target.currentPrice / Math.max(10, 120 - metrics.fundamentalScore)).toFixed(2)),
+    grossMargin: Number(Math.max(12, Math.min(62, metrics.fundamentalScore * 0.68)).toFixed(2)),
+    operatingMargin: Number(Math.max(3, Math.min(35, metrics.fundamentalScore * 0.34)).toFixed(2)),
+    netMargin: Number(Math.max(2, Math.min(28, metrics.fundamentalScore * 0.28)).toFixed(2)),
+    dividendYield: Number(Math.max(0.4, Math.min(5.5, 6 - metrics.riskScore / 13)).toFixed(2)),
+    limitUp: Math.round(previousClose * 1.1),
+    limitDown: Math.round(previousClose * 0.9),
+    high52w: Math.round(target.currentPrice * 1.18),
+    low52w: Math.round(target.currentPrice * 0.72),
+    innerVolumeLots: Math.round(volumeLots * (0.46 + metrics.riskScore / 500)),
+    outerVolumeLots: Math.round(volumeLots * (0.54 - metrics.riskScore / 500)),
+  };
+}
+
+export function buildProfessionalInfoSections(signal: PredictionSignal): ProfessionalInfoSection[] {
+  const metrics = buildStockMetrics(signal);
+  const quote = buildQuoteOverview(signal);
+  const backtest = buildBacktestConfidenceProfile(signal);
+  const target = buildTargetPriceRange(signal);
+
+  return [
+    {
+      title: "交易報價",
+      description: "價格、量能、區間與市場狀態，供一般投資人先快速掌握。",
+      rows: [
+        { label: "今開 / 最高 / 最低", value: `${quote.open} / ${quote.high} / ${quote.low}`, note: "MVP 報價欄位，正式版接 TWSE/TPEx" },
+        { label: "成交量 / 成交額", value: `${quote.volumeLots.toLocaleString()} 張 / ${quote.turnoverTwd} 億`, note: "用於流動性與滑價風險評估" },
+        { label: "52W 高低", value: `${quote.high52w} / ${quote.low52w}`, note: "觀察目前價格所在區間" },
+      ],
+    },
+    {
+      title: "研究訊號",
+      description: "把因子引擎結果翻成入門投資人容易理解的觀察資訊。",
+      rows: [
+        { label: "1D / 5D / 20D 上漲機率", value: `${metrics.probabilityUp1d}% / ${metrics.probabilityUp5d}% / ${metrics.probabilityUp20d}%`, note: "機率訊號，不代表個人化建議" },
+        { label: "Bullish / Risk / Risk-adjusted", value: `${metrics.bullishScore} / ${metrics.riskScore} / ${metrics.riskAdjustedScore}`, note: "多因子分數扣除風險後的研究分數" },
+        { label: "回測信賴下限勝率", value: `${backtest.winRateLowerBound}%`, note: `${backtest.sampleCount} 筆相似樣本，避免小樣本假高勝率` },
+      ],
+    },
+    {
+      title: "法人與籌碼",
+      description: "資金面、連續性與同步性，用來判斷訊號是否有資金支撐。",
+      rows: [
+        { label: "ChipScore", value: `${metrics.chipScore}`, note: "外資、投信、自營商與成交量比率" },
+        { label: "籌碼狀態", value: metrics.chipScore >= 60 ? "偏正向" : "觀察中", note: "若三大法人同步轉弱，訊號會降級" },
+        { label: "流動性提醒", value: quote.volumeLots >= 10000 ? "樣本流動性較足" : "需留意成交量", note: "低流動性會放大回測與實際落差" },
+      ],
+    },
+    {
+      title: "技術與量價",
+      description: "MA、MACD、RSI、KD、OBV 與量價背離，供進階使用者拆解。",
+      rows: [
+        { label: "TechnicalScore", value: `${metrics.technicalScore}`, note: "綜合趨勢、動能、量能與突破訊號" },
+        { label: "MA5 / MA20 / MA60", value: `${formatScore(signal.technicals.ma_5)} / ${formatScore(signal.technicals.ma_20)} / ${formatScore(signal.technicals.ma_60)}`, note: "用來看短中長期均線位置" },
+        { label: "RSI / MACD Hist", value: `${formatScore(signal.technicals.rsi_14)} / ${formatScore(signal.technicals.macd_histogram)}`, note: "動能與背離風險觀察" },
+      ],
+    },
+    {
+      title: "財務與估值",
+      description: "基本面、目標區間與財務品質，正式版會接月營收與財報資料。",
+      rows: [
+        { label: "現價 / 保守 / 基準 / 樂觀", value: `${target.currentPrice} / ${target.conservative} / ${target.base} / ${target.optimistic}`, note: target.sourceLabel },
+        { label: "EPS / PE / 殖利率", value: `${quote.epsTtm} / ${quote.peRatio} / ${quote.dividendYield}%`, note: "MVP 估算欄位，待接法人共識與財報" },
+        { label: "毛利率 / 營益率 / 淨利率", value: `${quote.grossMargin}% / ${quote.operatingMargin}% / ${quote.netMargin}%`, note: "財務品質與獲利能力觀察" },
+      ],
+    },
+    {
+      title: "外部連動與事件",
+      description: "美股、新聞、產業與供應鏈事件，供專業使用者追溯 Reference。",
+      rows: [
+        { label: "USMarketScore", value: `${metrics.usMarketScore}`, note: "SOX、TSM ADR、NVDA、AAPL、VIX 與供應鏈權重" },
+        { label: "NewsScore", value: `${metrics.newsScore}`, note: `${signal.news.length} 筆新聞/事件進入觀察` },
+        { label: "容易失效狀態", value: backtest.worstMarketRegime, note: "模型監控與風險過濾會追蹤此類狀態" },
+      ],
+    },
+  ];
 }
