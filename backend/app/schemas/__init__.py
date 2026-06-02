@@ -12,6 +12,11 @@ from app.schemas.core import (
     StockDetailResponse,
     TechnicalIndicators,
 )
+from app.schemas.anti_pattern_guard import (
+    SignalAntiPatternConfig,
+    SignalAntiPatternInput,
+    SignalAntiPatternResult,
+)
 from app.schemas.backtest import (
     BacktestConfig,
     BacktestObservation,
@@ -205,6 +210,9 @@ __all__ = [
     "RankingResponse",
     "RiskScore",
     "SignalDataAvailabilityCheck",
+    "SignalAntiPatternConfig",
+    "SignalAntiPatternInput",
+    "SignalAntiPatternResult",
     "SignalSelectionBatchResult",
     "SignalSelectionCandidate",
     "SignalSelectionConfig",

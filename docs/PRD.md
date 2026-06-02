@@ -154,6 +154,10 @@ The primary watchlist should favor multi-factor confluence. A high-quality bulli
 
 This will reduce the number of daily candidates, but it is more stable than ranking stocks from a single indicator.
 
+### Signal Anti-Patterns
+
+The app must not promote signals that rely only on one indicator or story, such as MACD golden cross, foreign buying, NVDA strength, positive news, technical breakout, or highest model probability. A primary signal should also have low risk, enough samples, multi-factor agreement, positive expected value after costs, yearly stability, and acceptable behavior across market regimes.
+
 ### MVP Strategy Defaults
 
 The initial preset targets 5-day relative win-rate reliability. It uses `up_5d_relative` as the main label against TAIEX, requires transaction costs and slippage, filters out low-liquidity and special-risk stocks, caps the daily list at 20 names, caps each industry at 5 names, rejects major negative news, rejects obvious MACD or high-price volume divergence, prefers foreign and investment-trust synchronized buying, and downgrades high-beta electronics exposure when US market conditions weaken.

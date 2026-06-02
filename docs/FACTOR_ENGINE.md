@@ -295,6 +295,29 @@ bullish_confluence:
 
 This intentionally produces fewer signals than a single-factor system, but each accepted signal has more aligned evidence and fewer obvious risk conflicts.
 
+### 0.10 Signal Anti-Patterns
+
+The system should avoid single-indicator signal design. These are not sufficient by themselves:
+
+- MACD golden cross only
+- foreign investor net buying only
+- NVDA spike only
+- positive news only
+- technical breakout only
+- highest model probability only
+
+The correct signal gate requires:
+
+- high model probability
+- low risk
+- enough historical samples
+- multi-factor agreement
+- positive expected value after transaction costs and slippage
+- stable performance across different years
+- no material failure across market regimes
+
+Signals that rely on a single narrative should be rejected or downgraded even when the headline indicator looks strong.
+
 ### 0.7 MVP Initial Strategy Defaults
 
 The MVP starts with a conservative preset designed for 5-day relative win-rate reliability:
