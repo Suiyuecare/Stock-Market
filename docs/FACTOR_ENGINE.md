@@ -8,6 +8,37 @@ The factor engine should calculate scores from `0` to `100`.
 
 Scores must be used as research signals and educational analysis only. The system must not output direct investment advice such as buy, sell, guaranteed profit, or 100% accurate predictions.
 
+## Final Design Principle
+
+The system should not look like it predicts well only because it has many data sources. It should prove when a signal is valid, when it fails, and why it was selected.
+
+The core workflow is:
+
+1. record when data becomes available
+2. store point-in-time features
+3. generate labels only after the future window closes
+4. validate with walk-forward out-of-sample splits
+5. optimize thresholds and factor combinations by objective score
+6. calibrate probabilities
+7. apply market-regime, risk, liquidity, and confluence filters
+8. track signal outcomes
+9. update performance statistics
+10. monitor model decay
+11. produce an explainability report for every signal
+
+Maximum-win-rate evaluation should optimize:
+
+```text
+WinRateLowerBound
++ AverageNetReturnScore
++ ProfitFactorScore
++ CalibrationScore
++ StabilityScore
+- MaxDrawdownPenalty
+```
+
+Raw win rate is supporting context only. A signal is stronger when it has enough samples, positive net expectancy after costs, acceptable drawdown, stable behavior across years and market regimes, and clear factor confluence.
+
 ## Main Modules
 
 ### 0. Target Variables

@@ -22,6 +22,42 @@ Deliver a web dashboard that summarizes:
 - Prediction score and confidence
 - Signal drivers such as ADR, US tech sector, FX, futures, and news events
 
+## Final System Direction
+
+The next stage is not to add more APIs first. The product becomes trustworthy by proving that its signals are point-in-time correct, statistically meaningful, explainable, and monitored after deployment.
+
+Priority capabilities:
+
+- data availability timestamps
+- feature store
+- label engine
+- walk-forward backtest
+- win-rate optimizer
+- probability calibration
+- market regime detection
+- risk filtering
+- signal outcome tracking
+- model monitoring
+- explainability reports
+
+Core maximum-win-rate setting:
+
+- main target: `up_5d_relative`
+- entry: next-session open
+- exit: 5 trading days later or take-profit / stop-loss
+- costs: commission, transaction tax, and slippage
+- filter: high probability, low risk, high liquidity, and multi-factor confluence
+- validation: walk-forward out-of-sample
+- evaluation: win-rate lower bound, average net return, Profit Factor, max drawdown, and calibration error
+
+The system should answer:
+
+- which conditions have high win rate
+- which conditions cause model decay or failure
+- which stocks should be excluded
+- which factor combinations are most useful
+- whether a signal has statistical meaning
+
 ## User Stories
 
 - As an investor, I want to see tomorrow's directional signal for my Taiwan watchlist.
