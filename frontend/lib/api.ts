@@ -1,4 +1,5 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
 
 export type MarketSummary = {
   session_date: string;
@@ -245,7 +246,7 @@ async function getJson<T>(path: string): Promise<T> {
   } catch {
     // The production frontend can launch before the FastAPI service is deployed.
   }
-  return mockResponse(path) as T;
+  return (await mockResponse(path)) as T;
 }
 
 export async function fetchMarketSummary(): Promise<MarketSummary> {
@@ -306,12 +307,140 @@ export async function fetchHighRisk(): Promise<HighRiskResponse> {
 
 const disclaimer = "本系統僅提供資料整理、研究分析與教育用途，不構成個人化投資建議、投資顧問服務、交易指示、獲利保證或招攬買賣；MVP Beta 期間部分資料可能延遲、估算或仍為示範資料。";
 
-const instruments: StockInstrument[] = [
+const seedInstruments: StockInstrument[] = [
+  { symbol: "1101", market: "TW", name: "台泥", sector: "水泥工業", currency: "TWD" },
+  { symbol: "1102", market: "TW", name: "亞泥", sector: "水泥工業", currency: "TWD" },
+  { symbol: "1216", market: "TW", name: "統一", sector: "食品工業", currency: "TWD" },
+  { symbol: "1301", market: "TW", name: "台塑", sector: "塑膠工業", currency: "TWD" },
+  { symbol: "1303", market: "TW", name: "南亞", sector: "塑膠工業", currency: "TWD" },
+  { symbol: "1326", market: "TW", name: "台化", sector: "塑膠工業", currency: "TWD" },
+  { symbol: "1402", market: "TW", name: "遠東新", sector: "紡織纖維", currency: "TWD" },
+  { symbol: "1590", market: "TW", name: "亞德客-KY", sector: "電機機械", currency: "TWD" },
+  { symbol: "2002", market: "TW", name: "中鋼", sector: "鋼鐵工業", currency: "TWD" },
+  { symbol: "2207", market: "TW", name: "和泰車", sector: "汽車工業", currency: "TWD" },
+  { symbol: "2301", market: "TW", name: "光寶科", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2303", market: "TW", name: "聯電", sector: "半導體", currency: "TWD" },
+  { symbol: "2308", market: "TW", name: "台達電", sector: "電源管理", currency: "TWD" },
+  { symbol: "2317", market: "TW", name: "鴻海", sector: "電子代工", currency: "TWD" },
+  { symbol: "2324", market: "TW", name: "仁寶", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2330", market: "TW", name: "台積電", sector: "半導體", currency: "TWD" },
+  { symbol: "2345", market: "TW", name: "智邦", sector: "通信網路", currency: "TWD" },
+  { symbol: "2357", market: "TW", name: "華碩", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2379", market: "TW", name: "瑞昱", sector: "半導體", currency: "TWD" },
+  { symbol: "2382", market: "TW", name: "廣達", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2395", market: "TW", name: "研華", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2408", market: "TW", name: "南亞科", sector: "半導體", currency: "TWD" },
   { symbol: "2330", market: "TW", name: "台積電", sector: "半導體", currency: "TWD" },
   { symbol: "2454", market: "TW", name: "聯發科", sector: "半導體", currency: "TWD" },
-  { symbol: "2317", market: "TW", name: "鴻海", sector: "電子代工", currency: "TWD" },
-  { symbol: "2308", market: "TW", name: "台達電", sector: "電源管理", currency: "TWD" },
+  { symbol: "2603", market: "TW", name: "長榮", sector: "航運業", currency: "TWD" },
+  { symbol: "2609", market: "TW", name: "陽明", sector: "航運業", currency: "TWD" },
+  { symbol: "2615", market: "TW", name: "萬海", sector: "航運業", currency: "TWD" },
+  { symbol: "2880", market: "TW", name: "華南金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2881", market: "TW", name: "富邦金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2882", market: "TW", name: "國泰金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2884", market: "TW", name: "玉山金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2885", market: "TW", name: "元大金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2886", market: "TW", name: "兆豐金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2891", market: "TW", name: "中信金", sector: "金融保險", currency: "TWD" },
+  { symbol: "3008", market: "TW", name: "大立光", sector: "光電業", currency: "TWD" },
+  { symbol: "3034", market: "TW", name: "聯詠", sector: "半導體", currency: "TWD" },
+  { symbol: "3035", market: "TW", name: "智原", sector: "半導體", currency: "TWD" },
+  { symbol: "3231", market: "TW", name: "緯創", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "3661", market: "TW", name: "世芯-KY", sector: "半導體", currency: "TWD" },
+  { symbol: "3711", market: "TW", name: "日月光投控", sector: "半導體", currency: "TWD" },
+  { symbol: "4904", market: "TW", name: "遠傳", sector: "通信網路", currency: "TWD" },
+  { symbol: "4938", market: "TW", name: "和碩", sector: "電子代工", currency: "TWD" },
+  { symbol: "5871", market: "TW", name: "中租-KY", sector: "金融保險", currency: "TWD" },
+  { symbol: "5876", market: "TW", name: "上海商銀", sector: "金融保險", currency: "TWD" },
+  { symbol: "5880", market: "TW", name: "合庫金", sector: "金融保險", currency: "TWD" },
+  { symbol: "6505", market: "TW", name: "台塑化", sector: "油電燃氣", currency: "TWD" },
+  { symbol: "6669", market: "TW", name: "緯穎", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "8046", market: "TW", name: "南電", sector: "電子零組件", currency: "TWD" },
 ];
+
+let twseInstrumentCache: StockInstrument[] | null = null;
+
+const industryCodeMap: Record<string, string> = {
+  "01": "水泥工業",
+  "02": "食品工業",
+  "03": "塑膠工業",
+  "04": "紡織纖維",
+  "05": "電機機械",
+  "06": "電器電纜",
+  "08": "玻璃陶瓷",
+  "09": "造紙工業",
+  "10": "鋼鐵工業",
+  "11": "橡膠工業",
+  "12": "汽車工業",
+  "14": "建材營造",
+  "15": "航運業",
+  "16": "觀光餐旅",
+  "17": "金融保險",
+  "18": "貿易百貨",
+  "20": "其他",
+  "21": "化學工業",
+  "22": "生技醫療",
+  "23": "油電燃氣",
+  "24": "半導體",
+  "25": "電腦及週邊",
+  "26": "光電業",
+  "27": "通信網路",
+  "28": "電子零組件",
+  "29": "電子通路",
+  "30": "資訊服務",
+  "31": "其他電子",
+  "32": "文化創意",
+  "33": "農業科技",
+  "34": "電子商務",
+  "35": "綠能環保",
+  "36": "數位雲端",
+  "37": "運動休閒",
+  "38": "居家生活",
+};
+
+async function getFallbackInstruments(): Promise<StockInstrument[]> {
+  if (twseInstrumentCache) return twseInstrumentCache;
+  try {
+    const response = await fetch(twseListedCompanyUrl, { next: { revalidate: 60 * 60 * 6 } });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      const normalized = rows
+        .map((row) => {
+          const symbol = String(row["公司代號"] ?? "").trim();
+          const name = String(row["公司簡稱"] || row["公司名稱"] || symbol).trim();
+          const industryCode = String(row["產業別"] ?? "").trim();
+          if (!/^\d{4}$/.test(symbol) || !name) return null;
+          const sector = industryCodeMap[industryCode] ?? (industryCode || "未分類");
+          const instrument: StockInstrument = {
+            symbol,
+            market: "TW",
+            name,
+            sector,
+            currency: "TWD",
+          };
+          return instrument;
+        })
+        .filter((item): item is StockInstrument => item !== null);
+      if (normalized.length > 0) {
+        twseInstrumentCache = normalized;
+        return normalized;
+      }
+    }
+  } catch {
+    // Keep the frontend resilient when TWSE is temporarily unavailable.
+  }
+  twseInstrumentCache = uniqueInstruments(seedInstruments);
+  return twseInstrumentCache;
+}
+
+function uniqueInstruments(items: StockInstrument[]): StockInstrument[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.symbol)) return false;
+    seen.add(item.symbol);
+    return true;
+  });
+}
 
 const linkage = {
   NASDAQ: 0.42,
@@ -344,15 +473,32 @@ function factor(name: string, category: string, score: number, weight: number, d
   };
 }
 
-function signal(symbol: string, name: string, index: number): PredictionSignal {
-  const base = 0.68 - index * 0.04;
-  const riskTotal = 0.3 + index * 0.05;
+function symbolSeed(symbol: string): number {
+  return symbol.split("").reduce((sum, char, index) => sum + char.charCodeAt(0) * (index + 3), 0);
+}
+
+function bounded(seed: number, min: number, max: number, salt = 0): number {
+  const raw = Math.abs(Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453);
+  return min + (raw - Math.floor(raw)) * (max - min);
+}
+
+function signal(symbol: string, name: string, index: number, sector: string | null = null): PredictionSignal {
+  const seed = symbolSeed(symbol);
+  const base = bounded(seed, 0.53, 0.72, 1);
+  const riskTotal = bounded(seed, 0.24, 0.58, 2);
+  const fundamentalScore = Math.round(bounded(seed, 48, 82, 3));
+  const chipScore = Math.round(bounded(seed, 42, 80, 4));
+  const technicalScore = Math.round(bounded(seed, 45, 84, 5));
+  const usMarketScore = Math.round(bounded(seed, sector?.includes("半導體") ? 58 : 38, sector?.includes("半導體") ? 86 : 70, 6));
+  const newsScore = Math.round(bounded(seed, 45, 72, 7));
+  const bullishScore = Math.round(0.2 * fundamentalScore + 0.18 * chipScore + 0.17 * technicalScore + 0.15 * usMarketScore + 0.12 * newsScore + 16);
+  const riskAdjustedScore = Math.round(Math.max(35, Math.min(78, bullishScore - riskTotal * 35)));
   const factorScores = [
-    factor("FundamentalScore", "fundamental", 72 - index * 3, 0.2),
-    factor("ChipScore", "chip", 68 - index * 2, 0.18),
-    factor("TechnicalScore", "technical", 74 - index * 2, 0.17),
-    factor("USMarketScore", "us_market", 78 - index * 4, 0.15),
-    factor("NewsScore", "news", 64 - index * 2, 0.12),
+    factor("FundamentalScore", "fundamental", fundamentalScore, 0.2),
+    factor("ChipScore", "chip", chipScore, 0.18),
+    factor("TechnicalScore", "technical", technicalScore, 0.17),
+    factor("USMarketScore", "us-linkage", usMarketScore, 0.15),
+    factor("NewsScore", "news", newsScore, 0.12),
     factor("TargetPriceScore", "target_price", 50, 0.05, "neutral"),
   ];
 
@@ -365,43 +511,43 @@ function signal(symbol: string, name: string, index: number): PredictionSignal {
     probability_up_1d: base,
     probability_up_5d: base - 0.03,
     probability_up_20d: base - 0.06,
-    confidence: 0.72 - index * 0.03,
-    composite_score: 0.58 - index * 0.04,
-    bullish_score: 70 - index * 4,
-    risk_adjusted_score: 58 - index * 5,
+    confidence: bounded(seed, 0.58, 0.78, 8),
+    composite_score: bullishScore / 100,
+    bullish_score: bullishScore,
+    risk_adjusted_score: riskAdjustedScore,
     explanation: {
-      top_positive_factors: ["SOX and AI supply-chain linkage are constructive", "Technical trend remains above medium averages"],
-      top_negative_factors: ["FX volatility can pressure exporters", "Valuation sensitivity remains elevated"],
+      top_positive_factors: [`${sector ?? "產業"} 因子資料已納入觀察`, "Technical trend remains above medium averages"],
+      top_negative_factors: ["正式財報/法人資料仍待後端排程寫入", "Valuation sensitivity remains elevated"],
       top_risk_factors: ["VIX change", "Event risk", "Liquidity and volatility watch"],
       component_scores: {
-        FundamentalScore: 72 - index * 3,
-        ChipScore: 68 - index * 2,
-        TechnicalScore: 74 - index * 2,
-        USMarketScore: 78 - index * 4,
-        NewsScore: 64 - index * 2,
+        FundamentalScore: fundamentalScore,
+        ChipScore: chipScore,
+        TechnicalScore: technicalScore,
+        USMarketScore: usMarketScore,
+        NewsScore: newsScore,
         TargetPriceScore: 50,
       },
     },
     risk_score: {
       total: riskTotal,
-      volatility: 0.32 + index * 0.03,
-      liquidity: 0.2 + index * 0.02,
-      concentration: 0.28 + index * 0.04,
-      event: 0.36 + index * 0.03,
-      explanation: "Mock risk score combining volatility, liquidity, concentration, and event risk.",
+      volatility: bounded(seed, 0.22, 0.62, 9),
+      liquidity: bounded(seed, 0.16, 0.48, 10),
+      concentration: bounded(seed, 0.2, 0.56, 11),
+      event: bounded(seed, 0.18, 0.55, 12),
+      explanation: "MVP fallback risk score combining volatility, liquidity, concentration, and event risk.",
     },
     technicals: {
-      ma_5: 612 + index * 12,
-      ma_20: 598 + index * 10,
-      ma_60: 560 + index * 8,
-      rsi_14: 61 - index * 2,
-      k_9: 58 - index,
-      d_9: 54 - index,
-      macd: 2.4 - index * 0.2,
-      macd_signal: 1.8 - index * 0.15,
-      macd_histogram: 0.6 - index * 0.05,
-      obv: 1260000 - index * 80000,
-      volume_price_divergence: index === 2 ? -0.3 : 0.2,
+      ma_5: Math.round(bounded(seed, 18, 1200, 13)),
+      ma_20: Math.round(bounded(seed, 18, 1180, 14)),
+      ma_60: Math.round(bounded(seed, 16, 1120, 15)),
+      rsi_14: Math.round(bounded(seed, 42, 68, 16)),
+      k_9: Math.round(bounded(seed, 38, 72, 17)),
+      d_9: Math.round(bounded(seed, 36, 70, 18)),
+      macd: Number(bounded(seed, -1.2, 3.2, 19).toFixed(2)),
+      macd_signal: Number(bounded(seed, -1.1, 2.8, 20).toFixed(2)),
+      macd_histogram: Number(bounded(seed, -0.6, 0.9, 21).toFixed(2)),
+      obv: Math.round(bounded(seed, 120000, 2600000, 22)),
+      volume_price_divergence: Number(bounded(seed, -0.35, 0.35, 23).toFixed(2)),
     },
     factor_scores: factorScores,
     positive_drivers: factorScores.filter((item) => item.direction === "positive").slice(0, 3),
@@ -410,7 +556,10 @@ function signal(symbol: string, name: string, index: number): PredictionSignal {
   };
 }
 
-const signals = instruments.map((item, index) => signal(item.symbol, item.name, index));
+async function getFallbackSignals(limit?: number): Promise<PredictionSignal[]> {
+  const stocks = await getFallbackInstruments();
+  return stocks.slice(0, limit ?? stocks.length).map((item, index) => signal(item.symbol, item.name, index, item.sector));
+}
 
 function mockNews(symbol: string): PredictionSignal["news"] {
   return [
@@ -433,13 +582,18 @@ function mockNews(symbol: string): PredictionSignal["news"] {
   ];
 }
 
-function findSignal(symbol: string): PredictionSignal {
-  return signals.find((item) => item.symbol === symbol.toUpperCase()) ?? signals[0];
+async function findSignal(symbol: string): Promise<PredictionSignal> {
+  const stocks = await getFallbackInstruments();
+  const normalized = symbol.toUpperCase();
+  const instrument = stocks.find((item) => item.symbol === normalized) ?? stocks[0];
+  const index = Math.max(0, stocks.findIndex((item) => item.symbol === instrument.symbol));
+  return signal(instrument.symbol, instrument.name, index, instrument.sector);
 }
 
-function stockDetail(symbol: string): StockDetailResponse {
-  const selected = findSignal(symbol);
-  const instrument = instruments.find((item) => item.symbol === selected.symbol) ?? instruments[0];
+async function stockDetail(symbol: string): Promise<StockDetailResponse> {
+  const selected = await findSignal(symbol);
+  const stocks = await getFallbackInstruments();
+  const instrument = stocks.find((item) => item.symbol === selected.symbol) ?? stocks[0];
   return {
     disclaimer,
     instrument,
@@ -453,8 +607,8 @@ function stockDetail(symbol: string): StockDetailResponse {
   };
 }
 
-function technicalResponse(symbol: string): StockTechnicalResponse {
-  const selected = findSignal(symbol);
+async function technicalResponse(symbol: string): Promise<StockTechnicalResponse> {
+  const selected = await findSignal(symbol);
   return {
     disclaimer,
     stock_id: selected.symbol,
@@ -495,8 +649,8 @@ function technicalResponse(symbol: string): StockTechnicalResponse {
   };
 }
 
-function institutionalResponse(symbol: string): StockInstitutionalResponse {
-  const selected = findSignal(symbol);
+async function institutionalResponse(symbol: string): Promise<StockInstitutionalResponse> {
+  const selected = await findSignal(symbol);
   return {
     disclaimer,
     stock_id: selected.symbol,
@@ -527,7 +681,8 @@ function institutionalResponse(symbol: string): StockInstitutionalResponse {
   };
 }
 
-function usMarketRadar(): USMarketRadarResponse {
+async function usMarketRadar(): Promise<USMarketRadarResponse> {
+  const signals = await getFallbackSignals(80);
   return {
     disclaimer,
     linkage,
@@ -543,19 +698,22 @@ function usMarketRadar(): USMarketRadarResponse {
   };
 }
 
-function mockResponse(path: string): unknown {
+async function mockResponse(path: string): Promise<unknown> {
+  const stocks = await getFallbackInstruments();
+  const signals = await getFallbackSignals();
+  const compactSignals = signals.slice(0, 80);
   if (path === "/api/market/summary") {
     return {
       session_date: "2026-06-02",
       tw_status: "盤後資料就緒",
       us_premarket_status: "美股開盤前觀察",
       disclaimer,
-      instruments,
+      instruments: stocks,
       us_linkage: linkage,
     } satisfies MarketSummary;
   }
   if (path === "/api/stocks") {
-    return { disclaimer, stocks: instruments } satisfies StockListResponse;
+    return { disclaimer, stocks } satisfies StockListResponse;
   }
   if (path === "/api/stocks/ranking" || path === "/api/rankings/top-probability") {
     return { disclaimer, signals } satisfies RankingResponse;
@@ -563,7 +721,7 @@ function mockResponse(path: string): unknown {
   if (path === "/api/rankings/institutional-buying") {
     return {
       disclaimer,
-      ranking: signals.map((item) => ({
+      ranking: compactSignals.map((item) => ({
         stock_id: item.symbol,
         stock_name: item.name,
         score: item.explanation?.component_scores?.ChipScore ?? 65,
@@ -576,7 +734,7 @@ function mockResponse(path: string): unknown {
   if (path === "/api/rankings/macd-golden-cross") {
     return {
       disclaimer,
-      ranking: signals.map((item) => ({
+      ranking: compactSignals.map((item) => ({
         stock_id: item.symbol,
         stock_name: item.name,
         macd_golden_cross: true,
@@ -590,7 +748,7 @@ function mockResponse(path: string): unknown {
   if (path === "/api/rankings/volume-price-divergence") {
     return {
       disclaimer,
-      ranking: signals.map((item) => ({
+      ranking: compactSignals.map((item) => ({
         stock_id: item.symbol,
         stock_name: item.name,
         state: "price up + volume up",
@@ -607,7 +765,7 @@ function mockResponse(path: string): unknown {
   if (path === "/api/risk/high-risk") {
     return {
       disclaimer,
-      signals: signals
+      signals: compactSignals
         .slice()
         .sort((a, b) => b.risk_score.total - a.risk_score.total)
         .map((item) => ({
@@ -624,7 +782,7 @@ function mockResponse(path: string): unknown {
   if (stockMatch) {
     const symbol = stockMatch[1];
     const section = stockMatch[2];
-    const selected = findSignal(symbol);
+    const selected = await findSignal(symbol);
     if (section === "scores") {
       return {
         disclaimer,

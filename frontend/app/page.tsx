@@ -25,6 +25,7 @@ export default async function Home() {
     fetchHighRisk(),
   ]);
   const signals = ranking.signals;
+  const previewSignals = signals.slice(0, 12);
   const selected = detail.signal;
   const metrics = buildStockMetrics(selected);
   const topRisk = highRisk.signals[0];
@@ -108,7 +109,7 @@ export default async function Home() {
             </div>
             <a className="text-link" href="/ranking">完整排名</a>
           </div>
-          <StockRankingTable signals={signals} />
+          <StockRankingTable signals={previewSignals} />
         </article>
 
         <article className="panel span-2">
