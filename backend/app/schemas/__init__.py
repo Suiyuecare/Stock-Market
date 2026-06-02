@@ -63,6 +63,11 @@ from app.schemas.model_monitoring import (
     ModelMonitoringResult,
     ModelMonitoringThresholds,
 )
+from app.schemas.objective_score import (
+    ObjectiveScoreConfig,
+    ObjectiveScoreRequest,
+    ObjectiveScoreResult,
+)
 from app.schemas.portfolio_risk import (
     PortfolioAllocation,
     PortfolioCandidate,
@@ -152,6 +157,9 @@ __all__ = [
     "ModelMonitoringInput",
     "ModelMonitoringResult",
     "ModelMonitoringThresholds",
+    "ObjectiveScoreConfig",
+    "ObjectiveScoreRequest",
+    "ObjectiveScoreResult",
     "NewsEvent",
     "NewsParseRequest",
     "NewsParseResponse",

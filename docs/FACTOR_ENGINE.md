@@ -139,6 +139,40 @@ Each validation run should report:
 - results by market regime, industry, and liquidity bucket
 - warnings when the validation design is too weak to trust
 
+### 0.5 Objective Score
+
+Strategy selection should not optimize raw win rate alone. A tiny sample with a high observed win rate can be less reliable than a large sample with a lower but statistically stable win rate.
+
+The MVP uses a Wilson lower-bound win rate plus return, profit factor, calibration, stability, and drawdown terms:
+
+```text
+AdjustedWinScore =
+  WilsonLowerBoundWinRate
++ AverageNetReturnScore
++ ProfitFactorScore
+- MaxDrawdownPenalty
+- TurnoverPenalty
+
+ObjectiveScore =
+  0.40 * WinRateLowerBound
++ 0.20 * AverageNetReturnScore
++ 0.15 * ProfitFactorScore
++ 0.10 * CalibrationScore
++ 0.10 * StabilityScore
+- 0.05 * MaxDrawdownPenalty
+```
+
+Components:
+
+- `WinRateLowerBound`: Wilson confidence lower bound, used to discount small samples
+- `AverageNetReturnScore`: average trade net return after costs
+- `ProfitFactorScore`: gross profits divided by gross losses
+- `CalibrationScore`: whether predicted probabilities match realized outcomes
+- `StabilityScore`: whether performance is stable across years, industries, liquidity buckets, and market regimes
+- `MaxDrawdownPenalty`: larger drawdowns reduce the objective score
+
+The app should rank strategy configurations by `ObjectiveScore` and keep raw win rate as supporting context.
+
 ### 1. FundamentalScore
 
 Inputs:

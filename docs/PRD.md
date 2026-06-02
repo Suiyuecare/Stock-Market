@@ -130,6 +130,12 @@ Model validation must use walk-forward splits with an embargo gap between train,
 
 Validation must reject or warn on weak results when a fold has fewer than 100 trades or the full validation run has fewer than 500 test trades. Results should be broken down by market regime, industry, and liquidity bucket so the system can detect signals that only work in narrow conditions.
 
+### Strategy Objective Score
+
+The system should compare strategy configurations with a confidence-aware objective score rather than raw win rate. The main win-rate component is the Wilson lower-bound win rate, which penalizes small samples that look too good by chance.
+
+The MVP objective combines lower-bound win rate, average net return, profit factor, calibration quality, stability across validation segments, and a max-drawdown penalty. Raw win rate should remain visible, but it should not be the primary ranking metric.
+
 ### Dashboard
 
 - Market status cards
