@@ -1,0 +1,52 @@
+# TW-US Stock Prediction App
+
+台股與美股連動預測系統。第一版先做 Web App + API + 資料庫 + 排程任務，不先做手機 App。
+
+## MVP 範圍
+
+- 每日盤後台股資料整理
+- 美股開盤前連動訊號
+- 股票 watchlist 與預測摘要
+- 新聞/事件 LLM parser 介面
+- 背景排程任務骨架
+- 可用 Docker Compose 一鍵啟動
+
+## 技術架構
+
+- Frontend: Next.js / React
+- Backend API: Python FastAPI
+- Database: PostgreSQL
+- Cache / Queue: Redis
+- Background Jobs: Celery-ready worker + APScheduler
+- AI News Parser: provider interface, default OpenAI-compatible
+- Charts: lightweight-charts
+- Testing: pytest
+
+## 本機啟動
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+服務：
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API docs: http://localhost:8000/docs
+
+## 第一階段資料流
+
+1. 盤後任務拉取/匯入台股 OHLCV 與基本指標
+2. 美股開盤前任務整理美股期貨、ADR、科技股與匯率訊號
+3. 新聞 parser 將重大事件轉成結構化 impact signals
+4. API 輸出 watchlist、signal summary、prediction score
+5. Frontend 顯示市場概況、預測分數與圖表
+
+## 後續里程碑
+
+- 接入合法行情資料源
+- 加入模型訓練與回測 pipeline
+- 加入登入與多使用者 watchlist
+- 加入部署環境與 CI
+- 評估手機 App 或 PWA

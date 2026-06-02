@@ -1,0 +1,240 @@
+:root {
+  --bg: #f5f7f8;
+  --panel: #fff;
+  --ink: #172026;
+  --muted: #66757d;
+  --line: #dce6e9;
+  --accent: #177e89;
+  --gold: #d7a928;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, "Noto Sans TC", "PingFang TC", sans-serif;
+}
+
+.workspace {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+
+.sidebar {
+  padding: 24px 18px;
+  background: #14252b;
+  color: #fff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 34px;
+}
+
+.brand span {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #172026;
+  font-weight: 800;
+}
+
+.brand small {
+  display: block;
+  margin-top: 2px;
+  color: #bdd0d5;
+}
+
+nav {
+  display: grid;
+  gap: 8px;
+}
+
+nav a {
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #d8e5e8;
+  text-decoration: none;
+}
+
+nav a.active,
+nav a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.content {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.topbar,
+.panel-heading,
+.signal,
+.job-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.16rem;
+}
+
+.status {
+  border: 1px solid rgba(23, 126, 137, 0.28);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.metric-grid,
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.grid {
+  grid-template-columns: 1.35fr 1fr;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.metric,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(20, 37, 43, 0.06);
+}
+
+.metric {
+  padding: 18px;
+}
+
+.metric span,
+.metric small,
+.signal span,
+.signal small {
+  color: var(--muted);
+}
+
+.metric strong {
+  display: block;
+  margin: 10px 0 6px;
+  font-size: 1.35rem;
+}
+
+.panel {
+  padding: 18px;
+}
+
+.chart {
+  width: 100%;
+  min-height: 260px;
+  margin-top: 16px;
+}
+
+.signal-list,
+.job-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.signal,
+.job-list li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfc;
+}
+
+.signal div {
+  display: grid;
+  gap: 3px;
+}
+
+.signal b {
+  color: var(--accent);
+  font-size: 1.7rem;
+}
+
+table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.job-list {
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 920px) {
+  .workspace,
+  .metric-grid,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: span 1;
+  }
+}
