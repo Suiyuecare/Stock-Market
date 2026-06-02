@@ -175,6 +175,33 @@ Examples:
 - high probability and poor liquidity: excluded
 - US linkage positive but Taiwan chip score weak: low-confidence watchlist
 
+### 10. PortfolioRiskEngine
+
+Inputs:
+
+- selected research signals
+- proposed simulated weights
+- sector and electronics exposure tags
+- current drawdown
+- portfolio volatility
+- consecutive losses
+- VIX level
+- US futures movement
+
+Controls:
+
+- maximum single-stock weight
+- maximum sector weight
+- maximum holding count
+- maximum new signals per day
+- max drawdown deleveraging
+- max volatility deleveraging
+- consecutive-loss deleveraging
+- high-VIX exposure reduction
+- weak US futures electronics exposure reduction
+
+The portfolio engine is for simulated research exposure, not order placement. It can reduce a broad list of high-scoring names into a smaller watchlist that respects concentration and market-risk limits.
+
 ## MVP Formula
 
 All component scores should be normalized to `0` to `100` before aggregation.

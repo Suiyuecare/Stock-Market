@@ -35,6 +35,7 @@ flowchart LR
 - Probability Calibration under `backend/app/services/probability_calibration.py`
 - Market Regime Engine under `backend/app/services/market_regime_engine.py`
 - Signal Selection Layer under `backend/app/services/signal_selection_layer.py`
+- Portfolio Risk Engine under `backend/app/services/portfolio_risk_engine.py`
 - Provider interfaces under `backend/app/services/data_providers/`
 - pytest contract tests
 
@@ -150,6 +151,23 @@ Selection checks:
 - factor conflict checks such as positive US linkage but weak Taiwan institutional/chip score
 
 The layer intentionally supports a no-signal decision. The system should prefer fewer, higher-confidence research signals over broad daily lists.
+
+### Portfolio Risk Engine
+
+The portfolio risk engine turns selected research signals into a simulated risk-aware watchlist. It does not place orders or provide personalized portfolio advice.
+
+MVP controls:
+
+- single-stock maximum weight
+- sector maximum weight
+- maximum holding count
+- maximum new signals per day
+- drawdown and volatility deleveraging
+- consecutive-loss deleveraging
+- high-VIX exposure reduction
+- weak US futures electronics exposure reduction
+
+Example: if 30 high-scoring names are all in AI server supply chains, the engine caps sector exposure and keeps only the highest-ranked subset instead of allowing the watchlist to become one concentrated theme.
 
 ## Runtime
 

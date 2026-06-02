@@ -37,6 +37,13 @@ from app.schemas.feature_store import (
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
 from app.schemas.label import LabelEngineRequest, LabelResult
 from app.schemas.market_regime import MarketRegimeInput, MarketRegimeResult
+from app.schemas.portfolio_risk import (
+    PortfolioAllocation,
+    PortfolioCandidate,
+    PortfolioRiskConfig,
+    PortfolioRiskResult,
+    PortfolioRiskState,
+)
 from app.schemas.signal_selection import (
     SignalSelectionConfig,
     SignalSelectionInput,
@@ -77,6 +84,11 @@ __all__ = [
     "NewsParseRequest",
     "NewsParseResponse",
     "PredictionSignal",
+    "PortfolioAllocation",
+    "PortfolioCandidate",
+    "PortfolioRiskConfig",
+    "PortfolioRiskResult",
+    "PortfolioRiskState",
     "RankingResponse",
     "RiskScore",
     "SignalDataAvailabilityCheck",
