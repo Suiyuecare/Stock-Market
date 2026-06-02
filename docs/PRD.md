@@ -31,6 +31,22 @@ Deliver a web dashboard that summarizes:
 
 ## MVP Features
 
+### Target Variables
+
+The model should not optimize a single generic up/down label. The MVP supports 1-day, 5-day, and 20-day targets.
+
+Primary model target:
+
+- `y_rel_5d`: future 5-day net return is greater than the benchmark 5-day return plus transaction costs and a minimum excess-return hurdle.
+
+Supporting labels:
+
+- `y_abs_1d`, `y_abs_5d`, `y_abs_20d`
+- `y_rel_1d`, `y_rel_5d`, `y_rel_20d`
+- `y_tp_sl_1d`, `y_tp_sl_5d`, `y_tp_sl_20d`
+
+This target design avoids rewarding stocks that only rise because the whole market is strong.
+
 ### Dashboard
 
 - Market status cards

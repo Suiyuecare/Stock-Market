@@ -66,6 +66,11 @@ from app.schemas.signal_quality import (
     SignalQualityResult,
     SignalQualityThresholds,
 )
+from app.schemas.target_variables import (
+    TargetVariableConfig,
+    TargetVariableRequest,
+    TargetVariableResult,
+)
 from app.schemas.us_market import (
     TaiwanStockProfile,
     USMarketScoreRequest,
@@ -125,6 +130,9 @@ __all__ = [
     "SignalQualityThresholds",
     "StockDetailResponse",
     "TechnicalIndicators",
+    "TargetVariableConfig",
+    "TargetVariableRequest",
+    "TargetVariableResult",
     "TimeSeriesSplitWindow",
     "TaiwanStockProfile",
     "USMarketScoreRequest",

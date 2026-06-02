@@ -10,6 +10,33 @@ Scores must be used as research signals and educational analysis only. The syste
 
 ## Main Modules
 
+### 0. Target Variables
+
+Target variables define what the model is trying to predict. The MVP supports three horizons:
+
+- `up_1d`
+- `up_5d`
+- `up_20d`
+
+Formal timing:
+
+```text
+signal_time = t day after market close
+entry_price = t+1 open or t+1 VWAP
+exit_price = t+h close
+net_return = exit_price / entry_price - 1 - fee - transaction_tax - slippage
+```
+
+Target definitions:
+
+```text
+y_abs_h = 1 if net_return_h > 0 else 0
+y_rel_h = 1 if net_return_h > benchmark_return_h + cost_buffer + minimum_excess_return else 0
+y_tp_sl_h = 1 if the path touches take-profit before stop-loss else 0
+```
+
+The primary MVP model target is `y_rel_5d`, because it asks whether a stock can outperform the Taiwan weighted index after costs and a minimum excess-return hurdle.
+
 ### 1. FundamentalScore
 
 Inputs:
