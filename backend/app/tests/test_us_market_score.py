@@ -42,6 +42,53 @@ def test_aapl_weak_guidance_hurts_apple_supply_chain_stocks() -> None:
     assert "US news sentiment is negative" in payload["negative_factors"]
 
 
+def test_ai_server_stock_uses_cloud_and_gpu_leaders() -> None:
+    linkage = {
+        "NASDAQ": 0.15,
+        "NVDA": 0.75,
+        "AMD": 0.45,
+        "AVGO": 0.4,
+        "MSFT": 0.35,
+        "META": 0.3,
+        "GOOGL": 0.28,
+        "AMZN": 0.25,
+        "VIX": -0.08,
+    }
+    profile = {"stock_id": "6669", "industry": "AI Server", "supply_chain_tags": ["AI-server", "cloud"]}
+    payload = calculate_us_market_score(linkage, profile)
+
+    assert payload["score"] > 60
+    assert payload["us_supply_chain_stock_score"] > 65
+    assert "NVDA strength supports AI/semiconductor supply chain" in payload["positive_factors"]
+
+
+def test_memory_stock_uses_mu_and_memory_news() -> None:
+    positive = calculate_us_market_score(
+        {"MU": 0.65, "MEMORY_NEWS_SENTIMENT": 0.45, "SOX": 0.25, "NASDAQ": 0.1, "VIX": -0.05},
+        {"stock_id": "2408", "industry": "記憶體", "supply_chain_tags": ["memory", "DRAM"]},
+    )
+    negative = calculate_us_market_score(
+        {"MU": -0.55, "MEMORY_NEWS_SENTIMENT": -0.45, "SOX": -0.2, "NASDAQ": -0.05, "VIX": 0.1},
+        {"stock_id": "2408", "industry": "記憶體", "supply_chain_tags": ["memory", "DRAM"]},
+    )
+
+    assert positive["score"] > negative["score"]
+    assert positive["us_semiconductor_ai_score"] > 55
+    assert "MU strength supports memory supply chain" in positive["positive_factors"]
+    assert "memory-related US news sentiment is negative" in negative["negative_factors"]
+
+
+def test_financial_stock_uses_yields_sp500_and_vix() -> None:
+    payload = calculate_us_market_score(
+        {"S&P500": -0.25, "US10Y": 0.55, "VIX": 0.45, "NASDAQ": -0.1},
+        {"stock_id": "2882", "industry": "金融", "supply_chain_tags": ["financial", "bank"]},
+    )
+
+    assert payload["score"] < 50
+    assert payload["us_macro_liquidity_score"] < 45
+    assert "US yields or volatility increase financial linkage risk" in payload["risk_factors"]
+
+
 def test_vix_spike_increases_risk_factors() -> None:
     payload = calculate_us_market_score(
         {"NASDAQ": -0.15, "S&P500": -0.2, "SOX": -0.25, "VIX": 0.65},

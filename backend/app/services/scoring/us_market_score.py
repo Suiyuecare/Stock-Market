@@ -189,8 +189,14 @@ def calculate_us_market_score(
         positives.append("SOX strength supports semiconductor linkage")
     if _ticker(linkage, "NVDA") > 0.15 and _has_any(tags, ["ai", "ai-server", "semiconductor", "半導體"]):
         positives.append("NVDA strength supports AI/semiconductor supply chain")
+    if _ticker(linkage, "MU") > 0.15 and _has_any(tags, ["memory", "dram", "nand", "記憶體"]):
+        positives.append("MU strength supports memory supply chain")
+    if _ticker(linkage, "MEMORY_NEWS_SENTIMENT") < -0.1 and _has_any(tags, ["memory", "dram", "nand", "記憶體"]):
+        negatives.append("memory-related US news sentiment is negative")
     if _ticker(linkage, "AAPL", "AAPL_GUIDANCE") < -0.1 and _has_any(tags, ["apple", "iphone"]):
         negatives.append("AAPL weakness pressures Apple supply chain")
+    if _has_any(tags, ["financial", "bank", "insurance", "金融"]) and (_ticker(linkage, "US_YIELDS", "US10Y") > 0.15 or _ticker(linkage, "VIX") > 0.15):
+        risks.append("US yields or volatility increase financial linkage risk")
     if _ticker(linkage, "TSM_ADR") > 0.1 and _has_any(tags, ["semiconductor", "半導體", "foundry"]):
         positives.append("TSM ADR strength supports Taiwan semiconductor sentiment")
     if _ticker(linkage, "VIX") > 0.15:
