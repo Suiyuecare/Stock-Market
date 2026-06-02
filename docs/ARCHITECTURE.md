@@ -71,6 +71,14 @@ All scoring endpoints return explainable research payloads and the standard disc
 - `us-premarket-linkage`: before US open, computes US linkage signals
 - `news-event-parser`: normalizes news into structured impact signals
 
+Implemented MVP job behavior uses mock providers first:
+
+- `daily_after_market_job` updates mock Taiwan prices, institutional/chip data, technical indicators, and final factor score artifacts.
+- `pre_open_us_market_job` updates mock US market linkage data, calculates per-stock USMarketScore, and generates a pre-open radar ranking.
+- `news_ingestion_job` ingests mock provider news, classifies events through the parser interface, and calculates NewsScore payloads.
+
+The jobs currently return write-ready artifacts instead of persisting to PostgreSQL directly. The next provider/database phase should replace the mock provider with licensed data sources and write these artifacts into the schema tables.
+
 ## Runtime
 
 Local development is Docker Compose:

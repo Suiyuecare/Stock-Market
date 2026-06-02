@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Dict, List
 
+from app.services.data_providers.base import MarketDataProvider, NewsDataProvider, PriceDataProvider
+
 
 TW_INSTRUMENTS = [
     {"symbol": "2330", "market": "TW", "name": "台積電", "sector": "半導體", "currency": "TWD", "supply_chain_tags": ["semiconductor", "foundry", "AI", "TSM_ADR"]},
@@ -97,3 +99,19 @@ def get_mock_news(symbol: str) -> List[dict]:
             "related_symbols": [symbol],
         },
     ]
+
+
+class MockMarketDataProvider(MarketDataProvider, PriceDataProvider, NewsDataProvider):
+    """Deterministic provider used by jobs and tests before licensed feeds are connected."""
+
+    def get_instruments(self) -> List[Dict[str, object]]:
+        return list(TW_INSTRUMENTS)
+
+    def get_price_series(self, symbol: str) -> Dict[str, List[float]]:
+        return get_mock_price_series(symbol)
+
+    def get_news(self, symbol: str) -> List[Dict[str, object]]:
+        return get_mock_news(symbol)
+
+    def get_us_linkage(self) -> Dict[str, float]:
+        return get_mock_us_linkage()
