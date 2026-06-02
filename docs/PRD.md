@@ -1,0 +1,77 @@
+# Product Requirements Document
+
+## Product Summary
+
+TW-US Stock Prediction App helps investors review Taiwan stocks after market close and understand how US premarket conditions may affect the next Taiwan trading session.
+
+The product is not a trading bot. It is a decision-support system that explains signals, drivers, and confidence.
+
+## Target Users
+
+- Taiwan stock investors who track US market influence
+- Analysts who need a repeatable daily workflow
+- Portfolio managers who want signal summaries before the next session
+
+## MVP Goal
+
+Deliver a web dashboard that summarizes:
+
+- Taiwan after-close status
+- US premarket linkage status
+- Watchlist instruments
+- Prediction score and confidence
+- Signal drivers such as ADR, US tech sector, FX, futures, and news events
+
+## User Stories
+
+- As an investor, I want to see tomorrow's directional signal for my Taiwan watchlist.
+- As an analyst, I want to understand which factors pushed the score up or down.
+- As an operator, I want scheduled jobs to run after Taiwan close and before US open.
+- As a developer, I want API contracts and database tables ready for real data ingestion.
+
+## MVP Features
+
+### Dashboard
+
+- Market status cards
+- Watchlist table
+- Prediction signal cards
+- Signal trend chart
+- Job schedule overview
+
+### Backend API
+
+- Health check
+- Market summary
+- Prediction signal list
+- News parser endpoint
+
+### Data Foundation
+
+- Instrument master
+- Daily prices
+- Market sessions
+- News events
+- Prediction signals
+
+### Background Jobs
+
+- Taiwan after-close job
+- US premarket linkage job
+- News/event parsing job placeholder
+
+## Non-Goals
+
+- No mobile app in phase 1
+- No full intraday realtime system
+- No broker integration
+- No direct financial advice language
+- No unauthorized market-data scraping
+
+## Success Criteria
+
+- App runs locally through Docker Compose.
+- Backend tests pass.
+- Dashboard shows signals from API data.
+- Data model supports historical prices, news events, and prediction signals.
+- Architecture allows legal market-data providers to be plugged in later.

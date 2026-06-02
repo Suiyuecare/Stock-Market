@@ -22,6 +22,16 @@
 - Charts: lightweight-charts
 - Testing: pytest
 
+## Repo 文件
+
+- `AGENTS.md`: Codex repo-specific guidance
+- `docs/PRD.md`: product requirements
+- `docs/ARCHITECTURE.md`: system architecture
+- `docs/FACTOR_ENGINE.md`: factor and prediction scoring design
+- `docs/DATABASE_SCHEMA.md`: database schema notes
+- `docs/DATA_SOURCES.md`: data-source policy and candidates
+- `docs/CODEX_TASKS.md`: implementation task backlog
+
 ## 本機啟動
 
 ```bash
