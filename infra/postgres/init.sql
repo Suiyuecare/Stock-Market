@@ -60,6 +60,31 @@ create index if not exists ix_feature_store_signal_time
 create index if not exists ix_feature_store_feature_lookup
   on feature_store_daily (feature_group, feature_name, feature_version);
 
+create table if not exists labels_daily (
+  trade_date date not null,
+  stock_id text not null references stock_master(stock_id) on delete cascade,
+  label_name text not null,
+  label_value numeric(10, 4) not null,
+  horizon_days integer not null,
+  label_version text not null,
+  forward_return numeric(18, 8),
+  benchmark_return numeric(18, 8),
+  excess_return numeric(18, 8),
+  max_favorable_excursion numeric(18, 8),
+  max_adverse_excursion numeric(18, 8),
+  transaction_cost numeric(10, 6) not null default 0,
+  minimum_excess_return numeric(10, 6) not null default 0,
+  calculated_at timestamptz not null,
+  available_for_signal_at timestamptz not null,
+  primary key (trade_date, stock_id, label_name, horizon_days, label_version)
+);
+
+create index if not exists ix_labels_daily_lookup
+  on labels_daily (stock_id, trade_date, label_name, label_version);
+
+create index if not exists ix_labels_daily_signal_time
+  on labels_daily (stock_id, trade_date, available_for_signal_at);
+
 create table if not exists price_daily (
   trade_date date not null,
   stock_id text not null references stock_master(stock_id) on delete cascade,

@@ -4,6 +4,7 @@ from app.models.factor_score import FactorScoresDaily
 from app.models.feature_store import FeatureStoreDaily
 from app.models.fundamental import FundamentalMonthly, FundamentalQuarterly
 from app.models.institutional import InstitutionalTradingDaily, InstitutionalTradingDay
+from app.models.label import LabelsDaily
 from app.models.news import NewsEvent
 from app.models.price import PriceDaily
 from app.models.stock import StockMaster
@@ -20,6 +21,7 @@ __all__ = [
     "FundamentalQuarterly",
     "InstitutionalTradingDaily",
     "InstitutionalTradingDay",
+    "LabelsDaily",
     "NewsEvent",
     "PriceDaily",
     "StockMaster",

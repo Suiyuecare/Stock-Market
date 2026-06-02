@@ -23,6 +23,7 @@ from app.schemas.feature_store import (
     FeatureStoreQuery,
 )
 from app.schemas.institutional import ChipScoreRequest, ChipScoreResponse, InstitutionalTradingInput
+from app.schemas.label import LabelEngineRequest, LabelResult
 from app.schemas.us_market import (
     TaiwanStockProfile,
     USMarketScoreRequest,
@@ -42,6 +43,8 @@ __all__ = [
     "HealthResponse",
     "Instrument",
     "InstitutionalTradingInput",
+    "LabelEngineRequest",
+    "LabelResult",
     "MarketSummary",
     "NewsEvent",
     "NewsParseRequest",

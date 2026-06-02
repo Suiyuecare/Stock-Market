@@ -66,6 +66,35 @@ Primary key:
 
 - `(trade_date, stock_id, feature_group, feature_name, feature_version)`
 
+## `labels_daily`
+
+Point-in-time labels for training, backtesting, and signal evaluation.
+
+Labels should be generated after the required future window is complete and
+should never be used as features. The table supports multiple optimization
+targets, including absolute return, relative return versus benchmark, take
+profit / stop loss path labels, and risk-adjusted labels.
+
+- `trade_date`
+- `stock_id`
+- `label_name`
+- `label_value`
+- `horizon_days`
+- `label_version`
+- `forward_return`
+- `benchmark_return`
+- `excess_return`
+- `max_favorable_excursion`
+- `max_adverse_excursion`
+- `transaction_cost`
+- `minimum_excess_return`
+- `calculated_at`
+- `available_for_signal_at`
+
+Primary key:
+
+- `(trade_date, stock_id, label_name, horizon_days, label_version)`
+
 ## `stock_master`
 
 Taiwan stock master.

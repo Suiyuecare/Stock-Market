@@ -10,6 +10,7 @@ from app.models import (
     FactorScoresDaily,
     FeatureStoreDaily,
     InstitutionalTradingDaily,
+    LabelsDaily,
     NewsEvent,
     PriceDaily,
     StockMaster,
@@ -31,6 +32,7 @@ EXPECTED_TABLES = {
     "factor_scores_daily",
     "data_availability_ledger",
     "feature_store_daily",
+    "labels_daily",
 }
 
 
@@ -153,3 +155,44 @@ def test_feature_store_daily_preserves_point_in_time_feature_versions() -> None:
 
         assert len(usable_features) == 1
         assert usable_features[0].feature_version == "technical-v1"
+
+
+def test_labels_daily_can_store_multiple_label_targets() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        session.add(StockMaster(stock_id="2330", stock_name="台積電", market_type="TWSE", is_listed=True, is_otc=False))
+        session.add_all(
+            [
+                LabelsDaily(
+                    trade_date=date(2026, 6, 4),
+                    stock_id="2330",
+                    label_name="up_5d_absolute",
+                    label_value=1,
+                    horizon_days=5,
+                    label_version="label-v1",
+                    forward_return=0.04,
+                    calculated_at=datetime(2026, 6, 11, 15, 0, tzinfo=timezone.utc),
+                    available_for_signal_at=datetime(2026, 6, 11, 15, 5, tzinfo=timezone.utc),
+                ),
+                LabelsDaily(
+                    trade_date=date(2026, 6, 4),
+                    stock_id="2330",
+                    label_name="up_5d_relative",
+                    label_value=1,
+                    horizon_days=5,
+                    label_version="label-v1",
+                    forward_return=0.04,
+                    benchmark_return=0.01,
+                    excess_return=0.03,
+                    calculated_at=datetime(2026, 6, 11, 15, 0, tzinfo=timezone.utc),
+                    available_for_signal_at=datetime(2026, 6, 11, 15, 5, tzinfo=timezone.utc),
+                ),
+            ]
+        )
+        session.commit()
+
+        labels = session.scalars(select(LabelsDaily).where(LabelsDaily.stock_id == "2330")).all()
+
+        assert {label.label_name for label in labels} == {"up_5d_absolute", "up_5d_relative"}
