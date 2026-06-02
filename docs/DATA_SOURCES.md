@@ -202,6 +202,40 @@ Implementation notes:
 - For real-time quote display, confirm exchange/vendor redistribution terms before streaming data to users or storing tick data.
 - Product copy must continue to avoid direct investment instructions. Brokerage APIs are infrastructure capabilities, not recommendations.
 
+## App Operations APIs
+
+These providers support user notifications, transactional email, SMS, billing, authentication, project management, and production monitoring. They are infrastructure services, not market-data sources. Keep all secret keys in deployment environment variables and never expose server-side keys in the browser.
+
+| API / Source | Purpose | URL |
+| --- | --- | --- |
+| Firebase Cloud Messaging Docs | Push notification setup | `https://firebase.google.com/docs/cloud-messaging` |
+| Firebase Cloud Messaging REST Docs | FCM REST API reference | `https://firebase.google.com/docs/reference/fcm/rest` |
+| Firebase Cloud Messaging send endpoint | Send push notifications | `https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send` |
+| SendGrid API reference | Transactional email API | `https://www.twilio.com/docs/sendgrid/api-reference` |
+| SendGrid Mail Send endpoint | Send transactional email | `https://api.sendgrid.com/v3/mail/send` |
+| Twilio Messaging API | SMS and messaging API | `https://www.twilio.com/docs/messaging/api` |
+| Twilio SMS endpoint | Send SMS messages | `https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json` |
+| Stripe API docs | Billing and payments API | `https://docs.stripe.com/api` |
+| Stripe REST base | Stripe REST API base | `https://api.stripe.com/v1` |
+| Supabase Auth docs | Auth, Google OAuth, sessions, JWT, RLS integration | `https://supabase.com/docs/guides/auth` |
+| Supabase Data API docs | Auto-generated Postgres REST API | `https://supabase.com/docs/guides/api` |
+| Supabase Management API | Supabase project management API | `https://api.supabase.com/api/v1` |
+| Auth0 Management API | Alternative identity provider management API | `https://auth0.com/docs/api/management/v2` |
+| Auth0 tenant API base | Tenant-specific Auth0 Management API base | `https://{YOUR_DOMAIN}/api/v2/` |
+| Clerk Backend API | Alternative identity provider backend API | `https://clerk.com/docs/reference/backend-api` |
+| Clerk REST base | Clerk REST API base | `https://api.clerk.com/v1` |
+| Sentry API docs | Error monitoring and release operations API | `https://docs.sentry.io/api/` |
+| Sentry REST base | Sentry REST API base | `https://sentry.io/api/0` |
+
+Implementation notes:
+
+- Use Supabase Auth first for Google login unless product requirements later justify Auth0 or Clerk.
+- Enable RLS on user-owned tables exposed through Supabase Data API and never use Supabase service-role keys in frontend code.
+- Keep payment features behind a separate Stripe integration scope with webhook verification, idempotency, and server-only secret keys.
+- Notifications should be opt-in and user-scoped. Store notification preferences per user before sending push, email, or SMS alerts.
+- FCM, SendGrid, Twilio, Stripe, Supabase Management, Auth0, Clerk, and Sentry keys must be server-side environment variables only.
+- For the MVP, implement mock notification and billing adapters first so local development and tests do not call external services.
+
 ## Official Taiwan Data Sources
 
 Use official TWSE/MOPS/TPEx/TAIFEX/TDCC/CBC/DGBAS sources first for Taiwan equities, derivatives, ownership concentration, macro factors, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
