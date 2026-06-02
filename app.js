@@ -1,4 +1,4 @@
-const watchlist = [
+const initialWatchlist = [
   { symbol: "2330", name: "台積電", price: 1085, change: 1.88, target: 1180 },
   { symbol: "2454", name: "聯發科", price: 1340, change: -0.74, target: 1450 },
   { symbol: "AAPL", name: "Apple", price: 196.6, change: 0.42, target: 215 },
@@ -18,6 +18,113 @@ const formatMoney = new Intl.NumberFormat("zh-TW", {
   currency: "TWD",
   maximumFractionDigits: 0,
 });
+
+let watchlist = [...initialWatchlist];
+let supabaseClient = null;
+
+function setDbStatus(message, mode = "") {
+  const status = document.querySelector("#dbStatus");
+  status.textContent = message;
+  status.className = `status-pill ${mode}`.trim();
+}
+
+function toAppStock(row) {
+  return {
+    id: row.id,
+    symbol: row.symbol,
+    name: row.name,
+    price: Number(row.price),
+    change: Number(row.change_percent),
+    target: Number(row.target_price),
+  };
+}
+
+function toDbStock(stock) {
+  return {
+    symbol: stock.symbol,
+    name: stock.name,
+    price: stock.price,
+    change_percent: stock.change,
+    target_price: stock.target,
+  };
+}
+
+async function setupSupabase() {
+  try {
+    const response = await fetch("/api/config");
+    if (!response.ok) throw new Error("Config endpoint unavailable");
+
+    const config = await response.json();
+    if (!config.supabaseUrl || !config.supabasePublishableKey) {
+      throw new Error("Supabase env vars missing");
+    }
+
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    supabaseClient = createClient(config.supabaseUrl, config.supabasePublishableKey);
+    setDbStatus("Supabase 已連線", "connected");
+  } catch (error) {
+    supabaseClient = null;
+    setDbStatus("使用本機暫存，尚未連線 Supabase", "offline");
+  }
+}
+
+async function loadWatchlist() {
+  if (!supabaseClient) {
+    renderWatchlist();
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("watchlist_items")
+    .select("id,symbol,name,price,change_percent,target_price")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    setDbStatus("Supabase 資料表尚未建立，使用示範資料", "offline");
+    renderWatchlist();
+    return;
+  }
+
+  watchlist = data.length > 0 ? data.map(toAppStock) : [...initialWatchlist];
+  renderWatchlist();
+}
+
+async function saveStock(stock) {
+  if (!supabaseClient) return;
+
+  const { error } = await supabaseClient.from("watchlist_items").insert(toDbStock(stock));
+  if (error) setDbStatus("新增股票未同步，請確認 Supabase schema", "offline");
+}
+
+async function loadJournal() {
+  const journalText = document.querySelector("#journalText");
+  const saveStatus = document.querySelector("#saveStatus");
+
+  if (!supabaseClient) {
+    const savedJournal = window.localStorage.getItem("stock-market-journal");
+    if (savedJournal) {
+      journalText.value = savedJournal;
+      saveStatus.textContent = "已載入本機筆記";
+    }
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("journal_entries")
+    .select("content,updated_at")
+    .eq("entry_key", "daily")
+    .maybeSingle();
+
+  if (error) {
+    setDbStatus("投資筆記資料表尚未建立", "offline");
+    return;
+  }
+
+  if (data) {
+    journalText.value = data.content || "";
+    saveStatus.textContent = `已載入雲端筆記 ${new Date(data.updated_at).toLocaleTimeString("zh-TW")}`;
+  }
+}
 
 function renderWatchlist() {
   const tbody = document.querySelector("#watchlistTable");
@@ -77,44 +184,57 @@ function refreshDemoData() {
   renderWatchlist();
 }
 
-function addSymbol() {
+async function addSymbol() {
   const symbol = window.prompt("請輸入股票代號");
   if (!symbol) return;
 
   const name = window.prompt("請輸入股票名稱") || "自訂股票";
   const price = Number(window.prompt("請輸入目前價格") || 0);
   const target = Number(window.prompt("請輸入目標價格") || price);
-
-  watchlist.push({
+  const stock = {
     symbol: symbol.trim().toUpperCase(),
     name: name.trim(),
     price,
     change: 0,
     target,
-  });
+  };
 
+  watchlist.push(stock);
   renderWatchlist();
+  await saveStock(stock);
 }
 
-function setupJournal() {
+function setupJournalSave() {
   const journalText = document.querySelector("#journalText");
   const saveStatus = document.querySelector("#saveStatus");
-  const savedJournal = window.localStorage.getItem("stock-market-journal");
 
-  if (savedJournal) {
-    journalText.value = savedJournal;
-    saveStatus.textContent = "已載入上次筆記";
-  }
+  document.querySelector("#saveJournalButton").addEventListener("click", async () => {
+    if (!supabaseClient) {
+      window.localStorage.setItem("stock-market-journal", journalText.value);
+      saveStatus.textContent = `已儲存本機筆記 ${new Date().toLocaleTimeString("zh-TW")}`;
+      return;
+    }
 
-  document.querySelector("#saveJournalButton").addEventListener("click", () => {
-    window.localStorage.setItem("stock-market-journal", journalText.value);
-    saveStatus.textContent = `已儲存 ${new Date().toLocaleTimeString("zh-TW")}`;
+    const { error } = await supabaseClient.from("journal_entries").upsert({
+      entry_key: "daily",
+      content: journalText.value,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      saveStatus.textContent = "雲端儲存失敗，請確認 Supabase schema";
+      return;
+    }
+
+    saveStatus.textContent = `已儲存雲端筆記 ${new Date().toLocaleTimeString("zh-TW")}`;
   });
 }
 
 document.querySelector("#refreshButton").addEventListener("click", refreshDemoData);
 document.querySelector("#addSymbolButton").addEventListener("click", addSymbol);
 
-renderWatchlist();
 renderPortfolio();
-setupJournal();
+setupJournalSave();
+await setupSupabase();
+await loadWatchlist();
+await loadJournal();

@@ -148,6 +148,27 @@ h2 {
   gap: 16px;
 }
 
+.status-pill {
+  width: fit-content;
+  margin: -8px 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.status-pill.connected {
+  border-color: rgba(19, 138, 54, 0.3);
+  color: var(--gain);
+}
+
+.status-pill.offline {
+  border-color: rgba(201, 130, 0, 0.35);
+  color: var(--warn);
+}
+
 .summary-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 16px;
