@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
 const navItems = [
-  { href: "/", label: "總覽" },
-  { href: "/ranking", label: "台股排名" },
+  { href: "/", label: "入門總覽" },
+  { href: "/ranking", label: "選股清單" },
   { href: "/us-radar", label: "美股連動" },
-  { href: "/stocks/2330", label: "個股分析" },
-  { href: "/risk", label: "風險監控" },
-  { href: "/news", label: "新聞事件" },
+  { href: "/stocks/2330", label: "個股說明書" },
+  { href: "/risk", label: "風險提醒" },
+  { href: "/news", label: "依據來源" },
 ];
 
 export function AppShell({ active, children }: { active: string; children: ReactNode }) {
@@ -16,8 +16,8 @@ export function AppShell({ active, children }: { active: string; children: React
         <div className="brand">
           <span>TW</span>
           <div>
-            <strong>Stock Factors</strong>
-            <small>台美連動研究台</small>
+            <strong>歲悅 Stock</strong>
+            <small>新手選股研究台</small>
           </div>
         </div>
         <nav>

@@ -1,9 +1,13 @@
 import { AppShell } from "@/components/AppShell";
+import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { NewsTimeline } from "@/components/NewsTimeline";
+import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
+import { ReferencePanel } from "@/components/ReferencePanel";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
 import { StockRankingTable } from "@/components/StockRankingTable";
+import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
 import { buildStockMetrics, DISCLAIMER_TEXT, sanitizeRiskScore } from "@/lib/view-model";
@@ -27,10 +31,10 @@ export default async function Home() {
     <AppShell active="/">
       <header className="topbar">
         <div>
-          <p className="eyebrow">每日盤後 + 美股開盤前</p>
-          <h1>台美股因子分析儀表板</h1>
+          <p className="eyebrow">Finance Template Workspace</p>
+          <h1>台美股入門觀察工作台</h1>
         </div>
-        <div className="status">Research MVP</div>
+        <div className="status">今天先看懂，再決定是否放入觀察</div>
       </header>
 
       <div className="disclaimer">{DISCLAIMER_TEXT}</div>
@@ -39,18 +43,49 @@ export default async function Home() {
         <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />
         <ScoreCard label="美股連動狀態" value={summary.us_premarket_status} detail="開盤前觀察訊號" />
         <ScoreCard label="追蹤標的" value={`${stocks.stocks.length}`} detail="台股樣本池" />
-        <ScoreCard label="2330 上漲機率" value={`${metrics.probabilityUp1d}%`} detail="1D probability-style signal" tone="positive" />
+        <ScoreCard label="入門首選觀察" value={`${selected.symbol}`} detail={`${selected.name} · 5D ${metrics.probabilityUp5d}%`} tone="positive" />
       </section>
 
       <section className="grid">
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Signal Trend</p>
-              <h2>觀察訊號趨勢</h2>
+              <p className="eyebrow">Beginner Mode</p>
+              <h2>為什麼今天先看這檔</h2>
+            </div>
+            <a className="text-link" href={`/stocks/${selected.symbol}`}>看完整分析</a>
+          </div>
+          <BeginnerDecisionPanel signal={selected} />
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Target Range</p>
+              <h2>現價與上看區間</h2>
             </div>
           </div>
-          <TechnicalChart />
+          <TargetPriceRangePanel signal={selected} />
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">My Portfolio</p>
+              <h2>觀察配置示意</h2>
+            </div>
+          </div>
+          <PortfolioAllocationPanel signal={selected} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">References</p>
+              <h2>客觀依據與 Reference</h2>
+            </div>
+          </div>
+          <ReferencePanel signal={selected} />
         </article>
 
         <article className="panel span-2">
@@ -62,6 +97,16 @@ export default async function Home() {
             <a className="text-link" href="/ranking">完整排名</a>
           </div>
           <StockRankingTable signals={signals} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Signal Trend</p>
+              <h2>觀察訊號趨勢</h2>
+            </div>
+          </div>
+          <TechnicalChart />
         </article>
 
         <article className="panel">

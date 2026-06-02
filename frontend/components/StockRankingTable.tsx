@@ -8,16 +8,16 @@ export function StockRankingTable({ signals }: { signals: PredictionSignal[] }) 
         <thead>
           <tr>
             <th>股票</th>
-            <th>上漲機率 1D</th>
+            <th>5D 機率</th>
             <th>因子分數</th>
             <th>風險係數</th>
-            <th>觀察訊號</th>
+            <th>為什麼入選</th>
           </tr>
         </thead>
         <tbody>
           {signals.map((signal) => {
             const metrics = buildStockMetrics(signal);
-            const topDriver = signal.positive_drivers[0]?.name ?? "資料觀察中";
+            const topDriver = signal.positive_drivers[0]?.name ?? "多因子資料觀察中";
             return (
               <tr key={signal.symbol}>
                 <td>
@@ -27,7 +27,7 @@ export function StockRankingTable({ signals }: { signals: PredictionSignal[] }) 
                   </a>
                 </td>
                 <td>
-                  <b className={scoreTone(metrics.probabilityUp1d)}>{metrics.probabilityUp1d}%</b>
+                  <b className={scoreTone(metrics.probabilityUp5d)}>{metrics.probabilityUp5d}%</b>
                 </td>
                 <td>{metrics.bullishScore}</td>
                 <td>{metrics.riskScore}</td>

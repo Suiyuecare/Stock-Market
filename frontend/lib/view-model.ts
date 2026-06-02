@@ -17,6 +17,20 @@ export type StockDisplayMetrics = {
   targetPriceScore: number;
 };
 
+export type TargetPriceRange = {
+  currentPrice: number;
+  conservative: number;
+  base: number;
+  optimistic: number;
+  sourceLabel: string;
+};
+
+export type PortfolioAllocation = {
+  label: string;
+  percent: number;
+  reason: string;
+};
+
 export function toPercent(value: number): number {
   return Math.round(Math.max(0, Math.min(1, value)) * 100);
 }
@@ -94,4 +108,69 @@ export function formatRatio(value: number | boolean | null | undefined): string 
 export function formatScore(value: number | null | undefined): string {
   if (typeof value !== "number") return "觀察中";
   return `${Math.round(value)}`;
+}
+
+export function estimateCurrentPrice(signal: PredictionSignal): number {
+  const ma5 = signal.technicals.ma_5;
+  const ma20 = signal.technicals.ma_20;
+  const fallbackBySymbol: Record<string, number> = {
+    "2330": 960,
+    "2454": 1280,
+    "2317": 178,
+    "2308": 392,
+  };
+  return Math.round(ma5 ?? ma20 ?? fallbackBySymbol[signal.symbol] ?? 100);
+}
+
+export function buildTargetPriceRange(signal: PredictionSignal): TargetPriceRange {
+  const metrics = buildStockMetrics(signal);
+  const currentPrice = estimateCurrentPrice(signal);
+  const riskDiscount = Math.max(0, metrics.riskScore - 45) / 100;
+  const upsideBase = Math.max(0.02, (metrics.riskAdjustedScore - 45) / 250 - riskDiscount * 0.08);
+  const conservative = currentPrice * (1 + upsideBase * 0.45);
+  const base = currentPrice * (1 + upsideBase);
+  const optimistic = currentPrice * (1 + upsideBase * 1.55);
+
+  return {
+    currentPrice,
+    conservative: Math.round(conservative),
+    base: Math.round(base),
+    optimistic: Math.round(optimistic),
+    sourceLabel: "MVP 研究估算，待接法人共識目標價資料源",
+  };
+}
+
+export function buildPlainLanguageReasons(signal: PredictionSignal): string[] {
+  const metrics = buildStockMetrics(signal);
+  const reasons = [
+    `5 日上漲機率 ${metrics.probabilityUp5d}%，搭配風險調整分數 ${metrics.riskAdjustedScore}。`,
+    `目前最強因子是 ${sanitizeDisplayText(signal.positive_drivers[0]?.name ?? "多因子共振")}，不是只看單一指標。`,
+    `風險係數 ${metrics.riskScore}，需要同時觀察波動、流動性與事件風險。`,
+  ];
+  if (metrics.usMarketScore >= 55) reasons.push("美股連動分數偏正向，電子與半導體族群會特別受影響。");
+  if (metrics.chipScore >= 60) reasons.push("法人籌碼分數偏正向，代表資金面目前不是主要扣分來源。");
+  return reasons;
+}
+
+export function buildReferences(signal: PredictionSignal): string[] {
+  const refs = [
+    "因子分數：基本面、籌碼、技術、美股連動、新聞、風險分數",
+    `新聞來源：${signal.news.map((item) => item.source).filter(Boolean).slice(0, 2).join("、") || "資料觀察中"}`,
+    "技術依據：MA、RSI、KD、MACD、OBV、量價背離",
+    "風險依據：波動、流動性、事件風險、VIX/美股代理訊號",
+  ];
+  return refs.map(sanitizeDisplayText);
+}
+
+export function buildPortfolioAllocation(signal: PredictionSignal): PortfolioAllocation[] {
+  const metrics = buildStockMetrics(signal);
+  const core = Math.max(20, Math.min(50, Math.round(metrics.riskAdjustedScore * 0.55)));
+  const satellite = Math.max(10, Math.min(30, Math.round(metrics.usMarketScore * 0.25)));
+  const reserve = Math.max(20, 100 - core - satellite);
+  const normalizedCore = Math.max(10, 100 - satellite - reserve);
+  return [
+    { label: `${signal.symbol} 觀察部位`, percent: normalizedCore, reason: "依風險調整分數估算，僅作研究配置示意。" },
+    { label: "同族群衛星", percent: satellite, reason: "保留給同產業或美股連動較強的替代標的。" },
+    { label: "現金/等待", percent: reserve, reason: "保留風險緩衝，避免一次集中在單一訊號。" },
+  ];
 }

@@ -1,10 +1,14 @@
 import { AppShell } from "@/components/AppShell";
+import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { InstitutionalTradingPanel } from "@/components/InstitutionalTradingPanel";
 import { MACDPanel } from "@/components/MACDPanel";
 import { NewsTimeline } from "@/components/NewsTimeline";
+import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
+import { ReferencePanel } from "@/components/ReferencePanel";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
+import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
 import { VolumePriceDivergenceBadge } from "@/components/VolumePriceDivergenceBadge";
@@ -41,10 +45,10 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
     <AppShell active="/stocks/2330">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Individual Stock Detail</p>
-          <h1>{signal.symbol} {signal.name}</h1>
+          <p className="eyebrow">Stock Decision Workspace</p>
+          <h1>{signal.symbol} {signal.name} 觀察說明書</h1>
         </div>
-        <div className="status">上漲機率 {metrics.probabilityUp1d}%</div>
+        <div className="status">5D 上漲機率 {metrics.probabilityUp5d}%</div>
       </header>
       <div className="disclaimer">{DISCLAIMER_TEXT}</div>
 
@@ -56,6 +60,46 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
       </section>
 
       <section className="grid">
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Plain Language</p>
+              <h2>為什麼系統會選這檔</h2>
+            </div>
+          </div>
+          <BeginnerDecisionPanel signal={signal} />
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Target Range</p>
+              <h2>現在金額與上看區間</h2>
+            </div>
+          </div>
+          <TargetPriceRangePanel signal={signal} />
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Portfolio</p>
+              <h2>我的選股配置組合</h2>
+            </div>
+          </div>
+          <PortfolioAllocationPanel signal={signal} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Reference</p>
+              <h2>客觀依據與資料來源</h2>
+            </div>
+          </div>
+          <ReferencePanel signal={signal} />
+        </article>
+
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
