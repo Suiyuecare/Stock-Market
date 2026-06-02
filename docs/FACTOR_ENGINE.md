@@ -37,6 +37,14 @@ The factor engine converts raw market, macro, and news inputs into normalized pr
 - Export control and geopolitical news
 - Earnings guidance and analyst revisions
 
+### Risk Factors
+
+- Technical volatility
+- Liquidity
+- Concentration
+- News/event risk
+- VIX / US risk proxy
+
 ## Scoring Contract
 
 Each factor should produce:
@@ -69,6 +77,30 @@ confidence = data_quality * factor_agreement * recency_weight
 ```
 
 Only after baseline backtests are available should the project add ML models.
+
+## Implemented MVP Modules
+
+- `app.services.technical_indicators`
+- `app.services.factor_engine`
+- `app.services.mock_provider`
+
+Implemented indicators:
+
+- MA 5 / 20 / 60
+- RSI 14
+- KD 9
+- MACD
+- OBV
+- Volume-price divergence
+
+Implemented factor categories:
+
+- Fundamental quality
+- Institutional flow
+- Technical structure
+- US market linkage
+- News sentiment
+- Risk score adjustment
 
 ## Testing Requirements
 

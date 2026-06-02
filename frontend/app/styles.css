@@ -125,6 +125,16 @@ h2 {
   font-weight: 700;
 }
 
+.disclaimer {
+  margin: -8px 0 18px;
+  border: 1px solid rgba(215, 169, 40, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fffaf0;
+  color: #725600;
+  font-size: 0.9rem;
+}
+
 .metric-grid,
 .grid {
   display: grid;
@@ -132,7 +142,7 @@ h2 {
 }
 
 .metric-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 16px;
 }
 
@@ -225,6 +235,78 @@ th {
 .job-list {
   padding: 0;
   list-style: none;
+}
+
+.radar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.radar-item,
+.score-card,
+.driver,
+.timeline-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfc;
+}
+
+.radar-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.positive {
+  color: #138a36;
+}
+
+.negative {
+  color: #b42318;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.score-card span,
+.score-card small,
+.driver span,
+.timeline-item span {
+  display: block;
+  color: var(--muted);
+}
+
+.score-card strong {
+  display: block;
+  margin: 8px 0;
+  color: var(--accent);
+  font-size: 2rem;
+}
+
+.risk strong {
+  color: #b7791f;
+}
+
+.driver-list,
+.timeline {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.positive-border {
+  border-left: 4px solid #138a36;
+}
+
+.negative-border {
+  border-left: 4px solid #b42318;
 }
 
 @media (max-width: 920px) {

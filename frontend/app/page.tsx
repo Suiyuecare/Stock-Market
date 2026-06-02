@@ -1,8 +1,14 @@
 import { SignalChart } from "@/components/SignalChart";
-import { fetchMarketSummary, fetchPredictionSignals } from "@/lib/api";
+import { fetchMarketSummary, fetchRanking, fetchStockDetail } from "@/lib/api";
 
 export default async function Home() {
-  const [summary, signals] = await Promise.all([fetchMarketSummary(), fetchPredictionSignals()]);
+  const [summary, ranking, detail] = await Promise.all([
+    fetchMarketSummary(),
+    fetchRanking(),
+    fetchStockDetail("2330"),
+  ]);
+  const signals = ranking.signals;
+  const selected = detail.signal;
 
   return (
     <main className="workspace">
@@ -16,9 +22,10 @@ export default async function Home() {
         </div>
         <nav>
           <a className="active" href="#overview">總覽</a>
-          <a href="#signals">預測訊號</a>
-          <a href="#watchlist">觀察名單</a>
-          <a href="#jobs">排程任務</a>
+          <a href="#ranking">台股排名</a>
+          <a href="#us-linkage">美股連動</a>
+          <a href="#detail">個股分析</a>
+          <a href="#news">事件時間線</a>
         </nav>
       </aside>
 
@@ -26,10 +33,12 @@ export default async function Home() {
         <header className="topbar">
           <div>
             <p className="eyebrow">每日盤後 + 美股開盤前</p>
-            <h1>台美股連動預測工作台</h1>
+            <h1>台美股因子分析與機率訊號</h1>
           </div>
-          <div className="status">MVP v0.1</div>
+          <div className="status">Research MVP</div>
         </header>
+
+        <div className="disclaimer">{summary.disclaimer}</div>
 
         <section id="overview" className="metric-grid">
           <article className="metric">
@@ -45,7 +54,12 @@ export default async function Home() {
           <article className="metric">
             <span>追蹤標的</span>
             <strong>{summary.instruments.length}</strong>
-            <small>TW + US seed list</small>
+            <small>TW seed universe</small>
+          </article>
+          <article className="metric">
+            <span>最高機率訊號</span>
+            <strong>{signals[0].symbol}</strong>
+            <small>{Math.round(signals[0].probability_up * 100)}% probability style</small>
           </article>
         </section>
 
@@ -60,11 +74,11 @@ export default async function Home() {
             <SignalChart />
           </article>
 
-          <article id="signals" className="panel">
+          <article id="ranking" className="panel">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">Signals</p>
-                <h2>預測訊號</h2>
+                <p className="eyebrow">Ranking</p>
+                <h2>台股因子排名</h2>
               </div>
             </div>
             <div className="signal-list">
@@ -72,65 +86,91 @@ export default async function Home() {
                 <div className="signal" key={signal.symbol}>
                   <div>
                     <strong>{signal.symbol}</strong>
-                    <span>{signal.horizon}</span>
+                    <span>{signal.name}</span>
                   </div>
-                  <b>{Math.round(signal.score * 100)}</b>
+                  <b>{Math.round(signal.probability_up * 100)}</b>
                   <small>confidence {Math.round(signal.confidence * 100)}%</small>
                 </div>
               ))}
             </div>
           </article>
 
-          <article id="watchlist" className="panel">
+          <article id="us-linkage" className="panel">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">Universe</p>
-                <h2>觀察名單</h2>
+                <p className="eyebrow">US Linkage Radar</p>
+                <h2>美股連動雷達</h2>
               </div>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>代號</th>
-                  <th>市場</th>
-                  <th>名稱</th>
-                  <th>產業</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.instruments.map((item) => (
-                  <tr key={item.symbol}>
-                    <td>{item.symbol}</td>
-                    <td>{item.market}</td>
-                    <td>{item.name}</td>
-                    <td>{item.sector}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="radar-grid">
+              {Object.entries(summary.us_linkage).map(([name, value]) => (
+                <div className="radar-item" key={name}>
+                  <span>{name}</span>
+                  <strong className={value >= 0 ? "positive" : "negative"}>{Math.round(value * 100)}</strong>
+                </div>
+              ))}
+            </div>
           </article>
 
-          <article id="jobs" className="panel">
+          <article id="detail" className="panel span-2">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">Jobs</p>
-                <h2>排程任務</h2>
+                <p className="eyebrow">Stock Detail</p>
+                <h2>{selected.symbol} {selected.name}</h2>
               </div>
             </div>
-            <ul className="job-list">
-              <li>
-                <strong>15:20</strong>
-                <span>台股每日盤後資料整理</span>
-              </li>
-              <li>
-                <strong>20:30</strong>
-                <span>美股開盤前連動訊號</span>
-              </li>
-              <li>
-                <strong>Queued</strong>
-                <span>LLM 新聞事件解析</span>
-              </li>
-            </ul>
+            <div className="detail-grid">
+              <div className="score-card">
+                <span>Probability-style signal</span>
+                <strong>{Math.round(selected.probability_up * 100)}%</strong>
+                <small>Composite {selected.composite_score}</small>
+              </div>
+              <div className="score-card risk">
+                <span>Risk score</span>
+                <strong>{Math.round(selected.risk_score.total * 100)}</strong>
+                <small>{selected.risk_score.explanation}</small>
+              </div>
+            </div>
+          </article>
+
+          <article className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">Explanation</p>
+                <h2>正向/負向因子</h2>
+              </div>
+            </div>
+            <div className="driver-list">
+              {selected.positive_drivers.map((driver) => (
+                <div className="driver positive-border" key={driver.name}>
+                  <strong>{driver.name}</strong>
+                  <span>{driver.explanation}</span>
+                </div>
+              ))}
+              {selected.negative_drivers.map((driver) => (
+                <div className="driver negative-border" key={driver.name}>
+                  <strong>{driver.name}</strong>
+                  <span>{driver.explanation}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article id="news" className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">News Timeline</p>
+                <h2>新聞/事件時間線</h2>
+              </div>
+            </div>
+            <div className="timeline">
+              {selected.news.map((event) => (
+                <div className="timeline-item" key={event.title}>
+                  <strong>{event.title}</strong>
+                  <span>{event.source} · {event.sentiment} · impact {event.impact_score}</span>
+                </div>
+              ))}
+            </div>
           </article>
         </section>
       </section>

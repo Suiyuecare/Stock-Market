@@ -8,8 +8,12 @@
 - 美股開盤前連動訊號
 - 股票 watchlist 與預測摘要
 - 新聞/事件 LLM parser 介面
+- 基本面、籌碼、技術面、新聞、風險、美股連動因子評分
+- MA、RSI、KD、MACD、OBV、量價背離技術指標
 - 背景排程任務骨架
 - 可用 Docker Compose 一鍵啟動
+
+所有輸出都是研究與教育用途的 probability-style signals，不提供個人化投資建議，也不輸出 buy/sell 指令。
 
 ## 技術架構
 
@@ -52,6 +56,21 @@ docker compose up --build
 3. 新聞 parser 將重大事件轉成結構化 impact signals
 4. API 輸出 watchlist、signal summary、prediction score
 5. Frontend 顯示市場概況、預測分數與圖表
+
+## MVP API
+
+- `GET /api/health`
+- `GET /api/market/summary`
+- `GET /api/predictions/signals`
+- `GET /api/stocks/ranking`
+- `GET /api/stocks/{symbol}`
+- `POST /api/news/parse`
+
+## 測試
+
+```bash
+PYTHONPATH=backend pytest backend/tests
+```
 
 ## 後續里程碑
 

@@ -14,6 +14,19 @@ Status: done
 - Add Next.js dashboard skeleton
 - Add pytest smoke tests
 
+## Task 1.5: MVP Factor Skeleton
+
+Status: done
+
+- Add technical indicators
+- Add factor engine
+- Add US linkage scoring
+- Add risk scoring
+- Add mock provider data
+- Add ranking and stock detail API routes
+- Add dashboard sections for ranking, linkage, detail, factor explanation, risk, and news
+- Add indicator and scoring tests
+
 ## Task 2: Database Access Layer
 
 Goal:

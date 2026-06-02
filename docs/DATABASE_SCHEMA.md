@@ -59,6 +59,37 @@ Unique key:
 
 - `(instrument_id, trade_date)`
 
+### `fundamental_metrics`
+
+Stores revenue growth, margin, EPS, valuation, and ROE style fundamental factors.
+
+### `institutional_trading`
+
+Stores foreign investor, investment trust, dealer, margin, and short balance style chip factors.
+
+### `technical_indicators`
+
+Stores MA, RSI, KD, MACD, OBV, and volume-price divergence.
+
+### `us_market_linkage`
+
+Stores daily US linkage proxies:
+
+- Nasdaq
+- SOX
+- S&P 500
+- VIX
+- TSM ADR
+- Nvidia
+- AMD
+- Apple
+- Broadcom
+- Micron
+- Microsoft
+- Meta
+- Google
+- Amazon
+
 ### `news_events`
 
 Raw and parsed news/event records.
@@ -88,6 +119,14 @@ Columns:
 - `confidence`
 - `drivers`
 - `created_at`
+
+### `factor_scores`
+
+Stores explainable model drivers by category and factor name.
+
+### `risk_scores`
+
+Stores total risk and component scores.
 
 ## Future Tables
 
