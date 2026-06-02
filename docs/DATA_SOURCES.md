@@ -46,7 +46,7 @@ These are candidates to evaluate, not final commitments:
 
 ## Official Taiwan Data Sources
 
-Use official TWSE/MOPS/TPEx sources first for Taiwan equities. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
+Use official TWSE/MOPS/TPEx/TAIFEX sources first for Taiwan equities, derivatives, and market linkage. These endpoints are suitable for scheduled MVP ingestion, not real-time intraday redistribution.
 
 | # | API / Source | Purpose | URL |
 | -: | --- | --- | --- |
@@ -69,15 +69,19 @@ Use official TWSE/MOPS/TPEx sources first for Taiwan equities. These endpoints a
 | 17 | TPEx data purchase | OTC after-market trading data and information downloads | `https://www.tpex.org.tw/zh-tw/service/data/overview.html` |
 | 18 | TPEx delayed trading information | OTC delayed quote licensing | `https://www.tpex.org.tw/zh-tw/service/data/product/delay.html` |
 | 19 | TPEx after-market trading information download system | Paid subscription data download service | `https://intd.tpex.org.tw` |
+| 20 | TAIFEX OpenAPI | Taiwan index futures, options, futures institutional data | `https://openapi.taifex.com.tw/` |
+| 21 | TAIFEX Swagger JSON | Machine-readable TAIFEX API specification | `https://openapi.taifex.com.tw/swagger.json` |
+| 22 | TAIFEX official portal | Official futures exchange data entry point | `https://www.taifex.com.tw/` |
 
 Implementation notes:
 
 - For MVP, prefer after-market/open data endpoints over real-time feeds.
-- Keep TWSE/MOPS/TPEx ingestion behind provider interfaces.
+- Keep TWSE/MOPS/TPEx/TAIFEX ingestion behind provider interfaces.
 - Do not redistribute real-time or delayed trading data without confirming license terms.
 - Use `swagger.json` to generate or validate endpoint mappings before adding new fetch methods.
 - Use MOPS CSV endpoints as fallback sources when an equivalent OpenAPI endpoint is unavailable.
 - Use TPEx OpenAPI for OTC and emerging stock coverage once the field mapping is implemented.
+- Use TAIFEX OpenAPI for Taiwan futures/options linkage, futures institutional positioning, and market position factors once endpoint field mapping is implemented.
 
 ## Provider Evaluation Checklist
 
