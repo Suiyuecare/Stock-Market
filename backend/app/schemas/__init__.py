@@ -83,6 +83,11 @@ from app.schemas.target_variables import (
     TargetVariableRequest,
     TargetVariableResult,
 )
+from app.schemas.trade_management import (
+    TradeManagementConfig,
+    TradeManagementRequest,
+    TradeManagementResult,
+)
 from app.schemas.universe_filter import (
     UniverseFilterCandidate,
     UniverseFilterConfig,
@@ -160,6 +165,9 @@ __all__ = [
     "TargetVariableConfig",
     "TargetVariableRequest",
     "TargetVariableResult",
+    "TradeManagementConfig",
+    "TradeManagementRequest",
+    "TradeManagementResult",
     "TimeSeriesSplitWindow",
     "UniverseFilterCandidate",
     "UniverseFilterConfig",

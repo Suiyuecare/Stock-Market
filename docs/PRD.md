@@ -98,6 +98,20 @@ After probability scoring, the system should decide whether a stock enters the r
 
 These thresholds should be selected through walk-forward backtests rather than treated as permanent constants. The system must reject configurations with too few historical trades, because a tiny sample can show 100% win rate without statistical meaning.
 
+### Trade Management Rules
+
+The MVP must define simulated entry and exit rules even before broker integration exists.
+
+- default entry: next-session open
+- default exit: fixed horizon or take-profit / stop-loss
+- supported horizons: 1, 5, and 20 days
+- stop-loss may use ATR or percentage ranges
+- take-profit uses configurable percentage ranges
+- trailing stop can be enabled
+- loss cooldown can temporarily suppress new simulated entries after a losing trade
+
+The app should report fixed-horizon win rate, take-profit/stop-loss win rate, and relative-to-benchmark win rate.
+
 ### Dashboard
 
 - Market status cards

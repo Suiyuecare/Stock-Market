@@ -58,6 +58,30 @@ universe_filters:
 
 These filters reduce misleading backtests from illiquid names, special-risk stocks, short listing histories, low-price stocks, and missing fundamental data.
 
+### 0.2 Trade Management Variables
+
+Trade management defines simulated entry and exit rules so win rate is measurable.
+
+```yaml
+trade_management:
+  entry_method: next_open
+  exit_method: fixed_horizon_or_tp_sl
+  holding_days: [1, 5, 20]
+  stop_loss_method: atr_or_percent
+  stop_loss_pct_range: [0.03, 0.08]
+  take_profit_pct_range: [0.05, 0.15]
+  trailing_stop_enabled: true
+  trailing_stop_atr: 1.5
+  max_holding_days: 20
+  cooldown_days_after_loss: 3
+```
+
+The engine should report three win definitions:
+
+- fixed-horizon win: hold `h` days and net return is positive
+- take-profit / stop-loss win: take-profit is touched before stop-loss
+- relative win: fixed-horizon return beats benchmark return plus costs
+
 ### 1. FundamentalScore
 
 Inputs:
