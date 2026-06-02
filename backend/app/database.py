@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 
 from psycopg_pool import ConnectionPool
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from app.config import get_settings
 
@@ -10,6 +12,8 @@ def _pool_url() -> str:
 
 
 pool = ConnectionPool(conninfo=_pool_url(), open=False)
+engine = create_engine(get_settings().database_url, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_connection() -> Iterator:
@@ -18,3 +22,8 @@ def get_connection() -> Iterator:
 
     with pool.connection() as connection:
         yield connection
+
+
+def get_session() -> Iterator:
+    with SessionLocal() as session:
+        yield session

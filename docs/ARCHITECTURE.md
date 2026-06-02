@@ -79,13 +79,13 @@ All scoring endpoints return explainable research payloads and the standard disc
 - `us-premarket-linkage`: before US open, computes US linkage signals
 - `news-event-parser`: normalizes news into structured impact signals
 
-Implemented MVP job behavior still uses mock providers first:
+Implemented MVP job behavior still uses mock providers first, but scheduled runs now persist write-ready artifacts when a database session is provided:
 
-- `daily_after_market_job` updates mock Taiwan prices, institutional/chip data, technical indicators, and final factor score artifacts.
-- `pre_open_us_market_job` updates mock US market linkage data, calculates per-stock USMarketScore, and generates a pre-open radar ranking.
-- `news_ingestion_job` ingests mock provider news, classifies events through the parser interface, and calculates NewsScore payloads.
+- `daily_after_market_job` updates mock Taiwan prices, institutional/chip data, technical indicators, final factor scores, and data availability ledger rows.
+- `pre_open_us_market_job` updates mock US market linkage proxy rows, calculates per-stock USMarketScore, generates a pre-open radar ranking, and writes data availability ledger rows.
+- `news_ingestion_job` ingests mock provider news, classifies events through the parser interface, writes normalized news events, and writes data availability ledger rows.
 
-The jobs currently return write-ready artifacts instead of persisting to PostgreSQL directly. The provider layer now includes official open-data fetchers for TWSE/MOPS company profiles, monthly revenue, material information, and CNA RSS parsing. The next deployment phase should switch scheduled jobs from mock providers to those open-data providers and write artifacts into PostgreSQL with data availability ledger records.
+Direct function calls can still return artifacts without persistence for tests and local inspection. The scheduler wrappers create a SQLAlchemy session and persist artifacts into PostgreSQL. The provider layer now includes official open-data fetchers for TWSE/MOPS company profiles, monthly revenue, material information, and CNA RSS parsing. The next deployment phase should switch scheduled jobs from mock providers to those open-data providers and keep writing artifacts into PostgreSQL with data availability ledger records.
 
 ### Backtest Lab
 

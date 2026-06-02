@@ -1,8 +1,11 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from sqlalchemy.orm import Session
+
 from app.schemas import NewsEvent, NewsParseRequest
 from app.services.data_providers.mock_provider import MockMarketDataProvider
+from app.services.jobs.persistence import persist_news_ingestion_result
 from app.services.news_parser import NewsParser
 from app.services.scoring.news_score import calculate_news_score
 
@@ -10,6 +13,7 @@ from app.services.scoring.news_score import calculate_news_score
 def run_news_ingestion_job(
     provider: Optional[MockMarketDataProvider] = None,
     parser: Optional[NewsParser] = None,
+    session: Optional[Session] = None,
 ) -> Dict[str, object]:
     """Ingest mock news, classify events, and calculate per-stock NewsScore payloads."""
     started_at = datetime.utcnow()
@@ -54,7 +58,7 @@ def run_news_ingestion_job(
             }
         )
 
-    return {
+    result = {
         "job": "news-ingestion",
         "status": "completed",
         "started_at": started_at.isoformat(),
@@ -64,3 +68,6 @@ def run_news_ingestion_job(
         "updated_news_scores": len(stocks),
         "stocks": stocks,
     }
+    if session is not None:
+        result["persisted"] = persist_news_ingestion_result(session, result)
+    return result

@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from sqlalchemy.orm import Session
+
 from app.services.data_providers.mock_provider import MockMarketDataProvider
+from app.services.jobs.persistence import persist_us_premarket_result
 from app.services.scoring.us_market_score import calculate_us_market_score
 
 
@@ -14,7 +17,7 @@ def _stock_profile(instrument: Dict[str, object]) -> Dict[str, object]:
     }
 
 
-def run_us_premarket_job(provider: Optional[MockMarketDataProvider] = None) -> Dict[str, object]:
+def run_us_premarket_job(provider: Optional[MockMarketDataProvider] = None, session: Optional[Session] = None) -> Dict[str, object]:
     """Run the US pre-open linkage mock pipeline and return a ranked radar."""
     started_at = datetime.utcnow()
     data_provider = provider or MockMarketDataProvider()
@@ -36,7 +39,7 @@ def run_us_premarket_job(provider: Optional[MockMarketDataProvider] = None) -> D
         )
     radar.sort(key=lambda row: float(row["us_market_score"]), reverse=True)
 
-    return {
+    result = {
         "job": "us-premarket-linkage",
         "status": "completed",
         "started_at": started_at.isoformat(),
@@ -47,3 +50,6 @@ def run_us_premarket_job(provider: Optional[MockMarketDataProvider] = None) -> D
         "linkage": linkage,
         "radar": radar,
     }
+    if session is not None:
+        result["persisted"] = persist_us_premarket_result(session, result)
+    return result
