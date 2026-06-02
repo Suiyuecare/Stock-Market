@@ -33,6 +33,20 @@ export type RiskScore = {
   explanation: string;
 };
 
+export type TechnicalIndicators = {
+  ma_5: number | null;
+  ma_20: number | null;
+  ma_60: number | null;
+  rsi_14: number | null;
+  k_9: number | null;
+  d_9: number | null;
+  macd: number | null;
+  macd_signal: number | null;
+  macd_histogram: number | null;
+  obv: number | null;
+  volume_price_divergence: number | null;
+};
+
 export type PredictionSignal = {
   symbol: string;
   name: string;
@@ -42,6 +56,7 @@ export type PredictionSignal = {
   confidence: number;
   composite_score: number;
   risk_score: RiskScore;
+  technicals: TechnicalIndicators;
   factor_scores: FactorScore[];
   positive_drivers: FactorScore[];
   negative_drivers: FactorScore[];

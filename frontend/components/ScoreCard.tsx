@@ -1,3 +1,5 @@
+import { sanitizeDisplayText } from "@/lib/view-model";
+
 export function ScoreCard({
   label,
   value,
@@ -7,13 +9,13 @@ export function ScoreCard({
   label: string;
   value: string;
   detail: string;
-  tone?: "default" | "risk";
+  tone?: "default" | "risk" | "positive" | "negative" | "neutral";
 }) {
   return (
     <div className={`score-card ${tone}`}>
       <span>{label}</span>
       <strong>{value}</strong>
-      <small>{detail}</small>
+      <small>{sanitizeDisplayText(detail)}</small>
     </div>
   );
 }
