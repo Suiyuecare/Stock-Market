@@ -92,6 +92,13 @@ from app.schemas.signal_quality import (
     SignalQualityResult,
     SignalQualityThresholds,
 )
+from app.schemas.signal_pipeline import (
+    SignalOutcomeRecord,
+    SignalPerformanceStatsRecord,
+    SignalPipelineResult,
+    SignalPipelineStep,
+    SignalRecord,
+)
 from app.schemas.strategy_defaults import (
     ChipFilterDefaults,
     LabelDefaults,
@@ -199,6 +206,11 @@ __all__ = [
     "SignalQualityInput",
     "SignalQualityResult",
     "SignalQualityThresholds",
+    "SignalOutcomeRecord",
+    "SignalPerformanceStatsRecord",
+    "SignalPipelineResult",
+    "SignalPipelineStep",
+    "SignalRecord",
     "ChipFilterDefaults",
     "LabelDefaults",
     "MVPStrategyDefaults",

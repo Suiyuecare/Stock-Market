@@ -295,6 +295,80 @@ Primary key:
 
 - `(trade_date, stock_id)`
 
+## `signals`
+
+Generated point-in-time model signals.
+
+- `signal_id`
+- `generated_at`
+- `trade_date`
+- `stock_id`
+- `horizon_days`
+- `probability_up`
+- `bullish_score`
+- `risk_score`
+- `risk_adjusted_score`
+- `confidence`
+- `signal_rank`
+- `selected_for_watchlist`
+- `rejection_reason`
+- `model_version`
+- `feature_version`
+
+Primary key:
+
+- `signal_id`
+
+## `signal_outcomes`
+
+Realized outcomes after each signal's holding window closes.
+
+- `signal_id`
+- `entry_date`
+- `entry_price`
+- `exit_date`
+- `exit_price`
+- `gross_return`
+- `net_return`
+- `benchmark_return`
+- `excess_return`
+- `win_absolute`
+- `win_relative`
+- `hit_take_profit`
+- `hit_stop_loss`
+- `max_favorable_excursion`
+- `max_adverse_excursion`
+- `holding_days`
+
+Primary key:
+
+- `signal_id`
+
+## `signal_performance_stats`
+
+Aggregated win-rate, calibration, and risk statistics by model, strategy, horizon, and segment.
+
+- `model_version`
+- `strategy_version`
+- `horizon_days`
+- `market_regime`
+- `industry`
+- `probability_bucket`
+- `risk_bucket`
+- `trade_count`
+- `win_rate`
+- `win_rate_lower_bound`
+- `avg_net_return`
+- `median_net_return`
+- `profit_factor`
+- `max_drawdown`
+- `sharpe`
+- `calibration_error`
+
+Primary key:
+
+- `(model_version, strategy_version, horizon_days, market_regime, industry, probability_bucket, risk_bucket)`
+
 ## Operational Tables
 
 ### `market_sessions`

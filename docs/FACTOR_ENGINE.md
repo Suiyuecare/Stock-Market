@@ -238,6 +238,27 @@ FinalScore =
 
 In bear markets, the goal is not to find more stocks. The system should raise thresholds, increase risk penalties, and reduce the number of generated signals.
 
+### 0.8 Daily Model Pipeline
+
+The MVP signal pipeline runs in ten steps:
+
+1. Daily after-close feature snapshot
+2. Generate t+1 tradable signals from t-day data
+3. Predict `up_1d`, `up_5d`, and `up_20d`
+4. Apply probability calibration
+5. Apply risk filtering
+6. Apply liquidity filtering
+7. Apply industry concentration limits
+8. Generate the research watchlist
+9. Backtest realized outcomes after horizons close
+10. Update win-rate performance statistics
+
+The pipeline writes to:
+
+- `signals`
+- `signal_outcomes`
+- `signal_performance_stats`
+
 ### 0.7 MVP Initial Strategy Defaults
 
 The MVP starts with a conservative preset designed for 5-day relative win-rate reliability:

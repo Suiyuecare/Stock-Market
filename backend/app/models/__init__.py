@@ -7,6 +7,7 @@ from app.models.institutional import InstitutionalTradingDaily, InstitutionalTra
 from app.models.label import LabelsDaily
 from app.models.news import NewsEvent
 from app.models.price import PriceDaily
+from app.models.signal import Signal, SignalOutcome, SignalPerformanceStats
 from app.models.stock import StockMaster
 from app.models.technical import TechnicalIndicatorsDaily
 from app.models.us_market import USMarketDaily, USMarketDailyORM
@@ -24,6 +25,9 @@ __all__ = [
     "LabelsDaily",
     "NewsEvent",
     "PriceDaily",
+    "Signal",
+    "SignalOutcome",
+    "SignalPerformanceStats",
     "StockMaster",
     "TechnicalIndicatorsDaily",
     "USMarketDaily",

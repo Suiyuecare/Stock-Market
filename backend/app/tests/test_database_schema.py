@@ -13,6 +13,9 @@ from app.models import (
     LabelsDaily,
     NewsEvent,
     PriceDaily,
+    Signal,
+    SignalOutcome,
+    SignalPerformanceStats,
     StockMaster,
     USMarketDailyORM,
 )
@@ -33,6 +36,9 @@ EXPECTED_TABLES = {
     "data_availability_ledger",
     "feature_store_daily",
     "labels_daily",
+    "signals",
+    "signal_outcomes",
+    "signal_performance_stats",
 }
 
 
@@ -196,3 +202,74 @@ def test_labels_daily_can_store_multiple_label_targets() -> None:
         labels = session.scalars(select(LabelsDaily).where(LabelsDaily.stock_id == "2330")).all()
 
         assert {label.label_name for label in labels} == {"up_5d_absolute", "up_5d_relative"}
+
+
+def test_signal_tables_store_generated_signals_outcomes_and_stats() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        session.add(StockMaster(stock_id="2330", stock_name="台積電", market_type="TWSE", is_listed=True, is_otc=False))
+        session.add(
+            Signal(
+                signal_id="sig-2330-20260605-5d",
+                generated_at=datetime(2026, 6, 4, 15, 10, tzinfo=timezone.utc),
+                trade_date=date(2026, 6, 5),
+                stock_id="2330",
+                horizon_days=5,
+                probability_up=0.64,
+                bullish_score=72,
+                risk_score=35,
+                risk_adjusted_score=59.75,
+                confidence=0.7,
+                signal_rank=1,
+                selected_for_watchlist=True,
+                model_version="model-v1",
+                feature_version="feature-v1",
+            )
+        )
+        session.add(
+            SignalOutcome(
+                signal_id="sig-2330-20260605-5d",
+                entry_date=date(2026, 6, 5),
+                entry_price=100,
+                exit_date=date(2026, 6, 12),
+                exit_price=104,
+                gross_return=0.04,
+                net_return=0.035,
+                benchmark_return=0.01,
+                excess_return=0.025,
+                win_absolute=True,
+                win_relative=True,
+                hit_take_profit=False,
+                hit_stop_loss=False,
+                max_favorable_excursion=0.05,
+                max_adverse_excursion=-0.01,
+                holding_days=5,
+            )
+        )
+        session.add(
+            SignalPerformanceStats(
+                model_version="model-v1",
+                strategy_version="mvp-default-v1",
+                horizon_days=5,
+                market_regime="bull_market",
+                industry="semiconductor",
+                probability_bucket="0.60-0.65",
+                risk_bucket="30-40",
+                trade_count=120,
+                win_rate=0.62,
+                win_rate_lower_bound=0.53,
+                avg_net_return=0.018,
+                median_net_return=0.011,
+                profit_factor=1.45,
+                max_drawdown=-0.08,
+                sharpe=1.2,
+                calibration_error=0.03,
+            )
+        )
+        session.commit()
+
+        assert session.query(Signal).count() == 1
+        assert session.query(SignalOutcome).count() == 1
+        assert session.query(SignalPerformanceStats).count() == 1

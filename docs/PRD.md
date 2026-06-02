@@ -142,6 +142,12 @@ The MVP starts with manual factor weights. General Taiwan stocks use balanced we
 
 In bear markets, the product should reduce signal count and raise thresholds rather than trying to find more names.
 
+### Daily Signal Pipeline
+
+The MVP pipeline should create an after-close feature snapshot, generate next-session tradable signal candidates, predict 1-day, 5-day, and 20-day probabilities, calibrate probabilities, apply risk/liquidity/industry filters, generate the research watchlist, backtest realized outcomes, and update win-rate statistics.
+
+The core persistence tables are `signals`, `signal_outcomes`, and `signal_performance_stats`.
+
 ### MVP Strategy Defaults
 
 The initial preset targets 5-day relative win-rate reliability. It uses `up_5d_relative` as the main label against TAIEX, requires transaction costs and slippage, filters out low-liquidity and special-risk stocks, caps the daily list at 20 names, caps each industry at 5 names, rejects major negative news, rejects obvious MACD or high-price volume divergence, prefers foreign and investment-trust synchronized buying, and downgrades high-beta electronics exposure when US market conditions weaken.
