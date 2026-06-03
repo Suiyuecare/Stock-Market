@@ -5,6 +5,7 @@ const navItems = [
   { href: "/stocks/2330", label: "個股明燈", description: "搜尋個股、行情、訊號與新聞" },
   { href: "/industries", label: "產業明燈", description: "產業趨勢、族群與細分題材" },
   { href: "/watchlist", label: "關注名單", description: "自己收藏的觀察標的" },
+  { href: "/calculation", label: "計算模組", description: "機率公式、因子權重與風險扣分" },
 ];
 
 export function AppShell({ active, children }: { active: string; children: ReactNode }) {

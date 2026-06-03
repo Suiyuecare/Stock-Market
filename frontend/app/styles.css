@@ -1809,6 +1809,128 @@ tbody tr:hover {
   cursor: pointer;
 }
 
+.formula-stack,
+.weight-grid,
+.calculation-list,
+.data-state-grid,
+.rule-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.formula-card,
+.weight-card,
+.calculation-row,
+.data-state-grid div {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+}
+
+.formula-card {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+}
+
+.formula-card span,
+.weight-card span,
+.calculation-row b,
+.data-state-grid strong {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.formula-card code {
+  white-space: normal;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.weight-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.weight-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.weight-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weight-card strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.weight-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.weight-card small,
+.calculation-row span,
+.calculation-row small,
+.data-state-grid span,
+.rule-list li {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.calculation-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+}
+
+.calculation-row b {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #ecfeff;
+}
+
+.calculation-row div {
+  display: grid;
+  gap: 5px;
+}
+
+.rule-list {
+  padding: 0;
+  list-style: none;
+}
+
+.rule-list li {
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--soft);
+}
+
+.data-state-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.data-state-grid div {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
 .empty-state {
   display: grid;
   gap: 10px;
@@ -1837,6 +1959,8 @@ tbody tr:hover {
   .insight-grid,
   .industry-grid,
   .watchlist-grid,
+  .weight-grid,
+  .data-state-grid,
   .growth-summary,
   .backtest-summary,
   .backtest-sections,
@@ -1896,6 +2020,11 @@ tbody tr:hover {
   .backtest-metrics,
   .quote-metric-group dl,
   .professional-row {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-card,
+  .calculation-row {
     grid-template-columns: 1fr;
   }
 
