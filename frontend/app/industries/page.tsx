@@ -54,32 +54,33 @@ const industries = [
 ];
 
 export default function IndustriesPage() {
-  const top = industries[0];
+  const rankedIndustries = [...industries].sort((left, right) => right.score - left.score);
+  const top = rankedIndustries[0];
 
   return (
     <AppShell active="/industries">
       <header className="topbar">
         <div>
           <p className="eyebrow">產業明燈</p>
-          <h1>不是只看半導體，而是拆到 CCL、散熱、封裝</h1>
+          <h1>最夯族群排在最上面，一路看到冷門觀察</h1>
         </div>
         <div className="status ok">最高族群：{top.name} {top.score}</div>
       </header>
       <ComplianceNotice />
 
       <section className="metric-grid">
-        <ScoreCard label="追蹤族群" value={`${industries.length}`} detail="MVP 先做 AI / 半導體主鏈" />
+        <ScoreCard label="追蹤族群" value={`${rankedIndustries.length}`} detail="依熱度分數由高到低排序" />
         <ScoreCard label="最高趨勢分" value={`${top.score}`} detail={top.name} tone="positive" />
         <ScoreCard label="細分類別" value="CCL / 散熱 / 封裝" detail="可繼續擴充族群樹" />
         <ScoreCard label="輸出方式" value="研究訊號" detail="不構成個人化建議" />
       </section>
 
       <section className="industry-grid">
-        {industries.map((industry) => (
+        {rankedIndustries.map((industry, index) => (
           <article className="industry-card" key={industry.name}>
             <div className="industry-card-head">
               <div>
-                <span>{industry.trend}</span>
+                <span>#{index + 1} 熱度排序 · {industry.trend}</span>
                 <h2>{industry.name}</h2>
               </div>
               <strong>{industry.score}</strong>
