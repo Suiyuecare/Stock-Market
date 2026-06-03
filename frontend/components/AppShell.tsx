@@ -11,6 +11,7 @@ const navItems = [
 
 export function AppShell({ active, children }: { active: string; children: ReactNode }) {
   const isStockDetail = active.startsWith("/stocks/");
+  const isActive = (href: string) => href === "/stocks/2330" ? isStockDetail : href === active;
 
   return (
     <main className="finance-shell">
@@ -25,13 +26,8 @@ export function AppShell({ active, children }: { active: string; children: React
         <div className="finance-sidebar-headline">新手順序：先看結論 → 再看原因 → 最後看風險</div>
         <nav>
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/stocks/2330"
-                ? isStockDetail
-                : item.href === active;
-
             return (
-              <a className={`finance-nav-item ${isActive ? "on" : ""}`} href={item.href} key={item.href}>
+              <a className={`finance-nav-item ${isActive(item.href) ? "on" : ""}`} href={item.href} key={item.href}>
                 {item.label}
                 <small>{item.description}</small>
               </a>
@@ -45,6 +41,21 @@ export function AppShell({ active, children }: { active: string; children: React
       <section className="finance-main">
         <div className="finance-content">{children}</div>
       </section>
+      <footer className="mobile-footer-nav" aria-label="手機版主要選單">
+        {navItems.map((item) => (
+          <a className={isActive(item.href) ? "on" : ""} href={item.href} key={item.href}>
+            <span>{mobileIcon(item.href)}</span>
+            <b>{item.label}</b>
+          </a>
+        ))}
+      </footer>
     </main>
   );
+}
+
+function mobileIcon(href: string): string {
+  if (href.startsWith("/stocks")) return "股";
+  if (href === "/industries") return "業";
+  if (href === "/watchlist") return "星";
+  return "算";
 }
