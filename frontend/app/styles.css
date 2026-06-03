@@ -699,6 +699,88 @@ tbody tr:hover {
   line-height: 1.55;
 }
 
+.related-news-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.related-news-card,
+.related-news-empty {
+  display: grid;
+  gap: 8px;
+  min-height: 122px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfd;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.related-news-card:hover {
+  border-color: rgba(15, 118, 110, 0.36);
+  background: #f0fdfa;
+}
+
+.related-news-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.related-news-title strong {
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.related-news-title span {
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-news-title b {
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #ecfeff;
+  color: var(--accent);
+  font-size: 0.72rem;
+}
+
+.related-news-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.related-news-card small,
+.related-news-empty span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.related-news-empty strong {
+  color: var(--accent);
+}
+
+.panel-divider {
+  height: 1px;
+  margin: 16px 0 0;
+  background: var(--line);
+}
+
 .score-card strong {
   display: block;
   margin: 8px 0;
@@ -1415,6 +1497,7 @@ tbody tr:hover {
   .compliance-notice,
   .guide-strip,
   .api-source-strip,
+  .related-news-grid,
   .growth-summary,
   .backtest-summary,
   .backtest-sections,

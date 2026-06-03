@@ -951,10 +951,30 @@ function inferRelatedSymbols(text: string): string[] {
     ["緯創", "3231"],
     ["緯穎", "6669"],
     ["台達電", "2308"],
+    ["智邦", "2345"],
+    ["華碩", "2357"],
+    ["南亞科", "2408"],
     ["智原", "3035"],
+    ["聯詠", "3034"],
+    ["世芯", "3661"],
     ["日月光", "3711"],
+    ["頎邦", "6147"],
+    ["萬潤", "6187"],
+    ["旺矽", "6223"],
+    ["環球晶", "6488"],
+    ["元太", "8069"],
+    ["輝達", "NVDA"],
+    ["NVIDIA", "NVDA"],
+    ["超微", "AMD"],
+    ["AMD", "AMD"],
+    ["蘋果", "AAPL"],
+    ["Apple", "AAPL"],
+    ["博通", "AVGO"],
+    ["Broadcom", "AVGO"],
+    ["美光", "MU"],
+    ["Micron", "MU"],
   ];
-  return mapping.filter(([keyword]) => text.includes(keyword)).map(([, symbol]) => symbol);
+  return Array.from(new Set(mapping.filter(([keyword]) => text.includes(keyword)).map(([, symbol]) => symbol)));
 }
 
 function deriveNewsKeywords(instrument: StockInstrument): string[] {
@@ -967,9 +987,25 @@ function deriveNewsKeywords(instrument: StockInstrument): string[] {
   return Array.from(new Set(keywords.filter(Boolean)));
 }
 
+function deriveRelatedStockSymbols(instrument: StockInstrument): string[] {
+  const sector = instrument.sector ?? "";
+  const base = [instrument.symbol];
+  if (/半導體|晶片|IC|電子零組件/.test(sector)) {
+    base.push("2330", "2303", "2454", "3034", "3035", "3661", "3711", "6147", "6223", "6488", "2408");
+  }
+  if (/電腦|週邊|電子代工|電源|通信|AI|伺服器/.test(sector)) {
+    base.push("2317", "2382", "3231", "6669", "2308", "2345", "2357", "4938", "6187");
+  }
+  if (/金融/.test(sector)) base.push("2881", "2882", "2884", "2885", "2886", "2891", "5880");
+  if (/航運/.test(sector)) base.push("2603", "2609", "2615");
+  if (/光電/.test(sector)) base.push("3008", "8069", "2409");
+  return Array.from(new Set(base.filter((symbol) => symbol !== instrument.symbol))).slice(0, 10);
+}
+
 async function getNewsForInstrument(instrument: StockInstrument): Promise<NewsItem[]> {
   const pool = await getOfficialNewsPool();
   const keywords = deriveNewsKeywords(instrument);
+  const relatedStockSymbols = deriveRelatedStockSymbols(instrument);
   const direct = pool.filter((event) => event.stock_id === instrument.symbol || event.related_symbols.includes(instrument.symbol));
   const contextual = pool.filter((event) => {
     if (direct.includes(event)) return false;
@@ -980,7 +1016,11 @@ async function getNewsForInstrument(instrument: StockInstrument): Promise<NewsIt
   const selected = dedupeNews([...direct, ...contextual, ...marketBackground]).slice(0, 8);
   return selected.map((event) => ({
     ...event,
-    related_symbols: event.related_symbols.includes(instrument.symbol) ? event.related_symbols : [...event.related_symbols, instrument.symbol],
+    related_symbols: Array.from(new Set([
+      ...event.related_symbols,
+      instrument.symbol,
+      ...(event.stock_id === instrument.symbol || contextual.includes(event) ? relatedStockSymbols.slice(0, 6) : []),
+    ])),
   }));
 }
 

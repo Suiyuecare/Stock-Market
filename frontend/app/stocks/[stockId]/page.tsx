@@ -10,6 +10,7 @@ import { NewsTimeline } from "@/components/NewsTimeline";
 import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
 import { ProfessionalInfoDeck } from "@/components/ProfessionalInfoDeck";
 import { ReferencePanel } from "@/components/ReferencePanel";
+import { RelatedStockNewsPanel } from "@/components/RelatedStockNewsPanel";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
 import { StockQuoteOverview } from "@/components/StockQuoteOverview";
@@ -228,9 +229,11 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
           <div className="panel-heading">
             <div>
               <p className="eyebrow">News</p>
-              <h2>新聞/事件時間線</h2>
+              <h2>相關股票新聞與事件連動</h2>
             </div>
           </div>
+          <RelatedStockNewsPanel signal={signal} />
+          <div className="panel-divider" />
           <NewsTimeline news={signal.news} />
         </article>
       </section>
