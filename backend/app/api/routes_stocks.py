@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException
@@ -6,15 +7,24 @@ from app.schemas import MarketSummary, RankingResponse, StockDetailResponse, Tec
 from app.services.market_data import get_market_summary, get_prediction_signals
 from app.services.scoring import DISCLAIMER
 from app.services.data_providers.mock_provider import TW_INSTRUMENTS, get_mock_news, get_mock_price_series
+from app.services.data_providers.public_provider import PublicMarketDataProvider, unique_instruments
 from app.services.indicators import build_technical_indicators
 from app.services.scoring.chip_score import calculate_chip_score
+from app.services.scoring.final_prediction_score import build_signal
 from app.services.scoring.technical_score import calculate_technical_score
 
 router = APIRouter()
 
 
+@lru_cache(maxsize=1)
+def _public_instruments() -> tuple[dict, ...]:
+    provider = PublicMarketDataProvider()
+    instruments = unique_instruments([*TW_INSTRUMENTS, *provider.get_instruments()])
+    return tuple(instruments)
+
+
 def _instrument_map() -> Dict[str, dict]:
-    return {instrument["symbol"]: instrument for instrument in TW_INSTRUMENTS}
+    return {str(instrument["symbol"]): instrument for instrument in _public_instruments()}
 
 
 def _get_instrument(stock_id: str) -> dict:
@@ -30,9 +40,10 @@ def _signal_map() -> Dict[str, Any]:
 
 
 def _stock_signal(stock_id: str):
-    _get_instrument(stock_id)
+    instrument = _get_instrument(stock_id)
     signals = _signal_map()
-    return signals[stock_id.upper()]
+    normalized = stock_id.upper()
+    return signals.get(normalized) or build_signal(instrument)
 
 
 def _technical_payload(stock_id: str) -> Dict[str, Any]:
@@ -75,6 +86,11 @@ def _ranking_payload(signals: List[Any]) -> Dict[str, Any]:
     return {"disclaimer": DISCLAIMER, "signals": signals}
 
 
+def _ranking_signals(limit: int = 160) -> List[Any]:
+    instruments = list(_public_instruments())[:limit]
+    return [build_signal(instrument) for instrument in instruments]
+
+
 @router.get("/market/summary", response_model=MarketSummary)
 def market_summary() -> MarketSummary:
     return get_market_summary()
@@ -82,7 +98,7 @@ def market_summary() -> MarketSummary:
 
 @router.get("/stocks")
 def stocks() -> Dict[str, Any]:
-    return {"disclaimer": DISCLAIMER, "stocks": TW_INSTRUMENTS}
+    return {"disclaimer": DISCLAIMER, "stocks": list(_public_instruments())}
 
 
 @router.get("/stocks/ranking", response_model=RankingResponse)
@@ -93,14 +109,14 @@ def stock_ranking() -> RankingResponse:
 
 @router.get("/rankings/top-probability")
 def top_probability_ranking() -> Dict[str, Any]:
-    signals = sorted(get_prediction_signals(), key=lambda signal: signal.probability_up_1d or signal.probability_up, reverse=True)
+    signals = sorted(_ranking_signals(), key=lambda signal: signal.probability_up_1d or signal.probability_up, reverse=True)
     return _ranking_payload(signals)
 
 
 @router.get("/rankings/institutional-buying")
 def institutional_buying_ranking() -> Dict[str, Any]:
     rows = []
-    for instrument in TW_INSTRUMENTS:
+    for instrument in list(_public_instruments())[:160]:
         chip_score = calculate_chip_score(instrument["symbol"])
         rows.append(
             {
@@ -119,7 +135,7 @@ def institutional_buying_ranking() -> Dict[str, Any]:
 @router.get("/rankings/macd-golden-cross")
 def macd_golden_cross_ranking() -> Dict[str, Any]:
     rows = []
-    for instrument in TW_INSTRUMENTS:
+    for instrument in list(_public_instruments())[:160]:
         technical = _technical_payload(instrument["symbol"])
         macd = technical["signals"]["macd"]
         rows.append(
@@ -140,7 +156,7 @@ def macd_golden_cross_ranking() -> Dict[str, Any]:
 @router.get("/rankings/volume-price-divergence")
 def volume_price_divergence_ranking() -> Dict[str, Any]:
     rows = []
-    for instrument in TW_INSTRUMENTS:
+    for instrument in list(_public_instruments())[:160]:
         technical = _technical_payload(instrument["symbol"])
         divergence = technical["signals"]["volume_price_divergence"]
         rows.append(
@@ -179,17 +195,17 @@ def high_risk_stocks() -> Dict[str, Any]:
 def stock_detail(stock_id: str) -> StockDetailResponse:
     normalized = stock_id.upper()
     instrument = _get_instrument(normalized)
-    signals = _signal_map()
+    signal = _signal_map().get(normalized) or build_signal(instrument)
 
     return StockDetailResponse(
         disclaimer=DISCLAIMER,
         instrument=instrument,
-        signal=signals[normalized],
+        signal=signal,
         factor_history=[
             {"date": "2026-05-27", "composite_score": 0.18, "risk_score": 0.34},
             {"date": "2026-05-28", "composite_score": 0.22, "risk_score": 0.33},
             {"date": "2026-05-29", "composite_score": 0.26, "risk_score": 0.31},
-            {"date": "2026-06-01", "composite_score": signals[normalized].composite_score, "risk_score": signals[normalized].risk_score.total},
+            {"date": "2026-06-01", "composite_score": signal.composite_score, "risk_score": signal.risk_score.total},
         ],
     )
 
@@ -226,9 +242,11 @@ def stock_institutional(stock_id: str) -> Dict[str, Any]:
 @router.get("/stocks/{stock_id}/news")
 def stock_news(stock_id: str) -> Dict[str, Any]:
     instrument = _get_instrument(stock_id)
+    provider = PublicMarketDataProvider()
+    news = provider.get_news(instrument["symbol"])
     return {
         "stock_id": instrument["symbol"],
         "stock_name": instrument["name"],
         "disclaimer": DISCLAIMER,
-        "news": get_mock_news(instrument["symbol"]),
+        "news": news or get_mock_news(instrument["symbol"]),
     }

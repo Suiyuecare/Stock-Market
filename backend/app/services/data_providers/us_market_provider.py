@@ -1,4 +1,8 @@
-from typing import Dict
+from typing import Any, Dict, Optional
+
+import httpx
+
+from app.config import get_settings
 
 US_MARKET_ENDPOINTS = {
     "massive_polygon_docs": "https://massive.com/docs",
@@ -35,10 +39,80 @@ US_MARKET_PROVIDER_PRIORITY = [
 
 
 class USMarketProvider:
-    """Placeholder for licensed US and global market linkage data."""
+    """US/global market linkage provider with keyed API adapters.
+
+    Public no-key US quotes are not reliable enough for production. This
+    provider enables Finnhub and Alpha Vantage when keys exist, and otherwise
+    keeps deterministic linkage values available through the mock provider.
+    """
 
     endpoints = US_MARKET_ENDPOINTS
     provider_priority = US_MARKET_PROVIDER_PRIORITY
 
+    def __init__(self, client: Optional[httpx.Client] = None, timeout: float = 10.0) -> None:
+        self.client = client or httpx.Client(timeout=timeout, follow_redirects=True)
+        self.settings = get_settings()
+
     def get_linkage_scores(self) -> Dict[str, float]:
-        return {}
+        symbols = {
+            "NASDAQ": "^IXIC",
+            "QQQ": "QQQ",
+            "SOX": "^SOX",
+            "SMH": "SMH",
+            "S&P500": "^GSPC",
+            "VIX": "^VIX",
+            "TSM_ADR": "TSM",
+            "NVDA": "NVDA",
+            "AMD": "AMD",
+            "AAPL": "AAPL",
+            "AVGO": "AVGO",
+            "MU": "MU",
+            "MSFT": "MSFT",
+            "META": "META",
+            "GOOGL": "GOOGL",
+            "AMZN": "AMZN",
+        }
+        scores: Dict[str, float] = {}
+        for key, ticker in symbols.items():
+            change_pct = self.get_us_quote_change_pct(ticker)
+            if change_pct is not None:
+                scores[key] = round(max(-1.0, min(1.0, change_pct / 8)), 3)
+        return scores
+
+    def get_us_quote_change_pct(self, ticker: str) -> Optional[float]:
+        if self.settings.finnhub_api_key:
+            value = self._finnhub_quote_change_pct(ticker)
+            if value is not None:
+                return value
+        if self.settings.alpha_vantage_api_key:
+            value = self._alpha_vantage_quote_change_pct(ticker)
+            if value is not None:
+                return value
+        return None
+
+    def _finnhub_quote_change_pct(self, ticker: str) -> Optional[float]:
+        response = self.client.get(
+            f"{self.endpoints['finnhub_rest_base']}/quote",
+            params={"symbol": ticker, "token": self.settings.finnhub_api_key},
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return _number(payload.get("dp"))
+
+    def _alpha_vantage_quote_change_pct(self, ticker: str) -> Optional[float]:
+        response = self.client.get(
+            self.endpoints["alpha_vantage_base"],
+            params={"function": "GLOBAL_QUOTE", "symbol": ticker, "apikey": self.settings.alpha_vantage_api_key},
+        )
+        response.raise_for_status()
+        payload = response.json().get("Global Quote", {})
+        return _number(str(payload.get("10. change percent", "")).replace("%", ""))
+
+
+def _number(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(str(value).replace(",", "").strip())
+    except ValueError:
+        return None

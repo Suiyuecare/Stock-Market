@@ -95,7 +95,11 @@ The codebase now includes production-shaped provider classes for legal open-data
 | --- | --- | --- |
 | TWSE / MOPS listed data | `backend/app/services/data_providers/twse_provider.py` | Fetch and parse listed company profiles, market index JSON, listed material information JSON, and monthly revenue CSV |
 | MOPS / mopsfin | `backend/app/services/data_providers/mops_provider.py` | Fetch and parse listed company profiles, monthly revenue CSV, and listed material information CSV |
-| CNA RSS | `backend/app/services/data_providers/news_provider.py` | Fetch and parse CNA finance and technology RSS into normalized news event payloads |
+| TPEx OpenAPI | `backend/app/services/data_providers/tpex_provider.py` | Fetch and normalize OTC daily close quotes, valuation rows, Swagger catalog, and generic OpenAPI endpoints |
+| Public provider | `backend/app/services/data_providers/public_provider.py` | Combines TWSE, TPEx, official/open news, and mock fallback behind one provider boundary |
+| Official/open news | `backend/app/services/data_providers/news_provider.py` | Fetch and normalize TWSE/MOPS material information, TWSE exchange news/events, CNA finance/technology RSS, configured RSS feeds, and optional NewsAPI |
+| US linkage keyed quotes | `backend/app/services/data_providers/us_market_provider.py` | Uses Finnhub or Alpha Vantage quote changes when keys are configured; otherwise remains disabled/fallback-only |
+| Analyst estimates / target prices | `backend/app/services/data_providers/analyst_estimates_provider.py` | Uses FMP target-price consensus when configured, tracks FactSet/LSEG/Bloomberg endpoints, and extracts target-price mentions from already-ingested news as a clearly labeled fallback |
 
 The production frontend also has a no-key resilience layer so the public site can show official/open data even before the FastAPI jobs are fully promoted:
 
@@ -117,7 +121,8 @@ Deployment notes:
 
 - These providers are safe to use as the first official-data layer, but their endpoint terms should still be reviewed before storing or redisplaying raw payloads.
 - The frontend must label data freshness and source status clearly.
-- Scheduled jobs still need to be switched from `MockMarketDataProvider` to official providers before claiming production data coverage.
+- FastAPI stock-list and ranking endpoints now use the public provider boundary so the backend can return TWSE + TPEx stock coverage instead of only the four seed symbols. Technical history still uses deterministic sample series until official historical K-line normalization is complete.
+- Scheduled jobs should fetch each open/news feed once per run, dedupe by URL/title, and then distribute events to related stocks. Avoid per-stock repeated RSS/API requests.
 - Paid, real-time, analyst estimate, and licensed news providers remain disabled until contracts, API keys, and display rights are confirmed.
 
 ## Commercial Taiwan Data Sources
