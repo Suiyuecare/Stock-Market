@@ -1928,7 +1928,8 @@ tbody tr:hover {
 .kline-chart-frame {
   border: 1px solid #cdd6e4;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 10px;
 }
 
 .kline-chart-frame.compact {
@@ -1942,18 +1943,18 @@ tbody tr:hover {
 }
 
 .kline-main-chart {
-  height: 420px;
-  min-height: 420px;
+  height: 500px;
+  min-height: 500px;
 }
 
 .kline-volume-chart {
-  height: 180px;
-  min-height: 180px;
+  height: 230px;
+  min-height: 230px;
 }
 
 .kline-kd-chart {
-  height: 230px;
-  min-height: 230px;
+  height: 300px;
+  min-height: 300px;
 }
 
 .kline-legend {
@@ -2750,18 +2751,18 @@ tbody tr:hover {
   }
 
   .kline-main-chart {
-    height: 330px;
-    min-height: 330px;
+    height: 400px;
+    min-height: 400px;
   }
 
   .kline-volume-chart {
-    height: 140px;
-    min-height: 140px;
+    height: 180px;
+    min-height: 180px;
   }
 
   .kline-kd-chart {
-    height: 210px;
-    min-height: 210px;
+    height: 260px;
+    min-height: 260px;
   }
 
   .content {

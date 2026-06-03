@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PredictionSignal, RevenueGrowthPoint } from "@/lib/api";
 import { estimateCurrentPrice } from "@/lib/view-model";
 
-type RangeKey = "1M" | "3M" | "6M" | "YTD" | "1Y";
+type RangeKey = "1D" | "3D" | "7D" | "1M" | "12M";
 
 type OhlcPoint = {
   time: string;
@@ -17,16 +17,16 @@ type OhlcPoint = {
 };
 
 const ranges: Array<{ key: RangeKey; label: string; count: number }> = [
-  { key: "1M", label: "近一個月", count: 22 },
-  { key: "3M", label: "近三個月", count: 66 },
-  { key: "6M", label: "近六個月", count: 132 },
-  { key: "YTD", label: "今年", count: 120 },
-  { key: "1Y", label: "近一年", count: 252 },
+  { key: "1D", label: "當日", count: 1 },
+  { key: "3D", label: "3日內", count: 3 },
+  { key: "7D", label: "7日內", count: 7 },
+  { key: "1M", label: "1個月內", count: 22 },
+  { key: "12M", label: "12個月內", count: 252 },
 ];
 
-const MAIN_CHART_HEIGHT = 420;
-const VOLUME_CHART_HEIGHT = 180;
-const KD_CHART_HEIGHT = 230;
+const MAIN_CHART_HEIGHT = 500;
+const VOLUME_CHART_HEIGHT = 230;
+const KD_CHART_HEIGHT = 300;
 
 export function StockGrowthTimeline({
   history,
@@ -35,7 +35,7 @@ export function StockGrowthTimeline({
   history: RevenueGrowthPoint[];
   signal: PredictionSignal;
 }) {
-  const [active, setActive] = useState<RangeKey>("3M");
+  const [active, setActive] = useState<RangeKey>("1M");
   const mainRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef<HTMLDivElement>(null);
   const kdRef = useRef<HTMLDivElement>(null);
@@ -45,15 +45,18 @@ export function StockGrowthTimeline({
   const latest = rows.at(-1);
   const previous = rows.at(-2);
   const change = latest && previous ? latest.close - previous.close : signal.quote?.change ?? 0;
-  const changePercent = previous ? (change / previous.close) * 100 : 0;
+  const previousCloseForChange = previous?.close ?? (latest && signal.quote?.change !== null && signal.quote?.change !== undefined
+    ? latest.close - signal.quote.change
+    : undefined);
+  const changePercent = previousCloseForChange ? (change / previousCloseForChange) * 100 : 0;
   const isUp = change >= 0;
 
   useEffect(() => {
     if (!mainRef.current || !volumeRef.current || !kdRef.current || rows.length === 0) return;
 
-    const mainChart = createChart(mainRef.current, baseChartOptions(MAIN_CHART_HEIGHT, false));
-    const volumeChart = createChart(volumeRef.current, baseChartOptions(VOLUME_CHART_HEIGHT, false));
-    const kdChart = createChart(kdRef.current, baseChartOptions(KD_CHART_HEIGHT, true));
+    const mainChart = createChart(mainRef.current, baseChartOptions(MAIN_CHART_HEIGHT, false, rows.length));
+    const volumeChart = createChart(volumeRef.current, baseChartOptions(VOLUME_CHART_HEIGHT, false, rows.length));
+    const kdChart = createChart(kdRef.current, baseChartOptions(KD_CHART_HEIGHT, true, rows.length));
 
     const candleSeries = mainChart.addSeries(CandlestickSeries, {
       upColor: "#ef3b2d",
@@ -161,7 +164,9 @@ export function StockGrowthTimeline({
   );
 }
 
-function baseChartOptions(height: number, showTimeScale: boolean) {
+function baseChartOptions(height: number, showTimeScale: boolean, pointCount: number) {
+  const barSpacing = pointCount <= 1 ? 56 : pointCount <= 3 ? 42 : pointCount <= 7 ? 28 : undefined;
+
   return {
     height,
     layout: {
@@ -181,6 +186,9 @@ function baseChartOptions(height: number, showTimeScale: boolean) {
       visible: showTimeScale,
       fixLeftEdge: true,
       fixRightEdge: true,
+      rightOffset: pointCount <= 7 ? 8 : 2,
+      minBarSpacing: pointCount <= 7 ? 18 : 5,
+      ...(barSpacing ? { barSpacing } : {}),
     },
     crosshair: {
       mode: 1,
