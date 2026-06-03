@@ -617,12 +617,12 @@ const linkage = {
   AMZN: 0.15,
 };
 
-const aiPrioritySymbols = [
-  "2330", "2317", "2382", "3231", "6669", "2308", "2345", "2454", "2379", "3035",
-  "3443", "3661", "5274", "3017", "3324", "6230", "2421", "3653", "2383", "6274",
-  "6213", "2368", "3037", "8046", "3189", "4958", "3711", "2449", "3264", "6147",
-  "6515", "2408", "2344", "8299", "6412", "2356", "2357", "2376", "2377", "4938",
-  "2324",
+const recommendationCoverageSymbols = [
+  "2330", "2454", "3035", "3661", "2382", "3231", "6669", "2317", "2308", "2345",
+  "3017", "3324", "2383", "3037", "8046", "3711", "1590", "2049", "2359", "1504",
+  "1513", "1519", "1605", "2603", "2609", "2615", "2618", "2610", "2634", "2881",
+  "2882", "2884", "2885", "2886", "2891", "5880", "5876", "1216", "2912", "2207",
+  "6505", "1301", "1303", "2002", "6446", "5871", "4904", "3008", "2408", "2357",
 ];
 
 function factor(name: string, category: string, score: number, weight: number, direction = "positive"): FactorScore {
@@ -1666,10 +1666,10 @@ async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
 async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   const stocks = await getFallbackInstruments();
   const stockMap = new Map(stocks.map((item) => [item.symbol, item]));
-  const aiPriority = aiPrioritySymbols.map((symbol) => stockMap.get(symbol)).filter((item): item is StockInstrument => Boolean(item));
+  const coveredStocks = recommendationCoverageSymbols.map((symbol) => stockMap.get(symbol)).filter((item): item is StockInstrument => Boolean(item));
   const selected = uniqueInstruments([
-    ...aiPriority,
-    ...stocks.filter((item) => !aiPrioritySymbols.includes(item.symbol)).slice(0, 140),
+    ...coveredStocks,
+    ...stocks.filter((item) => !recommendationCoverageSymbols.includes(item.symbol)).slice(0, 140),
   ]).slice(0, Math.min(stocks.length, 180));
   fallbackSignalsCache = await Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
   return fallbackSignalsCache;

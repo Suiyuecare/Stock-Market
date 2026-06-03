@@ -15,22 +15,37 @@ from app.services.scoring.technical_score import calculate_technical_score
 
 router = APIRouter()
 
-AI_PRIORITY_SYMBOLS = [
-    "2330", "2317", "2382", "3231", "6669", "2308", "2345", "2454", "2379", "3035",
-    "3443", "3661", "5274", "3017", "3324", "6230", "2421", "3653", "2383", "6274",
-    "6213", "2368", "3037", "8046", "3189", "4958", "3711", "2449", "3264", "6147",
-    "6515", "2408", "2344", "8299", "6412", "2356", "2357", "2376", "2377", "4938",
-    "2324",
+RECOMMENDATION_COVERAGE_SYMBOLS = [
+    "2330", "2454", "3035", "3661", "2382", "3231", "6669", "2317", "2308", "2345",
+    "3017", "3324", "2383", "3037", "8046", "3711", "1590", "2049", "2359", "1504",
+    "1513", "1519", "1605", "2603", "2609", "2615", "2618", "2610", "2634", "2881",
+    "2882", "2884", "2885", "2886", "2891", "5880", "5876", "1216", "2912", "2207",
+    "6505", "1301", "1303", "2002", "6446", "5871", "4904", "3008", "2408", "2357",
 ]
 
-AI_THEME_KEYWORDS = {
-    "半導體": 68,
+THEME_FIT_BY_SYMBOL = {
+    "2330": 88, "2454": 82, "3035": 80, "3661": 84, "2382": 86, "3231": 84, "6669": 86,
+    "2317": 78, "2308": 82, "2345": 80, "3017": 82, "3324": 80, "2383": 82, "3037": 78,
+    "8046": 76, "3711": 78, "1590": 82, "2049": 82, "2359": 78, "1504": 76, "1513": 78,
+    "1519": 80, "1605": 72, "2603": 74, "2609": 72, "2615": 70, "2618": 72, "2610": 70,
+    "2634": 68, "2881": 78, "2882": 78, "2884": 76, "2885": 74, "2886": 78, "2891": 78,
+    "5880": 76, "5876": 74, "1216": 70, "2912": 72, "2207": 70, "6505": 68, "1301": 66,
+    "1303": 66, "2002": 64, "6446": 72,
+}
+
+THEME_KEYWORDS = {
+    "半導體": 66,
     "IC": 64,
-    "晶片": 68,
-    "電腦及週邊": 60,
+    "晶片": 66,
+    "電腦及週邊": 62,
     "電子零組件": 62,
     "通信網路": 60,
-    "光電": 48,
+    "電機機械": 66,
+    "航運": 62,
+    "金融": 66,
+    "食品": 60,
+    "塑膠": 58,
+    "鋼鐵": 56,
 }
 
 
@@ -107,17 +122,51 @@ def _ranking_payload(signals: List[Any]) -> Dict[str, Any]:
 def _ranking_signals(limit: int = 160) -> List[Any]:
     all_instruments = list(_public_instruments())
     instrument_map = {str(instrument["symbol"]): instrument for instrument in all_instruments}
-    ai_instruments = [instrument_map[symbol] for symbol in AI_PRIORITY_SYMBOLS if symbol in instrument_map]
-    other_instruments = [instrument for instrument in all_instruments if str(instrument["symbol"]) not in AI_PRIORITY_SYMBOLS]
-    instruments = unique_instruments([*ai_instruments, *other_instruments])[:limit]
+    covered_instruments = [instrument_map[symbol] for symbol in RECOMMENDATION_COVERAGE_SYMBOLS if symbol in instrument_map]
+    other_instruments = [instrument for instrument in all_instruments if str(instrument["symbol"]) not in RECOMMENDATION_COVERAGE_SYMBOLS]
+    instruments = unique_instruments([*covered_instruments, *other_instruments])[:limit]
     return [build_signal(instrument) for instrument in instruments]
 
 
-def _ai_relevance(signal: Any) -> int:
-    if signal.symbol in AI_PRIORITY_SYMBOLS:
-        return 100 - min(AI_PRIORITY_SYMBOLS.index(signal.symbol), 38)
+def _recommendation_score(signal: Any) -> float:
+    probability = _percent(signal.probability_up_5d or signal.probability_up_1d or signal.probability_up)
+    risk_adjusted = float(signal.risk_adjusted_score or 50)
+    risk = _percent(signal.risk_score.total)
+    confidence = _percent(signal.confidence)
+    return (
+        probability * 0.18
+        + risk_adjusted * 0.17
+        + (100 - risk) * 0.14
+        + _theme_fit(signal) * 0.12
+        + _factor_score(signal, "chip") * 0.11
+        + _factor_score(signal, "technical") * 0.10
+        + _factor_score(signal, "fundamental") * 0.08
+        + _factor_score(signal, "news") * 0.05
+        + _factor_score(signal, "us-linkage") * 0.03
+        + confidence * 0.02
+        - max(0, risk - 62) * 0.32
+    )
+
+
+def _theme_fit(signal: Any) -> int:
+    if signal.symbol in THEME_FIT_BY_SYMBOL:
+        return THEME_FIT_BY_SYMBOL[signal.symbol]
     text = f"{signal.name} {getattr(signal, 'sector', '')}"
-    return max([score for keyword, score in AI_THEME_KEYWORDS.items() if keyword in text] or [20])
+    return max([score for keyword, score in THEME_KEYWORDS.items() if keyword in text] or [52])
+
+
+def _percent(value: Any) -> float:
+    numeric = float(value or 0)
+    if numeric <= 1:
+        return numeric * 100
+    return min(100, max(0, numeric))
+
+
+def _factor_score(signal: Any, category: str) -> float:
+    for factor in signal.factor_scores:
+        if factor.category == category:
+            return _percent(factor.score if factor.score >= 0 else (factor.score + 1) / 2)
+    return 50
 
 
 @router.get("/market/summary", response_model=MarketSummary)
@@ -140,7 +189,7 @@ def stock_ranking() -> RankingResponse:
 def top_probability_ranking() -> Dict[str, Any]:
     signals = sorted(
         _ranking_signals(),
-        key=lambda signal: (_ai_relevance(signal), signal.probability_up_1d or signal.probability_up),
+        key=_recommendation_score,
         reverse=True,
     )
     return _ranking_payload(signals)

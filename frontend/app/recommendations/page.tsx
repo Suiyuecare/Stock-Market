@@ -8,66 +8,82 @@ type RecommendationRow = {
   signal: PredictionSignal;
   score: number;
   reason: string;
-  aiThemes: string[];
-  aiRelevance: number;
+  themes: string[];
+  themeFit: number;
   metrics: ReturnType<typeof buildStockMetrics>;
 };
 
-const aiThemeMap: Record<string, { relevance: number; themes: string[] }> = {
-  "2330": { relevance: 100, themes: ["晶圓代工", "CoWoS", "AI 晶片"] },
-  "2317": { relevance: 94, themes: ["AI 伺服器", "EMS", "NVDA 供應鏈"] },
-  "2382": { relevance: 96, themes: ["AI 伺服器", "雲端資料中心"] },
-  "3231": { relevance: 94, themes: ["AI 伺服器", "雲端資料中心"] },
-  "6669": { relevance: 98, themes: ["AI 伺服器", "雲端資料中心"] },
-  "2308": { relevance: 92, themes: ["電源管理", "散熱電源", "資料中心"] },
-  "2345": { relevance: 90, themes: ["高速網通", "資料中心交換器"] },
-  "2356": { relevance: 84, themes: ["AI PC", "伺服器"] },
-  "2357": { relevance: 82, themes: ["AI PC", "伺服器"] },
-  "2376": { relevance: 86, themes: ["AI PC", "主機板", "伺服器"] },
-  "2377": { relevance: 82, themes: ["AI PC", "伺服器"] },
-  "4938": { relevance: 80, themes: ["EMS", "AI 終端"] },
-  "2324": { relevance: 78, themes: ["NB/AI PC", "EMS"] },
-  "2454": { relevance: 88, themes: ["IC 設計", "Edge AI"] },
-  "2379": { relevance: 82, themes: ["IC 設計", "網通晶片"] },
-  "3034": { relevance: 78, themes: ["IC 設計", "顯示晶片"] },
-  "3035": { relevance: 86, themes: ["ASIC", "AI 晶片設計服務"] },
-  "3443": { relevance: 90, themes: ["ASIC", "AI 晶片設計服務"] },
-  "3661": { relevance: 94, themes: ["ASIC", "AI/HPC"] },
-  "5274": { relevance: 86, themes: ["伺服器管理晶片", "BMC"] },
-  "3017": { relevance: 92, themes: ["散熱", "液冷"] },
-  "3324": { relevance: 90, themes: ["散熱", "液冷"] },
-  "6230": { relevance: 86, themes: ["散熱", "伺服器風扇"] },
-  "2421": { relevance: 82, themes: ["散熱", "風扇"] },
-  "3653": { relevance: 84, themes: ["散熱", "均熱片"] },
-  "2383": { relevance: 92, themes: ["CCL", "高速材料"] },
-  "6274": { relevance: 90, themes: ["CCL", "高速材料"] },
-  "6213": { relevance: 84, themes: ["CCL", "PCB 材料"] },
-  "2368": { relevance: 90, themes: ["PCB", "AI 伺服器板"] },
-  "3037": { relevance: 88, themes: ["ABF", "PCB", "AI 載板"] },
-  "8046": { relevance: 86, themes: ["ABF", "載板"] },
-  "3189": { relevance: 84, themes: ["載板", "先進封裝"] },
-  "4958": { relevance: 82, themes: ["PCB", "供應鏈"] },
-  "3711": { relevance: 90, themes: ["封裝測試", "先進封裝"] },
-  "2449": { relevance: 86, themes: ["測試", "AI/HPC"] },
-  "3264": { relevance: 80, themes: ["測試", "半導體"] },
-  "6147": { relevance: 78, themes: ["封測", "驅動 IC"] },
-  "6515": { relevance: 82, themes: ["測試介面", "HPC"] },
-  "2408": { relevance: 78, themes: ["記憶體", "AI 伺服器"] },
-  "2344": { relevance: 76, themes: ["記憶體", "邊緣 AI"] },
-  "8299": { relevance: 80, themes: ["NAND 控制晶片", "儲存"] },
-  "6412": { relevance: 78, themes: ["電源供應", "伺服器"] },
+const marketThemeProfiles: Record<string, { fit: number; themes: string[] }> = {
+  "2330": { fit: 88, themes: ["半導體", "AI/HPC"] },
+  "2454": { fit: 82, themes: ["IC 設計", "Edge AI"] },
+  "3035": { fit: 80, themes: ["ASIC", "晶片設計服務"] },
+  "3661": { fit: 84, themes: ["ASIC", "HPC"] },
+  "2382": { fit: 86, themes: ["AI 伺服器", "雲端資料中心"] },
+  "3231": { fit: 84, themes: ["AI 伺服器", "雲端資料中心"] },
+  "6669": { fit: 86, themes: ["AI 伺服器", "雲端資料中心"] },
+  "2317": { fit: 78, themes: ["EMS", "伺服器"] },
+  "2308": { fit: 82, themes: ["電源管理", "資料中心"] },
+  "2345": { fit: 80, themes: ["高速網通", "資料中心"] },
+  "3017": { fit: 82, themes: ["散熱", "液冷"] },
+  "3324": { fit: 80, themes: ["散熱", "液冷"] },
+  "2383": { fit: 82, themes: ["CCL", "高速材料"] },
+  "3037": { fit: 78, themes: ["ABF", "PCB/載板"] },
+  "8046": { fit: 76, themes: ["ABF", "載板"] },
+  "3711": { fit: 78, themes: ["封裝測試", "先進封裝"] },
+  "1590": { fit: 82, themes: ["機器人", "氣動元件"] },
+  "2049": { fit: 82, themes: ["機器人", "線性傳動"] },
+  "2359": { fit: 78, themes: ["機器人", "AI 視覺"] },
+  "1504": { fit: 76, themes: ["電機", "機器人/電動化"] },
+  "1513": { fit: 78, themes: ["重電", "電網升級"] },
+  "1519": { fit: 80, themes: ["重電", "變壓器"] },
+  "1605": { fit: 72, themes: ["電線電纜", "電網"] },
+  "2603": { fit: 74, themes: ["貨櫃航運", "景氣循環"] },
+  "2609": { fit: 72, themes: ["貨櫃航運", "景氣循環"] },
+  "2615": { fit: 70, themes: ["貨櫃航運", "景氣循環"] },
+  "2618": { fit: 72, themes: ["航空", "旅運復甦"] },
+  "2610": { fit: 70, themes: ["航空", "旅運復甦"] },
+  "2634": { fit: 68, themes: ["航太", "國防"] },
+  "2881": { fit: 78, themes: ["金融避險", "大型金控"] },
+  "2882": { fit: 78, themes: ["金融避險", "大型金控"] },
+  "2884": { fit: 76, themes: ["金融避險", "銀行"] },
+  "2885": { fit: 74, themes: ["金融避險", "券商"] },
+  "2886": { fit: 78, themes: ["金融避險", "銀行"] },
+  "2891": { fit: 78, themes: ["金融避險", "大型金控"] },
+  "5880": { fit: 76, themes: ["金融避險", "銀行"] },
+  "5876": { fit: 74, themes: ["金融避險", "銀行"] },
+  "1216": { fit: 70, themes: ["內需防禦", "食品通路"] },
+  "2912": { fit: 72, themes: ["內需防禦", "零售通路"] },
+  "2207": { fit: 70, themes: ["內需消費", "汽車"] },
+  "6505": { fit: 68, themes: ["能源", "油品價差"] },
+  "1301": { fit: 66, themes: ["塑化", "景氣循環"] },
+  "1303": { fit: 66, themes: ["塑化", "景氣循環"] },
+  "2002": { fit: 64, themes: ["鋼鐵", "景氣循環"] },
+  "6446": { fit: 72, themes: ["生技醫療", "新藥"] },
+};
+
+const recommendationWeights = {
+  probability: 18,
+  riskAdjusted: 17,
+  riskQuality: 14,
+  themeFit: 12,
+  chip: 11,
+  technical: 10,
+  fundamental: 8,
+  news: 5,
+  usMarket: 3,
+  confidence: 2,
 };
 
 export default async function RecommendationsPage() {
   const ranking = await fetchTopProbabilityRanking();
   const recommendations = ranking.signals
     .map(buildRecommendation)
-    .filter((row) => row.aiRelevance >= 55)
     .sort((left, right) => right.score - left.score)
     .slice(0, 20);
   const top = recommendations[0];
   const averageProbability = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.probabilityUp5d, 0) / Math.max(1, recommendations.length));
   const averageRisk = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.riskScore, 0) / Math.max(1, recommendations.length));
+  const averageScore = Math.round(recommendations.reduce((sum, row) => sum + row.score, 0) / Math.max(1, recommendations.length));
 
   return (
     <AppShell active="/recommendations">
@@ -80,8 +96,9 @@ export default async function RecommendationsPage() {
       </header>
 
       <section className="metric-grid">
-        <ScoreCard label="推薦數" value={`${recommendations.length}`} detail="AI 供應鏈優先" />
+        <ScoreCard label="推薦數" value={`${recommendations.length}`} detail="跨產業輪動" />
         <ScoreCard label="第一名" value={top?.signal.symbol ?? "-"} detail={top ? top.signal.name : "資料整理中"} tone="positive" />
+        <ScoreCard label="平均推薦分數" value={`${averageScore}`} detail="滿分 100" tone={scoreTone(averageScore)} />
         <ScoreCard label="平均 5D 機率" value={`${averageProbability}%`} detail="前 20 檔平均" tone={scoreTone(averageProbability)} />
         <ScoreCard label="平均風險" value={`${averageRisk}`} detail="越低越保守" tone={averageRisk >= 55 ? "risk" : "neutral"} />
       </section>
@@ -92,7 +109,7 @@ export default async function RecommendationsPage() {
             <p className="eyebrow">Top 20</p>
             <h2>明燈推薦清單</h2>
           </div>
-          <span className="panel-tag">AI 題材優先，非買賣建議</span>
+          <span className="panel-tag">產業輪動模型，非買賣建議</span>
         </div>
         <div className="recommendation-list">
           {recommendations.map((row, index) => (
@@ -102,11 +119,12 @@ export default async function RecommendationsPage() {
                 <strong>{row.signal.symbol} {row.signal.name}</strong>
                 <span>{row.reason}</span>
               </div>
-              <em>{row.metrics.probabilityUp5d}%</em>
-              <small>AI {row.aiRelevance} · {row.aiThemes.slice(0, 2).join(" / ")} · 風險 {row.metrics.riskScore}</small>
+              <em>{row.score}</em>
+              <small>5D {row.metrics.probabilityUp5d}% · 題材 {row.themeFit} · {row.themes.slice(0, 2).join(" / ")} · 風險 {row.metrics.riskScore}</small>
             </a>
           ))}
         </div>
+        <p className="panel-note">權重：5D 機率 18%、風險調整 17%、低風險品質 14%、產業/市場適配 12%、籌碼 11%、技術 10%、基本面 8%、新聞 5%、美股連動 3%、信心 2%。</p>
       </section>
     </AppShell>
   );
@@ -115,51 +133,59 @@ export default async function RecommendationsPage() {
 function buildRecommendation(signal: PredictionSignal): RecommendationRow {
   const metrics = buildStockMetrics(signal);
   const confidence = Math.round(signal.confidence * 100);
-  const aiProfile = getAiProfile(signal);
+  const marketProfile = getMarketProfile(signal);
   const score = Math.round(
-    aiProfile.relevance * 0.34
-    + metrics.probabilityUp5d * 0.2
-    + metrics.riskAdjustedScore * 0.16
-    + metrics.chipScore * 0.1
-    + metrics.technicalScore * 0.08
-    + metrics.usMarketScore * 0.08
-    + metrics.newsScore * 0.02
-    + confidence * 0.02
-    - Math.max(0, metrics.riskScore - 50) * 0.28,
+    metrics.probabilityUp5d * (recommendationWeights.probability / 100)
+    + metrics.riskAdjustedScore * (recommendationWeights.riskAdjusted / 100)
+    + (100 - metrics.riskScore) * (recommendationWeights.riskQuality / 100)
+    + marketProfile.fit * (recommendationWeights.themeFit / 100)
+    + metrics.chipScore * (recommendationWeights.chip / 100)
+    + metrics.technicalScore * (recommendationWeights.technical / 100)
+    + metrics.fundamentalScore * (recommendationWeights.fundamental / 100)
+    + metrics.newsScore * (recommendationWeights.news / 100)
+    + metrics.usMarketScore * (recommendationWeights.usMarket / 100)
+    + confidence * (recommendationWeights.confidence / 100)
+    - Math.max(0, metrics.riskScore - 62) * 0.32,
   );
 
   return {
     signal,
     score,
-    reason: buildReason(signal, metrics, aiProfile),
-    aiThemes: aiProfile.themes,
-    aiRelevance: aiProfile.relevance,
+    reason: buildReason(signal, metrics, marketProfile),
+    themes: marketProfile.themes,
+    themeFit: marketProfile.fit,
     metrics,
   };
 }
 
-function buildReason(signal: PredictionSignal, metrics: ReturnType<typeof buildStockMetrics>, aiProfile: { relevance: number; themes: string[] }): string {
+function buildReason(signal: PredictionSignal, metrics: ReturnType<typeof buildStockMetrics>, marketProfile: { fit: number; themes: string[] }): string {
   const drivers = [
-    aiProfile.themes.length ? `AI 關聯：${aiProfile.themes.slice(0, 2).join(" / ")}` : "",
+    marketProfile.themes.length ? `輪動：${marketProfile.themes.slice(0, 2).join(" / ")}` : "",
+    metrics.riskScore <= 45 ? "風險較低" : "",
     metrics.chipScore >= 65 ? "籌碼偏強" : "",
     metrics.technicalScore >= 65 ? "技術面偏強" : "",
-    metrics.usMarketScore >= 60 ? "美股連動加分" : "",
+    metrics.fundamentalScore >= 62 ? "基本面加分" : "",
+    metrics.usMarketScore >= 60 ? "外部市場加分" : "",
     metrics.newsScore >= 58 ? "新聞題材加分" : "",
-    metrics.riskScore <= 50 ? "風險較低" : "",
   ].filter(Boolean);
   const fallback = signal.explanation?.top_positive_factors?.[0] ?? "多因子條件相對完整";
   return sanitizeDisplayText(drivers.slice(0, 3).join(" · ") || fallback);
 }
 
-function getAiProfile(signal: PredictionSignal): { relevance: number; themes: string[] } {
-  const direct = aiThemeMap[signal.symbol];
+function getMarketProfile(signal: PredictionSignal): { fit: number; themes: string[] } {
+  const direct = marketThemeProfiles[signal.symbol];
   if (direct) return direct;
-  const haystack = `${signal.name} ${signal.sector ?? ""} ${signal.explanation?.top_positive_factors?.join(" ") ?? ""}`;
+  const haystack = `${signal.name} ${signal.sector ?? ""}`;
   const themes: string[] = [];
   if (/半導體|IC|晶片|封裝|測試/.test(haystack)) themes.push("半導體");
-  if (/電腦|週邊|伺服器|雲端|資料中心/.test(haystack)) themes.push("AI 伺服器");
-  if (/電子零組件|PCB|CCL|載板/.test(haystack)) themes.push("PCB/載板");
-  if (/通信|網通|交換器/.test(haystack)) themes.push("高速網通");
-  const relevance = themes.length ? 58 + Math.min(18, themes.length * 8) : 20;
-  return { relevance, themes };
+  if (/電腦|週邊|伺服器|雲端|資料中心/.test(haystack)) themes.push("AI/雲端");
+  if (/電機|機械|自動化|氣動|機器人/.test(haystack)) themes.push("機器人/自動化");
+  if (/航運|航空|運輸|物流/.test(haystack)) themes.push("運輸");
+  if (/金融|銀行|金控|保險|證券/.test(haystack)) themes.push("金融避險");
+  if (/電線|電纜|重電|電力|能源|油電/.test(haystack)) themes.push("電力能源");
+  if (/水泥|塑膠|鋼鐵|化學|原物料/.test(haystack)) themes.push("原物料循環");
+  if (/食品|百貨|觀光|汽車|零售/.test(haystack)) themes.push("內需防禦");
+  if (/生技|醫療|製藥/.test(haystack)) themes.push("生技醫療");
+  const fit = themes.length ? 58 + Math.min(18, themes.length * 6) : 52;
+  return { fit, themes: themes.length ? themes : ["一般產業"] };
 }

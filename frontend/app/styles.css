@@ -1681,6 +1681,14 @@ tbody tr:hover {
   text-align: right;
 }
 
+.panel-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
 .subscore-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
