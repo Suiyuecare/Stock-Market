@@ -10,6 +10,7 @@ import { ReferencePanel } from "@/components/ReferencePanel";
 import { RiskPanel } from "@/components/RiskPanel";
 import { ScoreCard } from "@/components/ScoreCard";
 import { StockRankingTable } from "@/components/StockRankingTable";
+import { StockSearch } from "@/components/StockSearch";
 import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { TechnicalChart } from "@/components/TechnicalChart";
 import { USMarketRadar } from "@/components/USMarketRadar";
@@ -59,6 +60,14 @@ export default async function Home() {
           <strong>最後看自己能不能承受</strong>
           <small>風險係數太高時，即使分數漂亮，也只適合放在高風險觀察區。</small>
         </div>
+      </section>
+
+      <section className="panel stock-search-hero">
+        <div>
+          <p className="eyebrow">Stock Search</p>
+          <h2>搜尋完整上市 / 上櫃公司池</h2>
+        </div>
+        <StockSearch stocks={stocks.stocks} />
       </section>
 
       <section className="metric-grid">

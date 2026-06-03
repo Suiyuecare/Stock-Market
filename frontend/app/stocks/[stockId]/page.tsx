@@ -15,11 +15,11 @@ import { StockSearch } from "@/components/StockSearch";
 import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { buildStockMetrics, formatScore, sanitizeDisplayText, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
-import { fetchStockDetail } from "@/lib/api";
+import { fetchStockDetail, fetchStocks } from "@/lib/api";
 
 export default async function StockDetailPage({ params }: { params: Promise<{ stockId: string }> }) {
   const { stockId } = await params;
-  const detail = await fetchStockDetail(stockId);
+  const [detail, stocks] = await Promise.all([fetchStockDetail(stockId), fetchStocks()]);
   const signal = {
     ...detail.signal,
     risk_score: sanitizeRiskScore(detail.signal.risk_score),
@@ -102,7 +102,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
           <p className="eyebrow">Stock Search</p>
           <h2>輸入股票代號或公司名，先從一檔看懂</h2>
         </div>
-        <StockSearch />
+        <StockSearch stocks={stocks.stocks} />
       </section>
 
       <StockQuoteOverview signal={signal} />
