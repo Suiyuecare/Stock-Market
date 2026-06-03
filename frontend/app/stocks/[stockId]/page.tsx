@@ -111,7 +111,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
           <div className="panel-heading">
             <div>
               <p className="eyebrow">K 線時間軸</p>
-              <h2>像券商圖表一樣看價格、成交量與 KD</h2>
+              <h2>用價格、成交量與 KD 看懂走勢</h2>
             </div>
             <span className="panel-tag">近 1 年</span>
           </div>
