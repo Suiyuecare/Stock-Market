@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { ComplianceNotice } from "@/components/ComplianceNotice";
+import { StockSearch } from "@/components/StockSearch";
+import { fetchStocks } from "@/lib/api";
 
 const navItems = [
   { href: "/", label: "首頁總覽", description: "新手導覽與首要訊號" },
@@ -10,8 +12,9 @@ const navItems = [
   { href: "/news", label: "新聞事件", description: "資料來源與時間軸" },
 ];
 
-export function AppShell({ active, children }: { active: string; children: ReactNode }) {
+export async function AppShell({ active, children }: { active: string; children: ReactNode }) {
   const isStockDetail = active.startsWith("/stocks/");
+  const stocks = await fetchStocks();
 
   return (
     <main className="finance-shell">
@@ -24,6 +27,7 @@ export function AppShell({ active, children }: { active: string; children: React
           </div>
         </div>
         <div className="finance-sidebar-headline">信號導向版｜非投資建議</div>
+        <StockSearch stocks={stocks.stocks} />
         <nav>
           {navItems.map((item) => {
             const isActive =
