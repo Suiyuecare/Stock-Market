@@ -493,9 +493,50 @@ tbody tr:hover {
 .score-card span,
 .score-card small,
 .driver span,
-.timeline-item span {
+.timeline-item span,
+.timeline-item small {
   display: block;
   color: var(--muted);
+}
+
+.timeline-item {
+  display: grid;
+  gap: 8px;
+}
+
+.timeline-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timeline-title a,
+.timeline-title strong {
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.timeline-title a:hover {
+  color: var(--accent);
+}
+
+.timeline-title b {
+  flex: 0 0 auto;
+  border: 1px solid rgba(15, 118, 110, 0.22);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #ecfeff;
+  color: var(--accent);
+  font-size: 0.74rem;
+}
+
+.timeline-item p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .score-card strong {

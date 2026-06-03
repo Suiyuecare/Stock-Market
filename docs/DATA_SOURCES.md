@@ -167,7 +167,9 @@ These providers can feed NewsScore, event timelines, earnings/revenue news class
 
 Implementation notes:
 
-- Start MVP news ingestion with CNA RSS feeds where terms allow parsing, with mock data as a fallback.
+- The production Next.js frontend now directly reads official/open news sources when the FastAPI service is not available: TWSE/MOPS material information (`/opendata/t187ap04_L`), TWSE news (`/news/newsList`), TWSE events (`/news/eventList`), CNA finance RSS, and CNA technology RSS.
+- Individual stock pages first match material information by company code, then add contextual CNA/TWSE events by company name, sector, and supply-chain keywords. The resulting events update `NewsScore`, event risk, timeline display, and source references.
+- Keep mock news only as a local resilience fallback when every official/open source is unreachable.
 - Treat Cnyes, Reuters/LSEG, NewsAPI, NewsData.io, and TheNewsAPI as licensed or key-based integrations; do not commit credentials.
 - Cnyes Open API is not assumed free for production use. Confirm commercial cooperation, data scope, display rights, and redistribution terms before enabling it.
 - Normalize all provider payloads into event time, market, stock ID or related symbol, source, title, summary, sentiment score, event type, impact score, confidence, and URL.

@@ -7,7 +7,13 @@ import { fetchStocks, fetchStockNews } from "@/lib/api";
 export default async function NewsPage() {
   const stocks = await fetchStocks();
   const stockNews = await Promise.all(stocks.stocks.slice(0, 80).map((stock) => fetchStockNews(stock.symbol)));
-  const news = stockNews.flatMap((detail) => detail.news);
+  const seen = new Set<string>();
+  const news = stockNews.flatMap((detail) => detail.news).filter((event) => {
+    const key = `${event.source}-${event.url || event.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   return (
     <AppShell active="/news">

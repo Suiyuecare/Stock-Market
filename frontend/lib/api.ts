@@ -3,6 +3,11 @@ const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L
 const twseMonthlyRevenueUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L";
 const twseDailyQuoteUrl = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
 const twseValuationUrl = "https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL";
+const twseMaterialNewsUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L";
+const twseExchangeNewsUrl = "https://openapi.twse.com.tw/v1/news/newsList";
+const twseExchangeEventsUrl = "https://openapi.twse.com.tw/v1/news/eventList";
+const cnaFinanceRssUrl = "https://feeds.feedburner.com/rsscna/finance";
+const cnaTechnologyRssUrl = "https://feeds.feedburner.com/rsscna/technology";
 
 export type MarketSummary = {
   session_date: string;
@@ -84,9 +89,15 @@ export type PredictionSignal = {
     sentiment: string;
     impact_score: number;
     related_symbols: string[];
+    summary?: string;
+    url?: string;
+    event_type?: string;
+    source_url?: string;
+    linkage_reason?: string;
   }>;
   quote?: TwseQuote | null;
   valuation?: TwseValuation | null;
+  sector?: string | null;
 };
 
 export type TwseQuote = {
@@ -290,7 +301,7 @@ export type HighRiskResponse = {
 
 async function getJson<T>(path: string): Promise<T> {
   try {
-    const response = await fetch(`${apiBaseUrl}${path}`, { cache: "no-store" });
+    const response = await fetchWithTimeout(`${apiBaseUrl}${path}`, { cache: "no-store", timeoutMs: 1500 });
     if (response.ok) {
       return response.json() as Promise<T>;
     }
@@ -413,6 +424,15 @@ let twseInstrumentCache: StockInstrument[] | null = null;
 const revenueGrowthCache = new Map<string, { history: RevenueGrowthPoint[]; source: DataSourceReference }>();
 let twseQuoteCache: Map<string, TwseQuote> | null = null;
 let twseValuationCache: Map<string, TwseValuation> | null = null;
+let officialNewsCache: NewsItem[] | null = null;
+let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
+let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
+let officialNewsCachePromise: Promise<NewsItem[]> | null = null;
+
+type NewsItem = PredictionSignal["news"][number] & {
+  stock_id?: string | null;
+  related_industry?: string | null;
+};
 
 const industryCodeMap: Record<string, string> = {
   "01": "水泥工業",
@@ -551,9 +571,15 @@ function parseTwseDate(value: string | undefined): string {
 
 async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
   if (twseQuoteCache) return twseQuoteCache;
+  if (twseQuoteCachePromise) return twseQuoteCachePromise;
+  twseQuoteCachePromise = loadTwseQuoteMap();
+  return twseQuoteCachePromise;
+}
+
+async function loadTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
   const map = new Map<string, TwseQuote>();
   try {
-    const response = await fetch(twseDailyQuoteUrl, { next: { revalidate: 60 * 30 } });
+    const response = await fetchWithTimeout(twseDailyQuoteUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 });
     if (response.ok) {
       const rows = (await response.json()) as Array<Record<string, string>>;
       rows.forEach((row) => {
@@ -585,9 +611,15 @@ async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
 
 async function getTwseValuationMap(): Promise<Map<string, TwseValuation>> {
   if (twseValuationCache) return twseValuationCache;
+  if (twseValuationCachePromise) return twseValuationCachePromise;
+  twseValuationCachePromise = loadTwseValuationMap();
+  return twseValuationCachePromise;
+}
+
+async function loadTwseValuationMap(): Promise<Map<string, TwseValuation>> {
   const map = new Map<string, TwseValuation>();
   try {
-    const response = await fetch(twseValuationUrl, { next: { revalidate: 60 * 30 } });
+    const response = await fetchWithTimeout(twseValuationUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 });
     if (response.ok) {
       const rows = (await response.json()) as Array<Record<string, string>>;
       rows.forEach((row) => {
@@ -612,16 +644,307 @@ async function getTwseValuationMap(): Promise<Map<string, TwseValuation>> {
   return map;
 }
 
+async function getOfficialNewsPool(): Promise<NewsItem[]> {
+  if (officialNewsCache) return officialNewsCache;
+  if (officialNewsCachePromise) return officialNewsCachePromise;
+  officialNewsCachePromise = loadOfficialNewsPool();
+  return officialNewsCachePromise;
+}
+
+async function loadOfficialNewsPool(): Promise<NewsItem[]> {
+  const events: NewsItem[] = [];
+  const settled = await Promise.allSettled([
+    fetchWithTimeout(twseMaterialNewsUrl, { next: { revalidate: 60 * 15 } }),
+    fetchWithTimeout(twseExchangeNewsUrl, { next: { revalidate: 60 * 15 } }),
+    fetchWithTimeout(twseExchangeEventsUrl, { next: { revalidate: 60 * 60 } }),
+    fetchWithTimeout(cnaFinanceRssUrl, { next: { revalidate: 60 * 15 } }),
+    fetchWithTimeout(cnaTechnologyRssUrl, { next: { revalidate: 60 * 15 } }),
+  ]);
+
+  const [material, exchangeNews, exchangeEvents, cnaFinance, cnaTechnology] = settled;
+  if (material.status === "fulfilled" && material.value.ok) {
+    const rows = (await material.value.json()) as Array<Record<string, string>>;
+    events.push(...rows.map(normalizeMaterialNews).filter((item): item is NewsItem => item !== null));
+  }
+  if (exchangeNews.status === "fulfilled" && exchangeNews.value.ok) {
+    const rows = (await exchangeNews.value.json()) as Array<Record<string, string>>;
+    events.push(...rows.map(normalizeTwseExchangeNews).filter((item): item is NewsItem => item !== null));
+  }
+  if (exchangeEvents.status === "fulfilled" && exchangeEvents.value.ok) {
+    const rows = (await exchangeEvents.value.json()) as Array<Record<string, string>>;
+    events.push(...rows.map(normalizeTwseExchangeEvent).filter((item): item is NewsItem => item !== null));
+  }
+  if (cnaFinance.status === "fulfilled" && cnaFinance.value.ok) {
+    events.push(...parseRssNews(await cnaFinance.value.text(), "CNA 財經 RSS", cnaFinanceRssUrl));
+  }
+  if (cnaTechnology.status === "fulfilled" && cnaTechnology.value.ok) {
+    events.push(...parseRssNews(await cnaTechnology.value.text(), "CNA 科技 RSS", cnaTechnologyRssUrl));
+  }
+
+  officialNewsCache = dedupeNews(events).sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at)).slice(0, 260);
+  return officialNewsCache;
+}
+
+function normalizeMaterialNews(row: Record<string, string>): NewsItem | null {
+  const symbol = String(row["公司代號"] ?? "").trim();
+  const companyName = String(row["公司名稱"] ?? "").trim();
+  const title = String(row["主旨 "] ?? row["主旨"] ?? "").trim();
+  const summary = String(row["說明"] ?? "").trim();
+  if (!/^\d{4}$/.test(symbol) || !title) return null;
+  const publishedAt = buildTwseDateTime(row["發言日期"], row["發言時間"]);
+  const sentiment = classifyNewsSentiment(`${title}\n${summary}`);
+  return {
+    title: `${companyName}：${title}`,
+    source: "TWSE/MOPS 重大訊息",
+    source_url: twseMaterialNewsUrl,
+    published_at: publishedAt,
+    sentiment: sentiment.label,
+    impact_score: sentiment.impact,
+    related_symbols: [symbol],
+    stock_id: symbol,
+    summary: summary || title,
+    event_type: inferEventType(`${title}\n${summary}`),
+    linkage_reason: "公司代號直接命中公開資訊觀測站重大訊息",
+  };
+}
+
+function normalizeTwseExchangeNews(row: Record<string, string>): NewsItem | null {
+  const title = String(row.Title ?? "").trim();
+  if (!title) return null;
+  const sentiment = classifyNewsSentiment(title);
+  return {
+    title,
+    source: "TWSE 證交所新聞",
+    source_url: twseExchangeNewsUrl,
+    published_at: parseTwseDate(row.Date),
+    sentiment: sentiment.label,
+    impact_score: sentiment.impact,
+    related_symbols: [],
+    summary: title,
+    url: String(row.Url ?? "").trim(),
+    event_type: inferEventType(title),
+    linkage_reason: "交易所市場新聞，作為市場背景事件",
+  };
+}
+
+function normalizeTwseExchangeEvent(row: Record<string, string>): NewsItem | null {
+  const title = String(row.Title ?? "").trim();
+  if (!title) return null;
+  return {
+    title,
+    source: "TWSE 活動訊息",
+    source_url: twseExchangeEventsUrl,
+    published_at: new Date().toISOString(),
+    sentiment: "neutral",
+    impact_score: 0.02,
+    related_symbols: [],
+    summary: title,
+    url: String(row.Details ?? "").trim(),
+    event_type: "market_event",
+    linkage_reason: "交易所活動與法人說明會資訊，作為事件行事曆",
+  };
+}
+
+function parseRssNews(xml: string, source: string, sourceUrl: string): NewsItem[] {
+  const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
+  const parsed: Array<NewsItem | null> = items.map((item) => {
+      const title = decodeXml(readRssTag(item, "title"));
+      const summary = stripTags(decodeXml(readRssTag(item, "description")));
+      if (!title) return null;
+      const sentiment = classifyNewsSentiment(`${title}\n${summary}`);
+      return {
+        title,
+        source,
+        source_url: sourceUrl,
+        published_at: parseRssDate(readRssTag(item, "pubDate")),
+        sentiment: sentiment.label,
+        impact_score: sentiment.impact,
+        related_symbols: inferRelatedSymbols(`${title}\n${summary}`),
+        summary: summary || title,
+        url: decodeXml(readRssTag(item, "link")),
+        event_type: inferEventType(`${title}\n${summary}`),
+        linkage_reason: "CNA 財經/科技新聞依公司名稱、產業與供應鏈關鍵字連動",
+      } satisfies NewsItem;
+    });
+  return parsed.filter((item): item is NewsItem => item !== null);
+}
+
+function readRssTag(item: string, tag: string): string {
+  const match = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return match?.[1]?.replace("<![CDATA[", "").replace("]]>", "").trim() ?? "";
+}
+
+function decodeXml(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", "\"")
+    .replaceAll("&#39;", "'");
+}
+
+function stripTags(value: string): string {
+  return value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function parseRssDate(value: string): string {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
+}
+
+function buildTwseDateTime(dateValue: string | undefined, timeValue: string | undefined): string {
+  const date = parseTwseDate(dateValue);
+  if (date === "資料日期待確認") return new Date().toISOString();
+  const digits = String(timeValue ?? "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  return `${date}T${digits.slice(0, 2)}:${digits.slice(2, 4)}:${digits.slice(4, 6)}+08:00`;
+}
+
+function classifyNewsSentiment(text: string): { label: string; impact: number } {
+  const content = text.toLowerCase();
+  const negative = ["違約", "裁罰", "駭客", "資安", "虧損", "下修", "衰退", "停工", "訴訟", "處分", "利空", "賣超", "重訊說明", "風險"];
+  const positive = ["創高", "成長", "買超", "配息", "股利", "擴產", "得標", "強漲", "看好", "需求", "ai", "輝達", "法說會", "營收增加"];
+  const negativeHits = negative.filter((word) => content.includes(word)).length;
+  const positiveHits = positive.filter((word) => content.includes(word)).length;
+  if (negativeHits > positiveHits) return { label: "cautious", impact: Math.max(-0.45, -0.12 - negativeHits * 0.07) };
+  if (positiveHits > negativeHits) return { label: "positive", impact: Math.min(0.45, 0.1 + positiveHits * 0.05) };
+  return { label: "neutral", impact: 0.03 };
+}
+
+function inferEventType(text: string): string {
+  if (/營收|月營收|revenue/i.test(text)) return "revenue";
+  if (/法說|法人說明會|guidance|展望/i.test(text)) return "guidance";
+  if (/股利|配息|除息|除權/i.test(text)) return "dividend";
+  if (/資安|駭客|裁罰|違約|訴訟|風險/i.test(text)) return "risk";
+  if (/AI|輝達|晶片|半導體|COMPUTEX|供應鏈/i.test(text)) return "supply_chain";
+  return "industry";
+}
+
+function inferRelatedSymbols(text: string): string[] {
+  const mapping: Array<[string, string]> = [
+    ["台積電", "2330"],
+    ["聯電", "2303"],
+    ["聯發科", "2454"],
+    ["鴻海", "2317"],
+    ["廣達", "2382"],
+    ["緯創", "3231"],
+    ["緯穎", "6669"],
+    ["台達電", "2308"],
+    ["智原", "3035"],
+    ["日月光", "3711"],
+  ];
+  return mapping.filter(([keyword]) => text.includes(keyword)).map(([, symbol]) => symbol);
+}
+
+function deriveNewsKeywords(instrument: StockInstrument): string[] {
+  const keywords = [instrument.symbol, instrument.name, instrument.sector ?? ""].filter(Boolean);
+  const sector = instrument.sector ?? "";
+  if (/半導體|電子|電腦|週邊|通信|零組件|光電/.test(sector)) keywords.push("AI", "輝達", "晶片", "半導體", "COMPUTEX", "供應鏈", "伺服器", "台積電");
+  if (/金融/.test(sector)) keywords.push("金融", "金控", "利率", "外資", "殖利率");
+  if (/航運/.test(sector)) keywords.push("航運", "運價", "貨櫃");
+  if (/水泥|塑膠|鋼鐵|油電|化學/.test(sector)) keywords.push("原物料", "能源", "景氣", "報價");
+  return Array.from(new Set(keywords.filter(Boolean)));
+}
+
+async function getNewsForInstrument(instrument: StockInstrument): Promise<NewsItem[]> {
+  const pool = await getOfficialNewsPool();
+  const keywords = deriveNewsKeywords(instrument);
+  const direct = pool.filter((event) => event.stock_id === instrument.symbol || event.related_symbols.includes(instrument.symbol));
+  const contextual = pool.filter((event) => {
+    if (direct.includes(event)) return false;
+    const haystack = `${event.title}\n${event.summary ?? ""}`;
+    return keywords.some((keyword) => keyword && haystack.includes(keyword));
+  });
+  const marketBackground = pool.filter((event) => event.source.startsWith("TWSE") || event.source.startsWith("CNA")).slice(0, 4);
+  const selected = dedupeNews([...direct, ...contextual, ...marketBackground]).slice(0, 8);
+  return selected.map((event) => ({
+    ...event,
+    related_symbols: event.related_symbols.includes(instrument.symbol) ? event.related_symbols : [...event.related_symbols, instrument.symbol],
+  }));
+}
+
+function dedupeNews(events: NewsItem[]): NewsItem[] {
+  const seen = new Set<string>();
+  return events.filter((event) => {
+    const key = `${event.url || event.title}-${event.source}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function applyNewsSignal(signalPayload: PredictionSignal, news: NewsItem[]): PredictionSignal {
+  if (news.length === 0) return signalPayload;
+  const averageImpact = news.reduce((sum, event) => sum + event.impact_score, 0) / news.length;
+  const negativeCount = news.filter((event) => event.impact_score < -0.05).length;
+  const positiveCount = news.filter((event) => event.impact_score > 0.08).length;
+  const newsScore = Math.round(clamp(50 + averageImpact * 85 + positiveCount * 2 - negativeCount * 4, 20, 85));
+  const oldNewsScore = signalPayload.explanation?.component_scores?.NewsScore ?? 50;
+  const bullishScore = Math.round(clamp((signalPayload.bullish_score ?? 55) + (newsScore - oldNewsScore) * 0.12, 20, 90));
+  const eventRisk = clamp(signalPayload.risk_score.event + Math.max(0, -averageImpact) * 0.45 + negativeCount * 0.03, 0.05, 0.95);
+  const riskAdjustedScore = Math.round(clamp(bullishScore - signalPayload.risk_score.total * 35 - Math.max(0, negativeCount - positiveCount) * 2, 20, 85));
+  const updatedNewsFactor = factor("NewsScore", "news", newsScore, 0.12, newsScore >= 58 ? "positive" : newsScore <= 42 ? "negative" : "neutral");
+  const factorScores = signalPayload.factor_scores.map((item) => (item.category === "news" ? updatedNewsFactor : item));
+  const topPositive = news.filter((event) => event.impact_score > 0.08).map((event) => `新聞正向：${event.title}`).slice(0, 2);
+  const topRisk = news.filter((event) => event.impact_score < -0.05).map((event) => `新聞風險：${event.title}`).slice(0, 2);
+
+  return {
+    ...signalPayload,
+    news,
+    composite_score: bullishScore / 100,
+    bullish_score: bullishScore,
+    risk_adjusted_score: riskAdjustedScore,
+    factor_scores: factorScores,
+    positive_drivers: factorScores.filter((item) => item.direction === "positive").slice(0, 3),
+    risk_score: {
+      ...signalPayload.risk_score,
+      event: eventRisk,
+      explanation: "Event risk now incorporates official TWSE/MOPS material information, TWSE news, and CNA finance/technology RSS context.",
+    },
+    explanation: {
+      ...signalPayload.explanation,
+      top_positive_factors: [...topPositive, ...(signalPayload.explanation?.top_positive_factors ?? [])].slice(0, 4),
+      top_risk_factors: [...topRisk, ...(signalPayload.explanation?.top_risk_factors ?? [])].slice(0, 4),
+      component_scores: {
+        ...(signalPayload.explanation?.component_scores ?? {}),
+        NewsScore: newsScore,
+      },
+    },
+  };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 async function attachTwseMarketData(signalPayload: PredictionSignal): Promise<PredictionSignal> {
   const [quoteMap, valuationMap] = await Promise.all([getTwseQuoteMap(), getTwseValuationMap()]);
   const quote = quoteMap.get(signalPayload.symbol) ?? null;
   const valuation = valuationMap.get(signalPayload.symbol) ?? null;
-  return {
-    ...signalPayload,
+  const instrument: StockInstrument = {
+    symbol: signalPayload.symbol,
     name: quote?.name || valuation?.name || signalPayload.name,
+    sector: signalPayload.sector ?? null,
+    market: "TW",
+    currency: "TWD",
+  };
+  const news = await getNewsForInstrument(instrument);
+  return applyNewsSignal({
+    ...signalPayload,
+    name: instrument.name,
     quote,
     valuation,
-  };
+  }, news);
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit & { next?: { revalidate?: number }; timeoutMs?: number } = {}): Promise<Response> {
+  const { timeoutMs = 8000, ...fetchInit } = init;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...fetchInit, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function formatTwseMonth(month: string): string {
@@ -758,6 +1081,7 @@ function signal(symbol: string, name: string, index: number, sector: string | nu
   return {
     symbol,
     name,
+    sector,
     signal_date: "2026-06-02",
     horizon: "1D/5D/20D",
     probability_up: base,
@@ -811,7 +1135,8 @@ function signal(symbol: string, name: string, index: number, sector: string | nu
 
 async function getFallbackSignals(limit?: number): Promise<PredictionSignal[]> {
   const stocks = await getFallbackInstruments();
-  return stocks.slice(0, limit ?? stocks.length).map((item, index) => signal(item.symbol, item.name, index, item.sector));
+  const selected = stocks.slice(0, limit ?? Math.min(stocks.length, 180));
+  return Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
 }
 
 function mockNews(symbol: string): PredictionSignal["news"] {
