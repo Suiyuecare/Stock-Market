@@ -454,6 +454,21 @@ const seedInstruments: StockInstrument[] = [
   { symbol: "2382", market: "TW", name: "廣達", sector: "電腦及週邊", currency: "TWD" },
   { symbol: "2395", market: "TW", name: "研華", sector: "電腦及週邊", currency: "TWD" },
   { symbol: "2408", market: "TW", name: "南亞科", sector: "半導體", currency: "TWD" },
+  { symbol: "3017", market: "TW", name: "奇鋐", sector: "散熱", currency: "TWD" },
+  { symbol: "3324", market: "TPEX", name: "雙鴻", sector: "散熱", currency: "TWD" },
+  { symbol: "2383", market: "TW", name: "台光電", sector: "CCL", currency: "TWD" },
+  { symbol: "3037", market: "TW", name: "欣興", sector: "PCB/載板", currency: "TWD" },
+  { symbol: "2049", market: "TW", name: "上銀", sector: "機器人/自動化", currency: "TWD" },
+  { symbol: "2359", market: "TW", name: "所羅門", sector: "機器人/AI 視覺", currency: "TWD" },
+  { symbol: "1504", market: "TW", name: "東元", sector: "電機機械", currency: "TWD" },
+  { symbol: "1513", market: "TW", name: "中興電", sector: "重電", currency: "TWD" },
+  { symbol: "1519", market: "TW", name: "華城", sector: "重電", currency: "TWD" },
+  { symbol: "1605", market: "TW", name: "華新", sector: "電線電纜", currency: "TWD" },
+  { symbol: "2618", market: "TW", name: "長榮航", sector: "航空", currency: "TWD" },
+  { symbol: "2610", market: "TW", name: "華航", sector: "航空", currency: "TWD" },
+  { symbol: "2634", market: "TW", name: "漢翔", sector: "航太/國防", currency: "TWD" },
+  { symbol: "2912", market: "TW", name: "統一超", sector: "貿易百貨", currency: "TWD" },
+  { symbol: "6446", market: "TPEX", name: "藥華藥", sector: "生技醫療", currency: "TWD" },
   { symbol: "2330", market: "TW", name: "台積電", sector: "半導體", currency: "TWD" },
   { symbol: "2454", market: "TW", name: "聯發科", sector: "半導體", currency: "TWD" },
   { symbol: "2603", market: "TW", name: "長榮", sector: "航運業", currency: "TWD" },
@@ -493,6 +508,7 @@ let apiRiskFlagCache: Map<string, ApiRiskFlag[]> | null = null;
 let officialNewsCache: NewsItem[] | null = null;
 let officialNewsCacheLoadedAt = 0;
 let fallbackSignalsCache: PredictionSignal[] | null = null;
+let fallbackRecommendationSignalsCache: PredictionSignal[] | null = null;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
 let tpexQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
@@ -500,6 +516,7 @@ let tpexValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null
 let apiRiskFlagCachePromise: Promise<Map<string, ApiRiskFlag[]>> | null = null;
 let officialNewsCachePromise: Promise<NewsItem[]> | null = null;
 let fallbackSignalsCachePromise: Promise<PredictionSignal[]> | null = null;
+let fallbackRecommendationSignalsCachePromise: Promise<PredictionSignal[]> | null = null;
 
 type NewsItem = PredictionSignal["news"][number] & {
   stock_id?: string | null;
@@ -1663,6 +1680,13 @@ async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
   return fallbackSignalsCachePromise;
 }
 
+async function getRecommendationFallbackSignals(): Promise<PredictionSignal[]> {
+  if (fallbackRecommendationSignalsCache) return fallbackRecommendationSignalsCache;
+  if (fallbackRecommendationSignalsCachePromise) return fallbackRecommendationSignalsCachePromise;
+  fallbackRecommendationSignalsCachePromise = Promise.resolve(loadRecommendationFallbackSignals());
+  return fallbackRecommendationSignalsCachePromise;
+}
+
 async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   const stocks = await getFallbackInstruments();
   const stockMap = new Map(stocks.map((item) => [item.symbol, item]));
@@ -1673,6 +1697,15 @@ async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   ]).slice(0, Math.min(stocks.length, 180));
   fallbackSignalsCache = await Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
   return fallbackSignalsCache;
+}
+
+function loadRecommendationFallbackSignals(): PredictionSignal[] {
+  const seedMap = new Map(seedInstruments.map((item) => [item.symbol, item]));
+  const selected = recommendationCoverageSymbols
+    .map((symbol) => seedMap.get(symbol))
+    .filter((item): item is StockInstrument => Boolean(item));
+  fallbackRecommendationSignalsCache = selected.map((item, index) => signal(item.symbol, item.name, index, item.sector));
+  return fallbackRecommendationSignalsCache;
 }
 
 function mockNews(symbol: string): PredictionSignal["news"] {
@@ -1832,7 +1865,11 @@ async function mockResponse(path: string): Promise<unknown> {
     const stocks = await getFallbackInstruments();
     return { disclaimer, stocks } satisfies StockListResponse;
   }
-  if (path === "/api/stocks/ranking" || path === "/api/rankings/top-probability") {
+  if (path === "/api/rankings/top-probability") {
+    const signals = await getRecommendationFallbackSignals();
+    return { disclaimer, signals } satisfies RankingResponse;
+  }
+  if (path === "/api/stocks/ranking") {
     const signals = await getFallbackSignals();
     return { disclaimer, signals } satisfies RankingResponse;
   }

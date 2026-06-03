@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.api.routes_stocks import RECOMMENDATION_COVERAGE_SYMBOLS
 from app.main import app
 
 
@@ -91,8 +92,7 @@ def test_top_probability_ranking() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["signals"]) >= 1
-    covered_symbols = {"2330", "1590", "2603", "2881", "1216", "1504", "1519", "1301", "6446"}
-    assert payload["signals"][0]["symbol"] in covered_symbols
+    assert payload["signals"][0]["symbol"] in set(RECOMMENDATION_COVERAGE_SYMBOLS)
 
 
 def test_institutional_buying_ranking() -> None:

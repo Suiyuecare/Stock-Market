@@ -1681,6 +1681,66 @@ tbody tr:hover {
   text-align: right;
 }
 
+.market-state-panel {
+  margin-bottom: 16px;
+}
+
+.market-state-grid,
+.horizon-weight-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.market-state-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.horizon-weight-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.market-state-grid div,
+.horizon-weight-grid div {
+  min-height: 128px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--soft);
+}
+
+.market-state-grid span,
+.market-state-grid small,
+.horizon-weight-grid span,
+.horizon-weight-grid small {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.market-state-grid strong,
+.horizon-weight-grid strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--ink);
+  font-size: 1.45rem;
+  font-weight: 1000;
+}
+
+.horizon-weight-grid strong {
+  min-height: 2.8em;
+  color: var(--accent);
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.market-state-grid small,
+.horizon-weight-grid small {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 .panel-note {
   margin: 14px 0 0;
   color: var(--muted);
@@ -2685,6 +2745,8 @@ tbody tr:hover {
   .related-news-grid,
   .stock-search-hero,
   .stock-ai-selector,
+  .market-state-grid,
+  .horizon-weight-grid,
   .horizon-main,
   .insight-grid,
   .industry-grid,
