@@ -457,12 +457,14 @@ let tpexQuoteCache: Map<string, TwseQuote> | null = null;
 let tpexValuationCache: Map<string, TwseValuation> | null = null;
 let apiRiskFlagCache: Map<string, ApiRiskFlag[]> | null = null;
 let officialNewsCache: NewsItem[] | null = null;
+let fallbackSignalsCache: PredictionSignal[] | null = null;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
 let tpexQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let tpexValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
 let apiRiskFlagCachePromise: Promise<Map<string, ApiRiskFlag[]>> | null = null;
 let officialNewsCachePromise: Promise<NewsItem[]> | null = null;
+let fallbackSignalsCachePromise: Promise<PredictionSignal[]> | null = null;
 
 type NewsItem = PredictionSignal["news"][number] & {
   stock_id?: string | null;
@@ -1479,9 +1481,22 @@ function signal(symbol: string, name: string, index: number, sector: string | nu
 }
 
 async function getFallbackSignals(limit?: number): Promise<PredictionSignal[]> {
+  const allSignals = await getAllFallbackSignals();
+  return typeof limit === "number" ? allSignals.slice(0, limit) : allSignals;
+}
+
+async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
+  if (fallbackSignalsCache) return fallbackSignalsCache;
+  if (fallbackSignalsCachePromise) return fallbackSignalsCachePromise;
+  fallbackSignalsCachePromise = loadAllFallbackSignals();
+  return fallbackSignalsCachePromise;
+}
+
+async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   const stocks = await getFallbackInstruments();
-  const selected = stocks.slice(0, limit ?? Math.min(stocks.length, 180));
-  return Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
+  const selected = stocks.slice(0, Math.min(stocks.length, 180));
+  fallbackSignalsCache = await Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
+  return fallbackSignalsCache;
 }
 
 function mockNews(symbol: string): PredictionSignal["news"] {
