@@ -91,7 +91,8 @@ def test_top_probability_ranking() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["signals"]) >= 1
-    assert payload["signals"][0]["probability_up_1d"] >= payload["signals"][-1]["probability_up_1d"]
+    ai_symbols = {"2330", "2317", "2382", "3231", "6669", "2308", "2345", "2454", "3035", "3037", "3017"}
+    assert payload["signals"][0]["symbol"] in ai_symbols
 
 
 def test_institutional_buying_ranking() -> None:

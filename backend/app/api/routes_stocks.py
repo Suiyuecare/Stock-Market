@@ -15,6 +15,24 @@ from app.services.scoring.technical_score import calculate_technical_score
 
 router = APIRouter()
 
+AI_PRIORITY_SYMBOLS = [
+    "2330", "2317", "2382", "3231", "6669", "2308", "2345", "2454", "2379", "3035",
+    "3443", "3661", "5274", "3017", "3324", "6230", "2421", "3653", "2383", "6274",
+    "6213", "2368", "3037", "8046", "3189", "4958", "3711", "2449", "3264", "6147",
+    "6515", "2408", "2344", "8299", "6412", "2356", "2357", "2376", "2377", "4938",
+    "2324",
+]
+
+AI_THEME_KEYWORDS = {
+    "半導體": 68,
+    "IC": 64,
+    "晶片": 68,
+    "電腦及週邊": 60,
+    "電子零組件": 62,
+    "通信網路": 60,
+    "光電": 48,
+}
+
 
 @lru_cache(maxsize=1)
 def _public_instruments() -> tuple[dict, ...]:
@@ -87,8 +105,19 @@ def _ranking_payload(signals: List[Any]) -> Dict[str, Any]:
 
 
 def _ranking_signals(limit: int = 160) -> List[Any]:
-    instruments = list(_public_instruments())[:limit]
+    all_instruments = list(_public_instruments())
+    instrument_map = {str(instrument["symbol"]): instrument for instrument in all_instruments}
+    ai_instruments = [instrument_map[symbol] for symbol in AI_PRIORITY_SYMBOLS if symbol in instrument_map]
+    other_instruments = [instrument for instrument in all_instruments if str(instrument["symbol"]) not in AI_PRIORITY_SYMBOLS]
+    instruments = unique_instruments([*ai_instruments, *other_instruments])[:limit]
     return [build_signal(instrument) for instrument in instruments]
+
+
+def _ai_relevance(signal: Any) -> int:
+    if signal.symbol in AI_PRIORITY_SYMBOLS:
+        return 100 - min(AI_PRIORITY_SYMBOLS.index(signal.symbol), 38)
+    text = f"{signal.name} {getattr(signal, 'sector', '')}"
+    return max([score for keyword, score in AI_THEME_KEYWORDS.items() if keyword in text] or [20])
 
 
 @router.get("/market/summary", response_model=MarketSummary)
@@ -109,7 +138,11 @@ def stock_ranking() -> RankingResponse:
 
 @router.get("/rankings/top-probability")
 def top_probability_ranking() -> Dict[str, Any]:
-    signals = sorted(_ranking_signals(), key=lambda signal: signal.probability_up_1d or signal.probability_up, reverse=True)
+    signals = sorted(
+        _ranking_signals(),
+        key=lambda signal: (_ai_relevance(signal), signal.probability_up_1d or signal.probability_up),
+        reverse=True,
+    )
     return _ranking_payload(signals)
 
 
