@@ -370,7 +370,20 @@ export async function fetchVolumePriceDivergenceRanking(): Promise<VolumePriceRa
 }
 
 export async function fetchStockDetail(symbol: string): Promise<StockDetailResponse> {
-  return getJson<StockDetailResponse>(`/api/stocks/${symbol}`);
+  const detail = await getJson<StockDetailResponse>(`/api/stocks/${symbol}`);
+  const signalWithLatestMarketData = await attachTwseMarketData(detail.signal);
+  return {
+    ...detail,
+    instrument: {
+      ...detail.instrument,
+      symbol: signalWithLatestMarketData.symbol,
+      name: signalWithLatestMarketData.name,
+      sector: signalWithLatestMarketData.sector ?? detail.instrument.sector,
+      market: signalWithLatestMarketData.quote?.source === "TPEx OpenAPI" ? "TPEX" : detail.instrument.market,
+      currency: "TWD",
+    },
+    signal: signalWithLatestMarketData,
+  };
 }
 
 export async function fetchStockScores(symbol: string): Promise<StockScoresResponse> {
