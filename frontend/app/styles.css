@@ -1704,6 +1704,163 @@ tbody tr:hover {
   line-height: 1.55;
 }
 
+.kline-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.kline-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.kline-quote-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.kline-quote-line > strong {
+  width: 100%;
+  color: #050505;
+  font-size: 1.14rem;
+}
+
+.kline-quote-line span {
+  color: #050505;
+}
+
+.kline-quote-line b {
+  font-size: 1.08rem;
+  font-weight: 1000;
+}
+
+.taiwan-up {
+  color: #ef3b2d;
+}
+
+.taiwan-down {
+  color: #3f9a3f;
+}
+
+.kline-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.kline-actions button {
+  min-width: 54px;
+  border: 1px solid #c9c9c9;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: #ffffff;
+  color: #222;
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.kline-actions button:not(:first-child) {
+  min-width: 48px;
+  background: #77716d;
+  color: #fff;
+}
+
+.kline-range-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kline-range-tabs button {
+  border: 0;
+  border-radius: 4px;
+  padding: 9px 18px;
+  background: #f5f5f5;
+  color: #222;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.kline-range-tabs button.on {
+  background: #e8eef7;
+  color: #060606;
+}
+
+.kline-chart-frame {
+  border: 1px solid #cdd6e4;
+  background: #fff;
+}
+
+.kline-chart-frame.compact {
+  margin-top: 4px;
+}
+
+.kline-main-chart,
+.kline-subchart {
+  width: 100%;
+}
+
+.kline-main-chart {
+  min-height: 390px;
+}
+
+.kline-subchart {
+  min-height: 150px;
+}
+
+.kline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: #4b5563;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.kline-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kline-legend i {
+  width: 20px;
+  height: 4px;
+  border-radius: 999px;
+}
+
+.legend-red {
+  background: #ef3b2d;
+}
+
+.legend-green {
+  background: #65a844;
+}
+
+.legend-yellow {
+  background: #ffbf2f;
+}
+
+.legend-pink {
+  background: #ff1493;
+}
+
+.kline-legend small {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .stock-header-actions {
   display: flex;
   align-items: center;

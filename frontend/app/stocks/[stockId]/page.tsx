@@ -118,12 +118,12 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">成長時間軸</p>
-              <h2>公司營收最近有沒有變好</h2>
+              <p className="eyebrow">K 線時間軸</p>
+              <h2>像券商圖表一樣看價格、成交量與 KD</h2>
             </div>
-            <span className="panel-tag">最多 1 年</span>
+            <span className="panel-tag">近 1 年</span>
           </div>
-          <StockGrowthTimeline history={detail.growth_history} />
+          <StockGrowthTimeline history={detail.growth_history} signal={signal} />
         </article>
 
         <article className="panel span-2">
