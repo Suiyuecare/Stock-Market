@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "corepack enable && corepack prepare pnpm@11.2.2 --activate && cd frontend && pnpm build",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "corepack enable && corepack prepare pnpm@11.2.2 --activate && cd frontend && pnpm install --no-frozen-lockfile",
+  "installCommand": "cd frontend && npm install",
   "framework": "nextjs"
 }
