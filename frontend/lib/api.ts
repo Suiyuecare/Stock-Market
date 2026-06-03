@@ -100,6 +100,7 @@ export type PredictionSignal = {
     related_symbols: string[];
     summary?: string;
     url?: string;
+    image_url?: string;
     event_type?: string;
     source_url?: string;
     linkage_reason?: string;
@@ -973,7 +974,8 @@ function parseRssNews(xml: string, source: string, sourceUrl: string): NewsItem[
   const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
   const parsed: Array<NewsItem | null> = items.map((item) => {
       const title = decodeXml(readRssTag(item, "title"));
-      const summary = stripTags(decodeXml(readRssTag(item, "description")));
+      const description = decodeXml(readRssTag(item, "description"));
+      const summary = stripTags(description);
       if (!title) return null;
       const sentiment = classifyNewsSentiment(`${title}\n${summary}`);
       return {
@@ -986,6 +988,7 @@ function parseRssNews(xml: string, source: string, sourceUrl: string): NewsItem[
         related_symbols: inferRelatedSymbols(`${title}\n${summary}`),
         summary: summary || title,
         url: decodeXml(readRssTag(item, "link")),
+        image_url: extractRssImageUrl(item, description),
         event_type: inferEventType(`${title}\n${summary}`),
         linkage_reason: "CNA 財經/科技新聞依公司名稱、產業與供應鏈關鍵字連動",
       } satisfies NewsItem;
@@ -996,6 +999,21 @@ function parseRssNews(xml: string, source: string, sourceUrl: string): NewsItem[
 function readRssTag(item: string, tag: string): string {
   const match = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
   return match?.[1]?.replace("<![CDATA[", "").replace("]]>", "").trim() ?? "";
+}
+
+function readRssAttribute(item: string, tag: string, attribute: string): string {
+  const match = item.match(new RegExp(`<${tag}[^>]*\\s${attribute}=["']([^"']+)["'][^>]*\\/?>`, "i"));
+  return match?.[1]?.trim() ?? "";
+}
+
+function extractRssImageUrl(item: string, description: string): string | undefined {
+  const candidates = [
+    readRssAttribute(item, "media:content", "url"),
+    readRssAttribute(item, "media:thumbnail", "url"),
+    readRssAttribute(item, "enclosure", "url"),
+    readRssAttribute(description, "img", "src"),
+  ];
+  return candidates.find((candidate) => /^https?:\/\//i.test(candidate));
 }
 
 function decodeXml(value: string): string {

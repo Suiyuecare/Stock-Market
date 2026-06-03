@@ -807,10 +807,41 @@ tbody tr:hover {
 
 .timeline-item {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
   color: var(--ink);
   text-decoration: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.timeline-content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.news-thumb {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(45, 27, 16, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff7eb, #eef7ed);
+}
+
+.news-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.news-thumb span {
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 1000;
 }
 
 .timeline-item:hover,
@@ -849,16 +880,43 @@ tbody tr:hover {
   background: #fff3ee;
 }
 
+.timeline-item.news-positive .news-thumb {
+  border-color: rgba(179, 58, 45, 0.24);
+  background: linear-gradient(135deg, #ffe4dc, #fff7ef);
+}
+
+.timeline-item.news-positive .news-thumb span {
+  color: var(--negative);
+}
+
 .timeline-item.news-negative,
 .related-news-card.news-negative {
   border-color: rgba(47, 125, 85, 0.3);
   background: #f2f8ef;
 }
 
+.timeline-item.news-negative .news-thumb {
+  border-color: rgba(47, 125, 85, 0.22);
+  background: linear-gradient(135deg, #e5f3df, #fffdf8);
+}
+
+.timeline-item.news-negative .news-thumb span {
+  color: var(--positive);
+}
+
 .timeline-item.news-neutral,
 .related-news-card.news-neutral {
   border-color: rgba(45, 27, 16, 0.16);
   background: #fffdf8;
+}
+
+.timeline-item.news-neutral .news-thumb {
+  border-color: rgba(45, 27, 16, 0.14);
+  background: linear-gradient(135deg, #f2eee6, #fffdf8);
+}
+
+.timeline-item.news-neutral .news-thumb span {
+  color: var(--ink);
 }
 
 .timeline-item.news-positive .timeline-title strong,
@@ -2678,6 +2736,17 @@ tbody tr:hover {
   .mobile-footer-nav a.on span {
     background: rgba(255, 255, 255, 0.22);
     color: #fff;
+  }
+
+  .timeline-item {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .news-thumb {
+    width: 76px;
+    border-radius: 12px;
   }
 
   .kline-main-chart {

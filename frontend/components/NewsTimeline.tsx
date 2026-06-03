@@ -8,20 +8,32 @@ export function NewsTimeline({ news }: { news: PredictionSignal["news"] }) {
       {news.map((event) => {
         const tone = newsTone(event);
         const href = newsHref(event);
+        const sourceInitial = event.source
+          .replace(/RSS|新聞|財經|科技|TWSE|MOPS|證交所|\/|\s/g, "")
+          .slice(0, 2) || "NEWS";
 
         return (
           <a className={`timeline-item news-${tone}`} href={href} target="_blank" rel="noreferrer" key={`${event.source}-${event.title}`}>
-            <div className="timeline-title">
-              <strong>
-                {sanitizeDisplayText(event.title)}
-              </strong>
-              <b>{newsToneLabel(tone)}</b>
+            <div className="news-thumb" aria-hidden="true">
+              {event.image_url ? (
+                <img src={event.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+              ) : (
+                <span>{sourceInitial}</span>
+              )}
             </div>
-            {event.summary ? <p>{sanitizeDisplayText(event.summary)}</p> : null}
-            <span>
-              {event.source} · {formatNewsTime(event.published_at)} · impact {event.impact_score.toFixed(2)} · 點擊看來源
-            </span>
-            {event.linkage_reason ? <small>{event.linkage_reason}</small> : null}
+            <div className="timeline-content">
+              <div className="timeline-title">
+                <strong>
+                  {sanitizeDisplayText(event.title)}
+                </strong>
+                <b>{newsToneLabel(tone)}</b>
+              </div>
+              {event.summary ? <p>{sanitizeDisplayText(event.summary)}</p> : null}
+              <span>
+                {event.source} · {formatNewsTime(event.published_at)} · impact {event.impact_score.toFixed(2)} · 點擊看來源
+              </span>
+              {event.linkage_reason ? <small>{event.linkage_reason}</small> : null}
+            </div>
           </a>
         );
       })}
