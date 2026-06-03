@@ -192,6 +192,7 @@ export function estimateCurrentPrice(signal: PredictionSignal): number {
 
 function quoteSourceLabel(signal: PredictionSignal): string {
   if (signal.quote?.source === "TPEx OpenAPI") return "TPEx OpenAPI /tpex_mainboard_daily_close_quotes";
+  if (signal.quote?.source === "TWSE Official STOCK_DAY") return "TWSE 官方 /afterTrading/STOCK_DAY";
   if (signal.quote?.source === "TWSE OpenAPI") return "TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL";
   return "後端 API 或示範資料";
 }
@@ -204,7 +205,7 @@ function valuationSourceLabel(signal: PredictionSignal): string {
 
 function exchangeLabel(signal: PredictionSignal): string {
   if (signal.quote?.source === "TPEx OpenAPI" || signal.valuation?.source === "TPEx OpenAPI") return "TPEx 上櫃";
-  if (signal.quote?.source === "TWSE OpenAPI" || signal.valuation?.source === "TWSE OpenAPI") return "TWSE 上市";
+  if (signal.quote?.source === "TWSE OpenAPI" || signal.quote?.source === "TWSE Official STOCK_DAY" || signal.valuation?.source === "TWSE OpenAPI") return "TWSE 上市";
   return "台股";
 }
 

@@ -3,7 +3,13 @@ import { buildTargetPriceRange } from "@/lib/view-model";
 
 export function TargetPriceRangePanel({ signal }: { signal: PredictionSignal }) {
   const range = buildTargetPriceRange(signal);
-  const quoteLabel = signal.quote?.source === "TPEx OpenAPI" ? "TWD · TPEx 盤後收盤價" : signal.quote?.source === "TWSE OpenAPI" ? "TWD · TWSE 盤後收盤價" : "TWD 估算現價";
+  const quoteLabel = signal.quote?.source === "TPEx OpenAPI"
+    ? "TWD · TPEx 盤後收盤價"
+    : signal.quote?.source === "TWSE Official STOCK_DAY"
+      ? "TWD · TWSE 官方日成交收盤價"
+      : signal.quote?.source === "TWSE OpenAPI"
+        ? "TWD · TWSE 盤後總表收盤價"
+        : "TWD 估算現價";
 
   return (
     <div className="target-range">

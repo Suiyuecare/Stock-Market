@@ -2,6 +2,7 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:800
 const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
 const twseMonthlyRevenueUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L";
 const twseDailyQuoteUrl = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
+const twseStockDayUrl = "https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY";
 const twseValuationUrl = "https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL";
 const twseMaterialNewsUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L";
 const twseExchangeNewsUrl = "https://openapi.twse.com.tw/v1/news/newsList";
@@ -111,7 +112,7 @@ export type PredictionSignal = {
 };
 
 export type TwseQuote = {
-  source: "TWSE OpenAPI" | "TPEx OpenAPI";
+  source: "TWSE OpenAPI" | "TWSE Official STOCK_DAY" | "TPEx OpenAPI";
   endpoint: string;
   date: string;
   symbol: string;
@@ -452,6 +453,7 @@ const seedInstruments: StockInstrument[] = [
 let twseInstrumentCache: StockInstrument[] | null = null;
 const revenueGrowthCache = new Map<string, { history: RevenueGrowthPoint[]; source: DataSourceReference }>();
 let twseQuoteCache: Map<string, TwseQuote> | null = null;
+let twseQuoteCacheLoadedAt = 0;
 let twseValuationCache: Map<string, TwseValuation> | null = null;
 let tpexQuoteCache: Map<string, TwseQuote> | null = null;
 let tpexValuationCache: Map<string, TwseValuation> | null = null;
@@ -615,8 +617,36 @@ function parseTwseDate(value: string | undefined): string {
   return `${year}-${trimmed.slice(3, 5)}-${trimmed.slice(5, 7)}`;
 }
 
+function parseTwseSlashDate(value: string | undefined): string {
+  const trimmed = String(value ?? "").trim();
+  const match = /^(\d{3})\/(\d{2})\/(\d{2})$/.exec(trimmed);
+  if (!match) return "資料日期待確認";
+  const year = Number(match[1]) + 1911;
+  return `${year}-${match[2]}-${match[3]}`;
+}
+
+function taipeiDateKey(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}${values.month}${values.day}`;
+}
+
+function pickLatestQuote(...quotes: Array<TwseQuote | null | undefined>): TwseQuote | null {
+  return quotes.reduce<TwseQuote | null>((latest, quote) => {
+    if (!quote?.close) return latest;
+    if (!latest) return quote;
+    return quote.date > latest.date ? quote : latest;
+  }, null);
+}
+
 async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
-  if (twseQuoteCache) return twseQuoteCache;
+  const cacheAgeMs = Date.now() - twseQuoteCacheLoadedAt;
+  if (twseQuoteCache && cacheAgeMs < 10 * 60 * 1000) return twseQuoteCache;
   if (twseQuoteCachePromise) return twseQuoteCachePromise;
   twseQuoteCachePromise = loadTwseQuoteMap();
   return twseQuoteCachePromise;
@@ -625,7 +655,7 @@ async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
 async function loadTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
   const map = new Map<string, TwseQuote>();
   try {
-    const response = await fetchWithTimeout(twseDailyQuoteUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 });
+    const response = await fetchWithTimeout(twseDailyQuoteUrl, { cache: "no-store", timeoutMs: 6000 });
     if (response.ok) {
       const rows = (await response.json()) as Array<Record<string, string>>;
       rows.forEach((row) => {
@@ -652,7 +682,44 @@ async function loadTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
     // Keep the frontend resilient when TWSE is temporarily unavailable.
   }
   twseQuoteCache = map;
+  twseQuoteCacheLoadedAt = Date.now();
+  twseQuoteCachePromise = null;
   return map;
+}
+
+async function getLatestTwseStockDayQuote(symbol: string, fallbackName?: string): Promise<TwseQuote | null> {
+  if (!/^\d{4}$/.test(symbol)) return null;
+  const endpoint = `${twseStockDayUrl}?date=${taipeiDateKey()}&stockNo=${symbol}&response=json`;
+  try {
+    const response = await fetchWithTimeout(endpoint, { cache: "no-store", timeoutMs: 6000 });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as {
+      stat?: string;
+      title?: string;
+      data?: string[][];
+    };
+    if (payload.stat !== "OK" || !Array.isArray(payload.data) || payload.data.length === 0) return null;
+    const latestRow = [...payload.data].reverse().find((row) => parseTwseNumber(row[6]) !== null);
+    if (!latestRow) return null;
+    const titleName = / \d{4}\s+(.+?)\s+各日成交資訊/.exec(payload.title ?? "")?.[1]?.trim();
+    return {
+      source: "TWSE Official STOCK_DAY",
+      endpoint,
+      date: parseTwseSlashDate(latestRow[0]),
+      symbol,
+      name: titleName || fallbackName || symbol,
+      open: parseTwseNumber(latestRow[3]),
+      high: parseTwseNumber(latestRow[4]),
+      low: parseTwseNumber(latestRow[5]),
+      close: parseTwseNumber(latestRow[6]),
+      change: parseTwseNumber(latestRow[7]),
+      trade_volume: parseTwseNumber(latestRow[1]),
+      trade_value: parseTwseNumber(latestRow[2]),
+      transaction_count: parseTwseNumber(latestRow[8]),
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function getTwseValuationMap(): Promise<Map<string, TwseValuation>> {
@@ -1276,7 +1343,7 @@ function getDataSourceStatus(): DataSourceStatus[] {
     ["FactSet/LSEG 目標價", "FACTSET_API_KEY", "https://developer.factset.com/api-catalog/factset-estimates-api"],
   ];
   return [
-    { name: "TWSE OpenAPI", status: "connected", detail: "上市行情、估值、重大訊息、注意/處置、融資融券、外資持股", url: "https://openapi.twse.com.tw/", requires_key: false },
+    { name: "TWSE OpenAPI", status: "connected", detail: "上市總表、估值、重大訊息、注意/處置、融資融券、外資持股；個股頁另接 TWSE 官方日成交資訊", url: "https://openapi.twse.com.tw/", requires_key: false },
     { name: "TPEx OpenAPI", status: "connected", detail: "上櫃行情與本益比/殖利率/股價淨值比", url: "https://www.tpex.org.tw/openapi/", requires_key: false },
     { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
     { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，前台新聞時間線已連動", url: cnaFinanceRssUrl, requires_key: false },
@@ -1302,8 +1369,11 @@ async function attachTwseMarketData(signalPayload: PredictionSignal): Promise<Pr
     getTpexValuationMap(),
     getApiRiskFlagMap(),
   ]);
-  const quote = quoteMap.get(signalPayload.symbol) ?? tpexQuoteMap.get(signalPayload.symbol) ?? null;
   const valuation = valuationMap.get(signalPayload.symbol) ?? tpexValuationMap.get(signalPayload.symbol) ?? null;
+  const twseQuote = quoteMap.get(signalPayload.symbol) ?? null;
+  const shouldTryLatestTwseQuote = Boolean(twseQuote || valuation?.source === "TWSE OpenAPI");
+  const latestTwseQuote = shouldTryLatestTwseQuote ? await getLatestTwseStockDayQuote(signalPayload.symbol, twseQuote?.name || valuation?.name) : null;
+  const quote = pickLatestQuote(latestTwseQuote, twseQuote) ?? tpexQuoteMap.get(signalPayload.symbol) ?? null;
   const market = quote?.source === "TPEx OpenAPI" || valuation?.source === "TPEx OpenAPI" ? "TPEX" : "TW";
   const instrument: StockInstrument = {
     symbol: signalPayload.symbol,

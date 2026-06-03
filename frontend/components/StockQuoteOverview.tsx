@@ -5,7 +5,11 @@ export function StockQuoteOverview({ signal }: { signal: PredictionSignal }) {
   const quote = buildQuoteOverview(signal);
   const metrics = buildStockMetrics(signal);
   const changeTone = quote.change >= 0 ? "positive" : "negative";
-  const marketLabel = signal.quote?.source === "TPEx OpenAPI" ? "上櫃" : signal.quote?.source === "TWSE OpenAPI" ? "上市" : "台股";
+  const marketLabel = signal.quote?.source === "TPEx OpenAPI"
+    ? "上櫃"
+    : signal.quote?.source === "TWSE OpenAPI" || signal.quote?.source === "TWSE Official STOCK_DAY"
+      ? "上市"
+      : "台股";
   const quoteRows: Array<[string, string | number]> = [
     ["今開", quote.open],
     ["最高", quote.high],
