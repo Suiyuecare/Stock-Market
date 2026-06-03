@@ -87,12 +87,12 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
     <AppShell active="/stocks/2330">
       <header className="topbar">
         <div>
-          <p className="eyebrow">個股明燈</p>
-          <h1>{signal.symbol} {signal.name} 個股搜尋與機率分析</h1>
+          <p className="eyebrow">STOCK SIGNAL GUIDE</p>
+          <h1>{signal.symbol} {signal.name}：先看結論，再看原因與風險</h1>
         </div>
         <div className="stock-header-actions">
           <WatchlistButton stock={{ symbol: signal.symbol, name: signal.name, sector: signal.sector ?? null }} />
-          <div className="status ok">5D 上漲機率 {metrics.probabilityUp5d}%</div>
+          <div className="status ok">5D 觀察機率 {metrics.probabilityUp5d}%</div>
         </div>
       </header>
       <ComplianceNotice />
@@ -100,7 +100,7 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
       <section className="panel stock-search-hero">
         <div>
           <p className="eyebrow">Stock Search</p>
-          <h2>先搜尋個股，再看完整資訊</h2>
+          <h2>輸入股票代號或公司名，先從一檔看懂</h2>
         </div>
         <StockSearch />
       </section>
@@ -109,17 +109,17 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
 
       <section className="metric-grid">
         <ScoreCard label="上漲機率 1D" value={`${metrics.probabilityUp1d}%`} detail="下一交易日觀察訊號" tone={scoreTone(metrics.probabilityUp1d)} />
-        <ScoreCard label="上漲機率 5D" value={`${metrics.probabilityUp5d}%`} detail="短週期推估訊號" tone={scoreTone(metrics.probabilityUp5d)} />
-        <ScoreCard label="上漲機率 20D" value={`${metrics.probabilityUp20d}%`} detail="中週期研究訊號" tone={scoreTone(metrics.probabilityUp20d)} />
-        <ScoreCard label="風險調整分數" value={formatScore(scores.RiskAdjustedScore)} detail="BullishScore 扣除風險係數" />
+        <ScoreCard label="上漲機率 5D" value={`${metrics.probabilityUp5d}%`} detail="主要觀察週期" tone={scoreTone(metrics.probabilityUp5d)} />
+        <ScoreCard label="上漲機率 20D" value={`${metrics.probabilityUp20d}%`} detail="中期研究訊號" tone={scoreTone(metrics.probabilityUp20d)} />
+        <ScoreCard label="扣風險後分數" value={formatScore(scores.RiskAdjustedScore)} detail="分數越高，研究條件越完整" />
       </section>
 
       <section className="grid">
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Growth Timeline</p>
-              <h2>個股成長時間軸</h2>
+              <p className="eyebrow">成長時間軸</p>
+              <h2>公司營收最近有沒有變好</h2>
             </div>
             <span className="panel-tag">最多 1 年</span>
           </div>
@@ -129,8 +129,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Probability Target</p>
-              <h2>上漲/下跌機率與 1D / 5D / 20D 目標金額</h2>
+              <p className="eyebrow">機率與區間</p>
+              <h2>1D / 5D / 20D 的觀察機率與目標區間</h2>
             </div>
           </div>
           <HorizonProbabilityPanel signal={signal} />
@@ -139,8 +139,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Stock Data Tabs</p>
-              <h2>行情 / K線 / 訊號 / 族群 / 法人 / 大戶</h2>
+              <p className="eyebrow">深入資料</p>
+              <h2>想看更細時，再切到行情、K線、法人與大戶</h2>
             </div>
           </div>
           <StockInsightTabs signal={signal} technical={technical} institutional={institutional} radar={radar} />
@@ -149,8 +149,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Target Range</p>
-              <h2>各投顧目標價區間</h2>
+              <p className="eyebrow">價格區間</p>
+              <h2>現在金額與研究區間</h2>
             </div>
           </div>
           <TargetPriceRangePanel signal={signal} />
@@ -159,8 +159,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Plain Language</p>
-              <h2>是否列入觀察與原因</h2>
+              <p className="eyebrow">白話結論</p>
+              <h2>這檔目前是否值得放入觀察</h2>
             </div>
           </div>
           <BeginnerDecisionPanel signal={signal} />
@@ -169,8 +169,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Probability Analysis</p>
-              <h2>機率分析：每一項數值如何量化加總</h2>
+              <p className="eyebrow">機率分析</p>
+              <h2>每個分數如何加總成觀察機率</h2>
             </div>
           </div>
           <div className="score-matrix">
@@ -188,8 +188,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Factors</p>
-              <h2>正向 / 負向 / 風險因子</h2>
+              <p className="eyebrow">原因拆解</p>
+              <h2>加分、扣分與風險因子</h2>
             </div>
           </div>
           <FactorBreakdown positiveDrivers={signal.positive_drivers} negativeDrivers={signal.negative_drivers} riskFactors={riskFactors} />
@@ -198,8 +198,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Win-rate Evidence</p>
-              <h2>勝率最佳化與回測可信度</h2>
+              <p className="eyebrow">歷史驗證</p>
+              <h2>類似訊號過去有沒有站得住腳</h2>
             </div>
           </div>
           <BacktestConfidencePanel signal={signal} />
@@ -208,8 +208,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Reference</p>
-              <h2>客觀依據與資料來源</h2>
+              <p className="eyebrow">資料來源</p>
+              <h2>這個判讀引用了哪些 Reference</h2>
             </div>
           </div>
           <ReferencePanel signal={signal} />
@@ -218,8 +218,8 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">News</p>
-              <h2>相關股票新聞與事件連動</h2>
+              <p className="eyebrow">最新事件</p>
+              <h2>新聞與相關股票怎麼連動</h2>
             </div>
           </div>
           <RelatedStockNewsPanel signal={signal} />

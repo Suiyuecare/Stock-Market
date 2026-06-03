@@ -35,37 +35,37 @@ export default async function Home() {
     <AppShell active="/">
       <header className="topbar">
         <div>
-          <p className="eyebrow">台美股訊號研究平台</p>
-          <h1>入門友善版觀察工作台</h1>
+          <p className="eyebrow">BEGINNER STOCK DASHBOARD</p>
+          <h1>今天先看哪些股票？新手版訊號總覽</h1>
         </div>
-        <div className="status ok">研究視角：觀察訊號，不提供個人化建議 · 已同步前台版型</div>
+        <div className="status ok">每 1 分鐘更新新聞 · 盤後同步官方行情</div>
       </header>
 
       <ComplianceNotice />
 
       <section className="guide-strip" aria-label="新手導覽">
         <div>
-          <span>Step 1</span>
-          <strong>先看上漲機率</strong>
-          <small>用 1D / 5D / 20D 區分短中期觀察，不把單一數字當答案。</small>
+          <span>第 1 步</span>
+          <strong>先看能不能列入觀察</strong>
+          <small>系統先把 1D / 5D / 20D 機率整理好，讓你不用一開始就看一堆線圖。</small>
         </div>
         <div>
-          <span>Step 2</span>
-          <strong>再看為什麼</strong>
-          <small>系統列出基本面、籌碼、技術、美股連動與新聞 reference。</small>
+          <span>第 2 步</span>
+          <strong>再看它為什麼被選到</strong>
+          <small>基本面、籌碼、技術、美股連動與新聞都會拆成加分或扣分原因。</small>
         </div>
         <div>
-          <span>Step 3</span>
-          <strong>最後看風險</strong>
-          <small>風險係數過高時，即使機率高也只列入高風險觀察。</small>
+          <span>第 3 步</span>
+          <strong>最後看自己能不能承受</strong>
+          <small>風險係數太高時，即使分數漂亮，也只適合放在高風險觀察區。</small>
         </div>
       </section>
 
       <section className="metric-grid">
-        <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />
-        <ScoreCard label="美股連動狀態" value={summary.us_premarket_status} detail="開盤前觀察訊號" />
-        <ScoreCard label="追蹤標的" value={`${stocks.stocks.length}`} detail="台股樣本池" />
-        <ScoreCard label="入門首選觀察" value={`${selected.symbol}`} detail={`${selected.name} · 5D ${metrics.probabilityUp5d}%`} tone="positive" />
+        <ScoreCard label="台股資料狀態" value={summary.tw_status} detail={summary.session_date} />
+        <ScoreCard label="美股風向" value={summary.us_premarket_status} detail="會影響電子與 AI 供應鏈" />
+        <ScoreCard label="目前追蹤股票" value={`${stocks.stocks.length}`} detail="可搜尋、可放入關注名單" />
+        <ScoreCard label="今日範例觀察" value={`${selected.symbol}`} detail={`${selected.name} · 5D ${metrics.probabilityUp5d}%`} tone="positive" />
       </section>
 
       {summary.data_source_status?.length ? (
@@ -84,8 +84,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Beginner Mode</p>
-              <h2>為什麼今天先看這檔</h2>
+              <p className="eyebrow">新手解讀</p>
+              <h2>這檔股票現在該怎麼理解</h2>
             </div>
             <a className="text-link" href={`/stocks/${selected.symbol}`}>看完整分析</a>
           </div>
@@ -95,8 +95,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Growth Curve</p>
-              <h2>營收成長曲線與官方 API</h2>
+              <p className="eyebrow">成長曲線</p>
+              <h2>公司最近成長有沒有變好</h2>
             </div>
             <a className="text-link" href="/stocks/2330">看個股完整曲線</a>
           </div>
@@ -106,8 +106,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Target Range</p>
-              <h2>現價與上看區間</h2>
+              <p className="eyebrow">價格區間</p>
+              <h2>現在價格與研究區間</h2>
             </div>
           </div>
           <TargetPriceRangePanel signal={selected} />
@@ -116,8 +116,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">My Portfolio</p>
-              <h2>觀察配置示意</h2>
+              <p className="eyebrow">配置概念</p>
+              <h2>不要只看單一股票</h2>
             </div>
           </div>
           <PortfolioAllocationPanel signal={selected} />
@@ -126,8 +126,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">References</p>
-              <h2>客觀依據與 Reference</h2>
+              <p className="eyebrow">客觀依據</p>
+              <h2>這些分數引用了哪些資料</h2>
             </div>
           </div>
           <ReferencePanel signal={selected} />
@@ -136,8 +136,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Backtest Confidence</p>
-              <h2>歷史相似訊號驗證</h2>
+              <p className="eyebrow">歷史驗證</p>
+              <h2>類似條件過去表現如何</h2>
             </div>
           </div>
           <BacktestConfidencePanel signal={selected} />
@@ -146,8 +146,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Ranking</p>
-              <h2>台股因子排名</h2>
+              <p className="eyebrow">觀察排行</p>
+              <h2>今天有哪些股票訊號比較整齊</h2>
             </div>
             <a className="text-link" href="/ranking">完整排名</a>
           </div>
@@ -157,8 +157,8 @@ export default async function Home() {
         <article className="panel span-2">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Signal Trend</p>
-              <h2>觀察訊號趨勢</h2>
+              <p className="eyebrow">趨勢圖</p>
+              <h2>分數最近是變強還是變弱</h2>
             </div>
           </div>
           <TechnicalChart />
@@ -167,8 +167,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">US Linkage</p>
-              <h2>美股連動雷達</h2>
+              <p className="eyebrow">美股影響</p>
+              <h2>美股科技股會怎麼牽動台股</h2>
             </div>
           </div>
           <USMarketRadar linkage={radar.linkage} stocks={radar.stocks} />
@@ -177,8 +177,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Risk Monitor</p>
-              <h2>{selected.symbol} 風險係數</h2>
+              <p className="eyebrow">風險提醒</p>
+              <h2>{selected.symbol} 需要先注意什麼</h2>
             </div>
           </div>
           <RiskPanel risk={sanitizeRiskScore(selected.risk_score)} />
@@ -188,8 +188,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Factor Explanation</p>
-              <h2>正向/負向因子</h2>
+              <p className="eyebrow">原因拆解</p>
+              <h2>哪些因素加分，哪些因素扣分</h2>
             </div>
           </div>
           <FactorBreakdown positiveDrivers={selected.positive_drivers} negativeDrivers={selected.negative_drivers} />
@@ -198,8 +198,8 @@ export default async function Home() {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">News Timeline</p>
-              <h2>新聞/事件時間線</h2>
+              <p className="eyebrow">最新事件</p>
+              <h2>新聞怎麼影響這檔股票</h2>
             </div>
             <a className="text-link" href="/news">全部事件</a>
           </div>
