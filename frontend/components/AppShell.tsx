@@ -4,6 +4,7 @@ import { MarketAutoRefresh } from "@/components/MarketAutoRefresh";
 
 const navItems = [
   { href: "/stocks/2330", label: "個股明燈", description: "先看一檔股票現在值不值得觀察" },
+  { href: "/recommendations", label: "明燈推薦", description: "系統挑出前 20 檔研究觀察名單" },
   { href: "/industries", label: "產業明燈", description: "看族群風向，理解資金在追什麼" },
   { href: "/watchlist", label: "關注名單", description: "把看得懂、想追蹤的股票收起來" },
   { href: "/calculation", label: "計算模組", description: "用白話看機率、權重與風險扣分" },
@@ -55,6 +56,7 @@ export function AppShell({ active, children }: { active: string; children: React
 
 function mobileIcon(href: string): string {
   if (href.startsWith("/stocks")) return "股";
+  if (href === "/recommendations") return "推";
   if (href === "/industries") return "業";
   if (href === "/watchlist") return "星";
   return "算";

@@ -1606,6 +1606,81 @@ tbody tr:hover {
   line-height: 1.45;
 }
 
+.recommendation-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.recommendation-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 72px minmax(170px, 0.5fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 13px 14px;
+  background: var(--soft);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.recommendation-row:hover {
+  border-color: rgba(223, 140, 53, 0.42);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(83, 52, 29, 0.08);
+}
+
+.recommendation-row > b {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff0db;
+  color: var(--accent);
+  font-weight: 1000;
+}
+
+.recommendation-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recommendation-row strong,
+.recommendation-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendation-row strong {
+  color: var(--ink);
+  font-weight: 1000;
+}
+
+.recommendation-row span,
+.recommendation-row small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.recommendation-row em {
+  justify-self: end;
+  color: var(--negative);
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.recommendation-row small {
+  justify-self: end;
+  text-align: right;
+}
+
 .subscore-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
@@ -2686,7 +2761,7 @@ tbody tr:hover {
     bottom: calc(8px + env(safe-area-inset-bottom));
     z-index: 80;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
     border: 1px solid rgba(223, 140, 53, 0.24);
     border-radius: 24px;
@@ -2748,6 +2823,16 @@ tbody tr:hover {
   .news-thumb {
     width: 76px;
     border-radius: 12px;
+  }
+
+  .recommendation-row {
+    grid-template-columns: 38px minmax(0, 1fr) 58px;
+  }
+
+  .recommendation-row small {
+    grid-column: 2 / -1;
+    justify-self: start;
+    text-align: left;
   }
 
   .kline-main-chart {
