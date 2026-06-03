@@ -1100,7 +1100,7 @@ tbody tr:hover {
 }
 
 .quote-detail-grid {
-  grid-template-columns: 1.3fr 1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.95fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
 }
 
 .quote-metric-group h3,
@@ -1131,6 +1131,75 @@ tbody tr:hover {
 
 .quote-metric-group dd {
   font-weight: 700;
+}
+
+.quote-flow-group {
+  display: grid;
+  gap: 10px;
+}
+
+.quote-flow-group dl {
+  grid-template-columns: 1fr;
+}
+
+.quote-flow-group small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.flow-badge {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  background: #fffdf8;
+}
+
+.flow-badge strong,
+.flow-badge span {
+  display: block;
+}
+
+.flow-badge strong {
+  font-size: 1.6rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.flow-badge span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.flow-badge.buy-strong,
+.flow-badge.buy-light {
+  border-color: rgba(179, 58, 45, 0.24);
+  background: #fff2ed;
+}
+
+.flow-badge.buy-strong strong,
+.flow-badge.buy-light strong {
+  color: var(--negative);
+}
+
+.flow-badge.sell-strong,
+.flow-badge.sell-light {
+  border-color: rgba(47, 125, 85, 0.22);
+  background: #eef7ed;
+}
+
+.flow-badge.sell-strong strong,
+.flow-badge.sell-light strong {
+  color: var(--positive);
+}
+
+.flow-badge.neutral {
+  border-color: rgba(127, 116, 104, 0.2);
+  background: #f7f1e8;
 }
 
 .stock-tabs {
