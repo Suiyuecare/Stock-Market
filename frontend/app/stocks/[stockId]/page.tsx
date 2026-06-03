@@ -1,17 +1,16 @@
 import { AppShell } from "@/components/AppShell";
 import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
-import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
 import { HorizonProbabilityPanel } from "@/components/HorizonProbabilityPanel";
 import { NewsTimeline } from "@/components/NewsTimeline";
 import { ReferencePanel } from "@/components/ReferencePanel";
 import { RelatedStockNewsPanel } from "@/components/RelatedStockNewsPanel";
 import { ScoreCard } from "@/components/ScoreCard";
+import { StockAiSelector } from "@/components/StockAiSelector";
 import { StockGrowthTimeline } from "@/components/StockGrowthTimeline";
 import { StockInsightTabs } from "@/components/StockInsightTabs";
 import { StockQuoteOverview } from "@/components/StockQuoteOverview";
-import { StockSearch } from "@/components/StockSearch";
 import { TargetPriceRangePanel } from "@/components/TargetPriceRangePanel";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { buildStockMetrics, formatScore, sanitizeDisplayText, sanitizeRiskScore, scoreTone } from "@/lib/view-model";
@@ -88,22 +87,15 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
       <header className="topbar">
         <div>
           <p className="eyebrow">STOCK SIGNAL GUIDE</p>
-          <h1>{signal.symbol} {signal.name}：先看結論，再看原因與風險</h1>
+          <h1>{signal.symbol} {signal.name}</h1>
         </div>
         <div className="stock-header-actions">
           <WatchlistButton stock={{ symbol: signal.symbol, name: signal.name, sector: signal.sector ?? null }} />
           <div className="status ok">5D 觀察機率 {metrics.probabilityUp5d}%</div>
         </div>
       </header>
-      <ComplianceNotice />
 
-      <section className="panel stock-search-hero">
-        <div>
-          <p className="eyebrow">Stock Search</p>
-          <h2>輸入股票代號或公司名，先從一檔看懂</h2>
-        </div>
-        <StockSearch stocks={stocks.stocks} />
-      </section>
+      <StockAiSelector signal={signal} stocks={stocks.stocks} />
 
       <StockQuoteOverview signal={signal} />
 

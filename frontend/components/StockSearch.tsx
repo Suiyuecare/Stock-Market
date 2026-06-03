@@ -47,22 +47,23 @@ const stockSearchUniverse: StockInstrument[] = [
   { symbol: "8069", market: "TPEX", name: "元太", sector: "光電業", currency: "TWD" },
 ];
 
-export function StockSearch({ stocks = stockSearchUniverse }: { stocks?: StockInstrument[] }) {
+export function StockSearch({ stocks = stockSearchUniverse, compact = false }: { stocks?: StockInstrument[]; compact?: boolean }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const keyword = query.trim();
 
   const results = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
+    const normalizedKeyword = query.trim().toLowerCase();
     const normalizedStocks = stocks.filter((stock) => /^\d{4}$/.test(stock.symbol));
-    if (!keyword) return normalizedStocks.slice(0, 8);
+    if (!normalizedKeyword) return compact ? [] : normalizedStocks.slice(0, 8);
     return normalizedStocks
       .filter((stock) => {
         const haystack = `${stock.symbol} ${stock.name} ${stock.sector ?? ""} ${stock.market}`.toLowerCase();
-        return haystack.includes(keyword);
+        return haystack.includes(normalizedKeyword);
       })
       .slice(0, 8);
-  }, [query, stocks]);
+  }, [compact, query, stocks]);
 
   function goToStock(symbol: string): void {
     router.push(`/stocks/${symbol}`);
@@ -79,7 +80,7 @@ export function StockSearch({ stocks = stockSearchUniverse }: { stocks?: StockIn
   }
 
   return (
-    <div className="stock-search" role="search">
+    <div className={`stock-search ${compact ? "compact" : ""}`} role="search">
       <label htmlFor="stock-search-input">搜尋公司</label>
       <div className="stock-search-box">
         <input
@@ -125,8 +126,10 @@ export function StockSearch({ stocks = stockSearchUniverse }: { stocks?: StockIn
               <small>{stock.market === "TPEX" ? "上櫃" : "上市"} · {stock.sector ?? "未分類"}</small>
             </button>
           ))
-        ) : (
+        ) : keyword ? (
           <p>找不到符合的公司，請改用股票代號或公司簡稱。</p>
+        ) : compact ? null : (
+          <p>輸入代號、公司名或產業，系統會列出可查看的股票。</p>
         )}
       </div>
     </div>

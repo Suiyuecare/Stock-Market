@@ -1944,6 +1944,193 @@ tbody tr:hover {
   color: var(--accent);
 }
 
+.stock-ai-selector {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.74fr) minmax(0, 1.26fr);
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 16px;
+  padding: 22px;
+}
+
+.stock-ai-picker,
+.stock-ai-brief {
+  min-width: 0;
+}
+
+.stock-ai-picker {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.stock-ai-picker h2,
+.stock-ai-brief h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.35rem, 2vw, 2rem);
+  letter-spacing: 0;
+}
+
+.stock-ai-picker p,
+.stock-ai-brief p {
+  margin: 0;
+  color: var(--text-soft);
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.stock-ai-selector .stock-search {
+  margin: 0;
+  border-color: var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  background: #fffaf2;
+}
+
+.stock-ai-selector .stock-search label {
+  color: var(--accent);
+  font-size: 0.86rem;
+}
+
+.stock-ai-selector .stock-search-box {
+  grid-template-columns: minmax(0, 1fr) 64px;
+  gap: 8px;
+}
+
+.stock-ai-selector .stock-search input {
+  min-height: 44px;
+  border-color: var(--line);
+  border-radius: 12px;
+  background: #fffdf8;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.stock-ai-selector .stock-search-box button {
+  min-height: 44px;
+  border-color: var(--accent);
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.stock-ai-selector .stock-search-results {
+  max-height: 218px;
+}
+
+.stock-ai-selector .stock-search-results button,
+.stock-ai-selector .stock-search-results p {
+  border-color: var(--line);
+  border-radius: 12px;
+  background: #fffdf8;
+  color: var(--text-soft);
+}
+
+.stock-ai-selector .stock-search-results button.on,
+.stock-ai-selector .stock-search-results button:hover {
+  border-color: rgba(223, 140, 53, 0.5);
+  background: #fff4e3;
+}
+
+.stock-ai-selector .stock-search-results span {
+  color: var(--ink);
+}
+
+.stock-ai-selector .stock-search-results strong,
+.stock-ai-selector .stock-search-results small {
+  color: var(--accent);
+}
+
+.compact-compliance-line {
+  display: block;
+  border: 1px solid rgba(47, 125, 85, 0.18);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #eef7ed;
+  color: var(--positive);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.stock-ai-brief {
+  display: grid;
+  gap: 16px;
+  border-left: 1px solid var(--line);
+  padding-left: 22px;
+}
+
+.theme-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.theme-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 140px) minmax(0, 1fr) 48px;
+  gap: 12px;
+  align-items: center;
+}
+
+.theme-row span,
+.theme-row b {
+  color: var(--ink);
+  font-weight: 1000;
+}
+
+.theme-row span {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-row b {
+  color: var(--accent);
+  font-size: 0.94rem;
+  text-align: right;
+}
+
+.theme-track {
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eadfd0;
+}
+
+.theme-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #62d2bf);
+}
+
+.theme-source {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.theme-source span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #fff0db;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 1000;
+}
+
+.theme-source small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
 .panel-tag {
   border: 1px solid rgba(47, 125, 85, 0.2);
   border-radius: 999px;
@@ -2286,6 +2473,7 @@ tbody tr:hover {
   .api-source-strip,
   .related-news-grid,
   .stock-search-hero,
+  .stock-ai-selector,
   .horizon-main,
   .insight-grid,
   .industry-grid,
@@ -2307,6 +2495,13 @@ tbody tr:hover {
 
   .span-2 {
     grid-column: span 1;
+  }
+
+  .stock-ai-brief {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    padding-left: 0;
   }
 
   .finance-sidebar,
