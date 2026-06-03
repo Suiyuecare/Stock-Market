@@ -24,6 +24,10 @@ const ranges: Array<{ key: RangeKey; label: string; count: number }> = [
   { key: "1Y", label: "近一年", count: 252 },
 ];
 
+const MAIN_CHART_HEIGHT = 420;
+const VOLUME_CHART_HEIGHT = 180;
+const KD_CHART_HEIGHT = 230;
+
 export function StockGrowthTimeline({
   history,
   signal,
@@ -47,9 +51,9 @@ export function StockGrowthTimeline({
   useEffect(() => {
     if (!mainRef.current || !volumeRef.current || !kdRef.current || rows.length === 0) return;
 
-    const mainChart = createChart(mainRef.current, baseChartOptions(390));
-    const volumeChart = createChart(volumeRef.current, baseChartOptions(150));
-    const kdChart = createChart(kdRef.current, baseChartOptions(170));
+    const mainChart = createChart(mainRef.current, baseChartOptions(MAIN_CHART_HEIGHT, false));
+    const volumeChart = createChart(volumeRef.current, baseChartOptions(VOLUME_CHART_HEIGHT, false));
+    const kdChart = createChart(kdRef.current, baseChartOptions(KD_CHART_HEIGHT, true));
 
     const candleSeries = mainChart.addSeries(CandlestickSeries, {
       upColor: "#ef3b2d",
@@ -141,10 +145,10 @@ export function StockGrowthTimeline({
         <div className="kline-main-chart" ref={mainRef} />
       </div>
       <div className="kline-chart-frame compact">
-        <div className="kline-subchart" ref={volumeRef} />
+        <div className="kline-volume-chart" ref={volumeRef} />
       </div>
       <div className="kline-chart-frame compact">
-        <div className="kline-subchart" ref={kdRef} />
+        <div className="kline-kd-chart" ref={kdRef} />
       </div>
       <div className="kline-legend">
         <span><i className="legend-red" />紅 K：收盤高於開盤</span>
@@ -157,7 +161,7 @@ export function StockGrowthTimeline({
   );
 }
 
-function baseChartOptions(height: number) {
+function baseChartOptions(height: number, showTimeScale: boolean) {
   return {
     height,
     layout: {
@@ -174,6 +178,9 @@ function baseChartOptions(height: number) {
     timeScale: {
       borderColor: "#cdd6e4",
       timeVisible: false,
+      visible: showTimeScale,
+      fixLeftEdge: true,
+      fixRightEdge: true,
     },
     crosshair: {
       mode: 1,

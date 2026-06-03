@@ -1801,6 +1801,7 @@ tbody tr:hover {
 .kline-chart-frame {
   border: 1px solid #cdd6e4;
   background: #fff;
+  overflow: hidden;
 }
 
 .kline-chart-frame.compact {
@@ -1808,16 +1809,24 @@ tbody tr:hover {
 }
 
 .kline-main-chart,
-.kline-subchart {
+.kline-volume-chart,
+.kline-kd-chart {
   width: 100%;
 }
 
 .kline-main-chart {
-  min-height: 390px;
+  height: 420px;
+  min-height: 420px;
 }
 
-.kline-subchart {
-  min-height: 150px;
+.kline-volume-chart {
+  height: 180px;
+  min-height: 180px;
+}
+
+.kline-kd-chart {
+  height: 230px;
+  min-height: 230px;
 }
 
 .kline-legend {
@@ -2405,6 +2414,21 @@ tbody tr:hover {
   .mobile-footer-nav a.on span {
     background: rgba(255, 255, 255, 0.22);
     color: #fff;
+  }
+
+  .kline-main-chart {
+    height: 330px;
+    min-height: 330px;
+  }
+
+  .kline-volume-chart {
+    height: 140px;
+    min-height: 140px;
+  }
+
+  .kline-kd-chart {
+    height: 210px;
+    min-height: 210px;
   }
 
   .content {
