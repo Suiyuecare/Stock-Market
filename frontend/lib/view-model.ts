@@ -178,6 +178,7 @@ export function formatScore(value: number | null | undefined): string {
 }
 
 export function estimateCurrentPrice(signal: PredictionSignal): number {
+  if (typeof signal.quote?.close === "number") return Math.round(signal.quote.close);
   const ma5 = signal.technicals.ma_5;
   const ma20 = signal.technicals.ma_20;
   const fallbackBySymbol: Record<string, number> = {
@@ -203,7 +204,9 @@ export function buildTargetPriceRange(signal: PredictionSignal): TargetPriceRang
     conservative: Math.round(conservative),
     base: Math.round(base),
     optimistic: Math.round(optimistic),
-    sourceLabel: "MVP 研究估算，待接法人共識目標價資料源",
+    sourceLabel: signal.quote?.close
+      ? "現在金額使用 TWSE 官方盤後 API；上看區間仍為 MVP 研究估算，待接法人共識目標價資料源。"
+      : "MVP 研究估算，待接法人共識目標價資料源",
   };
 }
 
@@ -222,6 +225,8 @@ export function buildPlainLanguageReasons(signal: PredictionSignal): string[] {
 export function buildReferences(signal: PredictionSignal): string[] {
   const refs = [
     "因子分數：基本面、籌碼、技術、美股連動、新聞、風險分數",
+    signal.quote ? "行情來源：TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL" : "行情來源：後端 API 或示範資料",
+    signal.valuation ? "估值來源：TWSE OpenAPI /exchangeReport/BWIBBU_ALL" : "估值來源：後端 API 或示範資料",
     `新聞來源：${signal.news.map((item) => item.source).filter(Boolean).slice(0, 2).join("、") || "資料觀察中"}`,
     "技術依據：MA、RSI、KD、MACD、OBV、量價背離",
     "風險依據：波動、流動性、事件風險、VIX/美股代理訊號",
@@ -303,40 +308,47 @@ export function buildBacktestConfidenceProfile(signal: PredictionSignal): Backte
 export function buildQuoteOverview(signal: PredictionSignal): QuoteOverview {
   const target = buildTargetPriceRange(signal);
   const metrics = buildStockMetrics(signal);
-  const previousClose = Math.max(10, Math.round(target.currentPrice * (1 - (metrics.riskAdjustedScore - 50) / 1800)));
-  const change = target.currentPrice - previousClose;
+  const quote = signal.quote;
+  const valuation = signal.valuation;
+  const currentPrice = quote?.close ?? target.currentPrice;
+  const previousClose = quote?.change !== null && quote?.change !== undefined
+    ? Math.max(0, Number((currentPrice - quote.change).toFixed(2)))
+    : Math.max(10, Math.round(currentPrice * (1 - (metrics.riskAdjustedScore - 50) / 1800)));
+  const change = quote?.change ?? currentPrice - previousClose;
   const changePercent = previousClose ? (change / previousClose) * 100 : 0;
-  const high = Math.round(target.currentPrice * 1.025);
-  const low = Math.round(target.currentPrice * 0.975);
-  const volumeLots = Math.round(8000 + metrics.chipScore * 92 + metrics.technicalScore * 40);
-  const turnoverTwd = Math.round((target.currentPrice * volumeLots * 1000) / 100000000);
+  const high = quote?.high ?? Math.round(currentPrice * 1.025);
+  const low = quote?.low ?? Math.round(currentPrice * 0.975);
+  const volumeLots = quote?.trade_volume ? Math.round(quote.trade_volume / 1000) : Math.round(8000 + metrics.chipScore * 92 + metrics.technicalScore * 40);
+  const turnoverTwd = quote?.trade_value ? Math.round(quote.trade_value / 100000000) : Math.round((currentPrice * volumeLots * 1000) / 100000000);
+  const computedPeRatio = Number(Math.max(10, 120 - metrics.fundamentalScore + metrics.riskScore / 2).toFixed(2));
+  const peRatio = valuation?.pe_ratio ?? computedPeRatio;
 
   return {
-    currentPrice: target.currentPrice,
+    currentPrice,
     change,
     changePercent,
-    marketStatus: "市場收盤",
-    quoteTime: `${signal.signal_date} 盤後`,
-    open: Math.round((target.currentPrice + previousClose) / 2),
+    marketStatus: quote ? "TWSE 盤後資料" : "市場收盤",
+    quoteTime: quote ? `${quote.date} TWSE 盤後` : `${signal.signal_date} 盤後`,
+    open: quote?.open ?? Math.round((currentPrice + previousClose) / 2),
     high,
     low,
     previousClose,
-    averagePrice: Math.round((high + low + target.currentPrice) / 3),
+    averagePrice: Math.round((high + low + currentPrice) / 3),
     volumeLots,
     turnoverTwd,
     amplitude: ((high - low) / previousClose) * 100,
     turnoverRate: Math.max(0.4, Math.min(8, volumeLots / 4200)),
-    marketCapTwd: Math.round(target.currentPrice * (40 + metrics.fundamentalScore / 2)),
-    peRatio: Number(Math.max(10, 120 - metrics.fundamentalScore + metrics.riskScore / 2).toFixed(2)),
-    epsTtm: Number(Math.max(0.8, target.currentPrice / Math.max(10, 120 - metrics.fundamentalScore)).toFixed(2)),
+    marketCapTwd: Math.round(currentPrice * (40 + metrics.fundamentalScore / 2)),
+    peRatio,
+    epsTtm: Number(Math.max(0.8, currentPrice / Math.max(1, peRatio)).toFixed(2)),
     grossMargin: Number(Math.max(12, Math.min(62, metrics.fundamentalScore * 0.68)).toFixed(2)),
     operatingMargin: Number(Math.max(3, Math.min(35, metrics.fundamentalScore * 0.34)).toFixed(2)),
     netMargin: Number(Math.max(2, Math.min(28, metrics.fundamentalScore * 0.28)).toFixed(2)),
-    dividendYield: Number(Math.max(0.4, Math.min(5.5, 6 - metrics.riskScore / 13)).toFixed(2)),
+    dividendYield: valuation?.dividend_yield ?? Number(Math.max(0.4, Math.min(5.5, 6 - metrics.riskScore / 13)).toFixed(2)),
     limitUp: Math.round(previousClose * 1.1),
     limitDown: Math.round(previousClose * 0.9),
-    high52w: Math.round(target.currentPrice * 1.18),
-    low52w: Math.round(target.currentPrice * 0.72),
+    high52w: Math.round(currentPrice * 1.18),
+    low52w: Math.round(currentPrice * 0.72),
     innerVolumeLots: Math.round(volumeLots * (0.46 + metrics.riskScore / 500)),
     outerVolumeLots: Math.round(volumeLots * (0.54 - metrics.riskScore / 500)),
   };
@@ -347,13 +359,15 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
   const quote = buildQuoteOverview(signal);
   const backtest = buildBacktestConfidenceProfile(signal);
   const target = buildTargetPriceRange(signal);
+  const quoteSourceNote = signal.quote ? "TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL" : "後端 API 或示範資料";
+  const valuationSourceNote = signal.valuation ? "TWSE OpenAPI /exchangeReport/BWIBBU_ALL" : "MVP 估算欄位，待接法人共識與財報";
 
   return [
     {
       title: "交易報價",
       description: "價格、量能、區間與市場狀態，供一般投資人先快速掌握。",
       rows: [
-        { label: "今開 / 最高 / 最低", value: `${quote.open} / ${quote.high} / ${quote.low}`, note: "MVP 報價欄位，正式版接 TWSE/TPEx" },
+        { label: "今開 / 最高 / 最低", value: `${quote.open} / ${quote.high} / ${quote.low}`, note: quoteSourceNote },
         { label: "成交量 / 成交額", value: `${quote.volumeLots.toLocaleString()} 張 / ${quote.turnoverTwd} 億`, note: "用於流動性與滑價風險評估" },
         { label: "52W 高低", value: `${quote.high52w} / ${quote.low52w}`, note: "觀察目前價格所在區間" },
       ],
@@ -390,7 +404,7 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
       description: "基本面、目標區間與財務品質，正式版會接月營收與財報資料。",
       rows: [
         { label: "現價 / 保守 / 基準 / 樂觀", value: `${target.currentPrice} / ${target.conservative} / ${target.base} / ${target.optimistic}`, note: target.sourceLabel },
-        { label: "EPS / PE / 殖利率", value: `${quote.epsTtm} / ${quote.peRatio} / ${quote.dividendYield}%`, note: "MVP 估算欄位，待接法人共識與財報" },
+        { label: "EPS / PE / 殖利率", value: `${quote.epsTtm} / ${quote.peRatio} / ${quote.dividendYield}%`, note: valuationSourceNote },
         { label: "毛利率 / 營益率 / 淨利率", value: `${quote.grossMargin}% / ${quote.operatingMargin}% / ${quote.netMargin}%`, note: "財務品質與獲利能力觀察" },
       ],
     },

@@ -9,7 +9,7 @@ export function TargetPriceRangePanel({ signal }: { signal: PredictionSignal }) 
       <div className="price-now">
         <span>現在金額</span>
         <strong>{range.currentPrice}</strong>
-        <small>TWD 估算現價</small>
+        <small>{signal.quote?.close ? "TWD · TWSE 盤後收盤價" : "TWD 估算現價"}</small>
       </div>
       <div className="range-track" aria-label="法人預測上看區間">
         <div>

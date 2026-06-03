@@ -1,6 +1,8 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
 const twseMonthlyRevenueUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L";
+const twseDailyQuoteUrl = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
+const twseValuationUrl = "https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL";
 
 export type MarketSummary = {
   session_date: string;
@@ -83,6 +85,35 @@ export type PredictionSignal = {
     impact_score: number;
     related_symbols: string[];
   }>;
+  quote?: TwseQuote | null;
+  valuation?: TwseValuation | null;
+};
+
+export type TwseQuote = {
+  source: "TWSE OpenAPI";
+  endpoint: string;
+  date: string;
+  symbol: string;
+  name: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  change: number | null;
+  trade_volume: number | null;
+  trade_value: number | null;
+  transaction_count: number | null;
+};
+
+export type TwseValuation = {
+  source: "TWSE OpenAPI";
+  endpoint: string;
+  date: string;
+  symbol: string;
+  name: string;
+  pe_ratio: number | null;
+  dividend_yield: number | null;
+  pb_ratio: number | null;
 };
 
 export type RankingResponse = {
@@ -380,6 +411,8 @@ const seedInstruments: StockInstrument[] = [
 
 let twseInstrumentCache: StockInstrument[] | null = null;
 const revenueGrowthCache = new Map<string, { history: RevenueGrowthPoint[]; source: DataSourceReference }>();
+let twseQuoteCache: Map<string, TwseQuote> | null = null;
+let twseValuationCache: Map<string, TwseValuation> | null = null;
 
 const industryCodeMap: Record<string, string> = {
   "01": "水泥工業",
@@ -507,6 +540,88 @@ function parseTwseNumber(value: string | undefined): number | null {
   if (!value) return null;
   const numeric = Number(String(value).replaceAll(",", "").trim());
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function parseTwseDate(value: string | undefined): string {
+  const trimmed = String(value ?? "").trim();
+  if (!/^\d{7}$/.test(trimmed)) return "資料日期待確認";
+  const year = Number(trimmed.slice(0, 3)) + 1911;
+  return `${year}-${trimmed.slice(3, 5)}-${trimmed.slice(5, 7)}`;
+}
+
+async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
+  if (twseQuoteCache) return twseQuoteCache;
+  const map = new Map<string, TwseQuote>();
+  try {
+    const response = await fetch(twseDailyQuoteUrl, { next: { revalidate: 60 * 30 } });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      rows.forEach((row) => {
+        const symbol = String(row.Code ?? "").trim();
+        if (!/^\d{4}$/.test(symbol)) return;
+        map.set(symbol, {
+          source: "TWSE OpenAPI",
+          endpoint: twseDailyQuoteUrl,
+          date: parseTwseDate(row.Date),
+          symbol,
+          name: String(row.Name ?? symbol).trim(),
+          open: parseTwseNumber(row.OpeningPrice),
+          high: parseTwseNumber(row.HighestPrice),
+          low: parseTwseNumber(row.LowestPrice),
+          close: parseTwseNumber(row.ClosingPrice),
+          change: parseTwseNumber(row.Change),
+          trade_volume: parseTwseNumber(row.TradeVolume),
+          trade_value: parseTwseNumber(row.TradeValue),
+          transaction_count: parseTwseNumber(row.Transaction),
+        });
+      });
+    }
+  } catch {
+    // Keep the frontend resilient when TWSE is temporarily unavailable.
+  }
+  twseQuoteCache = map;
+  return map;
+}
+
+async function getTwseValuationMap(): Promise<Map<string, TwseValuation>> {
+  if (twseValuationCache) return twseValuationCache;
+  const map = new Map<string, TwseValuation>();
+  try {
+    const response = await fetch(twseValuationUrl, { next: { revalidate: 60 * 30 } });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      rows.forEach((row) => {
+        const symbol = String(row.Code ?? "").trim();
+        if (!/^\d{4}$/.test(symbol)) return;
+        map.set(symbol, {
+          source: "TWSE OpenAPI",
+          endpoint: twseValuationUrl,
+          date: parseTwseDate(row.Date),
+          symbol,
+          name: String(row.Name ?? symbol).trim(),
+          pe_ratio: parseTwseNumber(row.PEratio),
+          dividend_yield: parseTwseNumber(row.DividendYield),
+          pb_ratio: parseTwseNumber(row.PBratio),
+        });
+      });
+    }
+  } catch {
+    // Keep the frontend resilient when TWSE is temporarily unavailable.
+  }
+  twseValuationCache = map;
+  return map;
+}
+
+async function attachTwseMarketData(signalPayload: PredictionSignal): Promise<PredictionSignal> {
+  const [quoteMap, valuationMap] = await Promise.all([getTwseQuoteMap(), getTwseValuationMap()]);
+  const quote = quoteMap.get(signalPayload.symbol) ?? null;
+  const valuation = valuationMap.get(signalPayload.symbol) ?? null;
+  return {
+    ...signalPayload,
+    name: quote?.name || valuation?.name || signalPayload.name,
+    quote,
+    valuation,
+  };
 }
 
 function formatTwseMonth(month: string): string {
@@ -725,7 +840,7 @@ async function findSignal(symbol: string): Promise<PredictionSignal> {
   const normalized = symbol.toUpperCase();
   const instrument = stocks.find((item) => item.symbol === normalized) ?? stocks[0];
   const index = Math.max(0, stocks.findIndex((item) => item.symbol === instrument.symbol));
-  return signal(instrument.symbol, instrument.name, index, instrument.sector);
+  return attachTwseMarketData(signal(instrument.symbol, instrument.name, index, instrument.sector));
 }
 
 async function stockDetail(symbol: string): Promise<StockDetailResponse> {
