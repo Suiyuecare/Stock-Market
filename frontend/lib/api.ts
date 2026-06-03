@@ -399,7 +399,25 @@ export async function fetchStockInstitutional(symbol: string): Promise<StockInst
 }
 
 export async function fetchStockNews(symbol: string): Promise<StockNewsResponse> {
-  return getJson<StockNewsResponse>(`/api/stocks/${symbol}/news`);
+  const response = await getJson<StockNewsResponse>(`/api/stocks/${symbol}/news`);
+  const instruments = await getFallbackInstruments();
+  const normalized = symbol.toUpperCase();
+  const instrument = instruments.find((item) => item.symbol === normalized) ?? {
+    symbol: normalized,
+    name: response.stock_name,
+    market: "TW",
+    sector: null,
+    currency: "TWD",
+  };
+  const officialNews = await getNewsForInstrument(instrument);
+  return {
+    ...response,
+    stock_id: instrument.symbol,
+    stock_name: instrument.name,
+    news: dedupeNews([...officialNews, ...response.news])
+      .sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at))
+      .slice(0, 12),
+  };
 }
 
 export async function fetchUSMarketRadar(): Promise<USMarketRadarResponse> {
@@ -472,6 +490,7 @@ let tpexQuoteCache: Map<string, TwseQuote> | null = null;
 let tpexValuationCache: Map<string, TwseValuation> | null = null;
 let apiRiskFlagCache: Map<string, ApiRiskFlag[]> | null = null;
 let officialNewsCache: NewsItem[] | null = null;
+let officialNewsCacheLoadedAt = 0;
 let fallbackSignalsCache: PredictionSignal[] | null = null;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
@@ -847,7 +866,8 @@ async function loadTpexValuationMap(): Promise<Map<string, TwseValuation>> {
 }
 
 async function getOfficialNewsPool(): Promise<NewsItem[]> {
-  if (officialNewsCache) return officialNewsCache;
+  const cacheAgeMs = Date.now() - officialNewsCacheLoadedAt;
+  if (officialNewsCache && cacheAgeMs < 60 * 1000) return officialNewsCache;
   if (officialNewsCachePromise) return officialNewsCachePromise;
   officialNewsCachePromise = loadOfficialNewsPool();
   return officialNewsCachePromise;
@@ -856,11 +876,11 @@ async function getOfficialNewsPool(): Promise<NewsItem[]> {
 async function loadOfficialNewsPool(): Promise<NewsItem[]> {
   const events: NewsItem[] = [];
   const settled = await Promise.allSettled([
-    fetchWithTimeout(twseMaterialNewsUrl, { next: { revalidate: 60 * 15 } }),
-    fetchWithTimeout(twseExchangeNewsUrl, { next: { revalidate: 60 * 15 } }),
-    fetchWithTimeout(twseExchangeEventsUrl, { next: { revalidate: 60 * 60 } }),
-    fetchWithTimeout(cnaFinanceRssUrl, { next: { revalidate: 60 * 15 } }),
-    fetchWithTimeout(cnaTechnologyRssUrl, { next: { revalidate: 60 * 15 } }),
+    fetchWithTimeout(twseMaterialNewsUrl, { next: { revalidate: 60 }, timeoutMs: 6000 }),
+    fetchWithTimeout(twseExchangeNewsUrl, { next: { revalidate: 60 }, timeoutMs: 6000 }),
+    fetchWithTimeout(twseExchangeEventsUrl, { next: { revalidate: 60 }, timeoutMs: 6000 }),
+    fetchWithTimeout(cnaFinanceRssUrl, { next: { revalidate: 60 }, timeoutMs: 6000 }),
+    fetchWithTimeout(cnaTechnologyRssUrl, { next: { revalidate: 60 }, timeoutMs: 6000 }),
   ]);
 
   const [material, exchangeNews, exchangeEvents, cnaFinance, cnaTechnology] = settled;
@@ -884,6 +904,8 @@ async function loadOfficialNewsPool(): Promise<NewsItem[]> {
   }
 
   officialNewsCache = dedupeNews(events).sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at)).slice(0, 260);
+  officialNewsCacheLoadedAt = Date.now();
+  officialNewsCachePromise = null;
   return officialNewsCache;
 }
 
@@ -1359,7 +1381,7 @@ function getDataSourceStatus(): DataSourceStatus[] {
     { name: "TWSE OpenAPI", status: "connected", detail: "上市總表、估值、重大訊息、注意/處置、融資融券、外資持股；個股頁另接 TWSE 官方日成交資訊", url: "https://openapi.twse.com.tw/", requires_key: false },
     { name: "TPEx OpenAPI", status: "connected", detail: "上櫃行情與本益比/殖利率/股價淨值比", url: "https://www.tpex.org.tw/openapi/", requires_key: false },
     { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
-    { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，前台新聞時間線已連動", url: cnaFinanceRssUrl, requires_key: false },
+    { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，新聞池與前台畫面每 1 分鐘同步", url: cnaFinanceRssUrl, requires_key: false },
     ...keyedProviders.map(([name, envName, url]) => ({
       name,
       status: process.env[envName] ? "configured" as const : "needs_key" as const,

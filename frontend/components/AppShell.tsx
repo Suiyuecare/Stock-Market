@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ComplianceNotice } from "@/components/ComplianceNotice";
+import { MarketAutoRefresh } from "@/components/MarketAutoRefresh";
 
 const navItems = [
   { href: "/stocks/2330", label: "個股明燈", description: "搜尋個股、行情、訊號與新聞" },
@@ -37,6 +38,7 @@ export function AppShell({ active, children }: { active: string; children: React
             );
           })}
         </nav>
+        <MarketAutoRefresh />
         <div className="finance-sidebar-foot">研究流程：樣本池 → 因子評分 → 風險篩選 → 信號備註</div>
         <ComplianceNotice compact />
       </aside>
