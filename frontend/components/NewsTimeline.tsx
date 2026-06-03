@@ -1,28 +1,30 @@
 import type { PredictionSignal } from "@/lib/api";
+import { newsHref, newsTone, newsToneLabel } from "@/lib/news";
 import { sanitizeDisplayText } from "@/lib/view-model";
 
 export function NewsTimeline({ news }: { news: PredictionSignal["news"] }) {
   return (
     <div className="timeline">
-      {news.map((event) => (
-        <div className="timeline-item" key={`${event.source}-${event.title}`}>
-          <div className="timeline-title">
-            {event.url ? (
-              <a href={event.url} target="_blank" rel="noreferrer">
+      {news.map((event) => {
+        const tone = newsTone(event);
+        const href = newsHref(event);
+
+        return (
+          <a className={`timeline-item news-${tone}`} href={href} target="_blank" rel="noreferrer" key={`${event.source}-${event.title}`}>
+            <div className="timeline-title">
+              <strong>
                 {sanitizeDisplayText(event.title)}
-              </a>
-            ) : (
-              <strong>{sanitizeDisplayText(event.title)}</strong>
-            )}
-            <b>{event.sentiment}</b>
-          </div>
-          {event.summary ? <p>{sanitizeDisplayText(event.summary)}</p> : null}
-          <span>
-            {event.source} · {formatNewsTime(event.published_at)} · impact {event.impact_score.toFixed(2)}
-          </span>
-          {event.linkage_reason ? <small>{event.linkage_reason}</small> : null}
-        </div>
-      ))}
+              </strong>
+              <b>{newsToneLabel(tone)}</b>
+            </div>
+            {event.summary ? <p>{sanitizeDisplayText(event.summary)}</p> : null}
+            <span>
+              {event.source} · {formatNewsTime(event.published_at)} · impact {event.impact_score.toFixed(2)} · 點擊看來源
+            </span>
+            {event.linkage_reason ? <small>{event.linkage_reason}</small> : null}
+          </a>
+        );
+      })}
     </div>
   );
 }

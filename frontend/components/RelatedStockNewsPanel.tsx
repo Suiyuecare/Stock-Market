@@ -1,4 +1,5 @@
 import type { PredictionSignal } from "@/lib/api";
+import { newsHref, newsTone, newsToneLabel } from "@/lib/news";
 import { sanitizeDisplayText } from "@/lib/view-model";
 
 const stockNameMap: Record<string, string> = {
@@ -55,26 +56,17 @@ export function RelatedStockNewsPanel({ signal }: { signal: PredictionSignal }) 
   return (
     <div className="related-news-grid">
       {rows.map((row) => {
-        const isTaiwanStock = /^\d{4}$/.test(row.symbol);
-        const content = (
-          <>
+        return (
+          <a className={`related-news-card news-${row.tone}`} href={row.href} target="_blank" rel="noreferrer" key={`${row.symbol}-${row.title}`}>
             <div className="related-news-title">
               <strong>{row.symbol}</strong>
               <span>{row.name}</span>
-              <b>{row.sentiment}</b>
+              <b>{newsToneLabel(row.tone)}</b>
             </div>
             <p>{sanitizeDisplayText(row.title)}</p>
-            <small>{row.source} · {row.reason}</small>
-          </>
-        );
-        return isTaiwanStock ? (
-          <a className="related-news-card" href={`/stocks/${row.symbol}`} key={`${row.symbol}-${row.title}`}>
-            {content}
+            <small>{row.source} · {row.reason} · 點擊看來源</small>
+            <span className="related-stock-link">關聯個股：{row.symbol} {row.name}</span>
           </a>
-        ) : (
-          <div className="related-news-card" key={`${row.symbol}-${row.title}`}>
-            {content}
-          </div>
         );
       })}
     </div>
@@ -86,8 +78,9 @@ function buildRelatedNewsRows(signal: PredictionSignal): Array<{
   name: string;
   title: string;
   source: string;
-  sentiment: string;
+  tone: "positive" | "negative" | "neutral";
   reason: string;
+  href: string;
 }> {
   const rows = signal.news.flatMap((event) => {
     const symbols = event.related_symbols
@@ -99,8 +92,9 @@ function buildRelatedNewsRows(signal: PredictionSignal): Array<{
       name: stockNameMap[symbol] ?? "關聯標的",
       title: event.title,
       source: event.source,
-      sentiment: event.sentiment,
+      tone: newsTone(event),
       reason: event.linkage_reason ?? "依公司名稱、產業或供應鏈關鍵字連動",
+      href: newsHref(event),
     }));
   });
 
