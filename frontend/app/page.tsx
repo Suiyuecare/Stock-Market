@@ -3,6 +3,7 @@ import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
+import { GrowthCurvePanel } from "@/components/GrowthCurvePanel";
 import { NewsTimeline } from "@/components/NewsTimeline";
 import { PortfolioAllocationPanel } from "@/components/PortfolioAllocationPanel";
 import { ReferencePanel } from "@/components/ReferencePanel";
@@ -42,6 +43,24 @@ export default async function Home() {
 
       <ComplianceNotice />
 
+      <section className="guide-strip" aria-label="新手導覽">
+        <div>
+          <span>Step 1</span>
+          <strong>先看上漲機率</strong>
+          <small>用 1D / 5D / 20D 區分短中期觀察，不把單一數字當答案。</small>
+        </div>
+        <div>
+          <span>Step 2</span>
+          <strong>再看為什麼</strong>
+          <small>系統列出基本面、籌碼、技術、美股連動與新聞 reference。</small>
+        </div>
+        <div>
+          <span>Step 3</span>
+          <strong>最後看風險</strong>
+          <small>風險係數過高時，即使機率高也只列入高風險觀察。</small>
+        </div>
+      </section>
+
       <section className="metric-grid">
         <ScoreCard label="台股盤後狀態" value={summary.tw_status} detail={summary.session_date} />
         <ScoreCard label="美股連動狀態" value={summary.us_premarket_status} detail="開盤前觀察訊號" />
@@ -59,6 +78,17 @@ export default async function Home() {
             <a className="text-link" href={`/stocks/${selected.symbol}`}>看完整分析</a>
           </div>
           <BeginnerDecisionPanel signal={selected} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Growth Curve</p>
+              <h2>營收成長曲線與官方 API</h2>
+            </div>
+            <a className="text-link" href="/stocks/2330">看個股完整曲線</a>
+          </div>
+          <GrowthCurvePanel history={detail.growth_history} source={detail.growth_source} />
         </article>
 
         <article className="panel">

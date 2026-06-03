@@ -3,6 +3,7 @@ import { BacktestConfidencePanel } from "@/components/BacktestConfidencePanel";
 import { BeginnerDecisionPanel } from "@/components/BeginnerDecisionPanel";
 import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { FactorBreakdown } from "@/components/FactorBreakdown";
+import { GrowthCurvePanel } from "@/components/GrowthCurvePanel";
 import { InstitutionalTradingPanel } from "@/components/InstitutionalTradingPanel";
 import { MACDPanel } from "@/components/MACDPanel";
 import { NewsTimeline } from "@/components/NewsTimeline";
@@ -124,6 +125,16 @@ export default async function StockDetailPage({ params }: { params: Promise<{ st
             </div>
           </div>
           <ProfessionalInfoDeck signal={signal} />
+        </article>
+
+        <article className="panel span-2">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Growth Curve</p>
+              <h2>營收成長曲線</h2>
+            </div>
+          </div>
+          <GrowthCurvePanel history={detail.growth_history} source={detail.growth_source} />
         </article>
 
         <article className="panel span-2">

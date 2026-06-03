@@ -1,5 +1,6 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
+const twseMonthlyRevenueUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L";
 
 export type MarketSummary = {
   session_date: string;
@@ -94,6 +95,25 @@ export type StockDetailResponse = {
   instrument: StockInstrument;
   signal: PredictionSignal;
   factor_history: Array<{ date: string; composite_score: number; risk_score: number }>;
+  growth_history: RevenueGrowthPoint[];
+  growth_source: DataSourceReference;
+};
+
+export type RevenueGrowthPoint = {
+  date: string;
+  label: string;
+  revenue_million_twd: number;
+  revenue_yoy: number | null;
+  revenue_mom: number | null;
+  accumulated_yoy: number | null;
+};
+
+export type DataSourceReference = {
+  name: string;
+  url: string;
+  dataset: string;
+  published_at: string;
+  note: string;
 };
 
 export type StockListResponse = {
@@ -359,6 +379,7 @@ const seedInstruments: StockInstrument[] = [
 ];
 
 let twseInstrumentCache: StockInstrument[] | null = null;
+const revenueGrowthCache = new Map<string, { history: RevenueGrowthPoint[]; source: DataSourceReference }>();
 
 const industryCodeMap: Record<string, string> = {
   "01": "水泥工業",
@@ -482,6 +503,123 @@ function bounded(seed: number, min: number, max: number, salt = 0): number {
   return min + (raw - Math.floor(raw)) * (max - min);
 }
 
+function parseTwseNumber(value: string | undefined): number | null {
+  if (!value) return null;
+  const numeric = Number(String(value).replaceAll(",", "").trim());
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function formatTwseMonth(month: string): string {
+  const trimmed = month.trim();
+  if (!/^\d{5}$/.test(trimmed)) return "2026-04";
+  const year = Number(trimmed.slice(0, 3)) + 1911;
+  return `${year}-${trimmed.slice(3, 5)}`;
+}
+
+function formatTwseDate(date: string): string {
+  const trimmed = date.trim();
+  if (!/^\d{7}$/.test(trimmed)) return "2026-05-17";
+  const year = Number(trimmed.slice(0, 3)) + 1911;
+  return `${year}-${trimmed.slice(3, 5)}-${trimmed.slice(5, 7)}`;
+}
+
+function shiftMonth(date: string, offset: number): string {
+  const [yearText, monthText] = date.split("-");
+  const dateValue = new Date(Number(yearText), Number(monthText) - 1 + offset, 1);
+  return `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function fallbackGrowthHistory(symbol: string): { history: RevenueGrowthPoint[]; source: DataSourceReference } {
+  const seed = symbolSeed(symbol);
+  const baseRevenue = bounded(seed, 1800, 90000, 60);
+  const history = Array.from({ length: 8 }, (_, index) => {
+    const month = shiftMonth("2026-04", index - 7);
+    const momentum = 1 + (index - 3) * 0.018 + Math.sin(seed + index) * 0.025;
+    const revenue = Math.max(120, baseRevenue * momentum);
+    return {
+      date: month,
+      label: month,
+      revenue_million_twd: Number(revenue.toFixed(0)),
+      revenue_yoy: Number(bounded(seed, -8, 24, 70 + index).toFixed(1)),
+      revenue_mom: Number(bounded(seed, -5, 12, 80 + index).toFixed(1)),
+      accumulated_yoy: Number(bounded(seed, -6, 18, 90 + index).toFixed(1)),
+    };
+  });
+  return {
+    history,
+    source: {
+      name: "TWSE OpenAPI",
+      url: twseMonthlyRevenueUrl,
+      dataset: "上市公司每月營業收入彙總表 /opendata/t187ap05_L",
+      published_at: "示範資料",
+      note: "若官方 API 暫時無法取得，前台會使用示範曲線維持閱讀體驗。",
+    },
+  };
+}
+
+async function getRevenueGrowth(symbol: string): Promise<{ history: RevenueGrowthPoint[]; source: DataSourceReference }> {
+  if (revenueGrowthCache.has(symbol)) return revenueGrowthCache.get(symbol)!;
+  try {
+    const response = await fetch(twseMonthlyRevenueUrl, { next: { revalidate: 60 * 60 * 6 } });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      const row = rows.find((item) => String(item["公司代號"] ?? "").trim() === symbol);
+      if (row) {
+        const currentMonth = formatTwseMonth(String(row["資料年月"] ?? ""));
+        const currentRevenue = parseTwseNumber(row["營業收入-當月營收"]);
+        const previousRevenue = parseTwseNumber(row["營業收入-上月營收"]);
+        const lastYearRevenue = parseTwseNumber(row["營業收入-去年當月營收"]);
+        const mom = parseTwseNumber(row["營業收入-上月比較增減(%)"]);
+        const yoy = parseTwseNumber(row["營業收入-去年同月增減(%)"]);
+        const accumulatedYoy = parseTwseNumber(row["累計營業收入-前期比較增減(%)"]);
+        const history = [
+          {
+            date: shiftMonth(currentMonth, -12),
+            label: "去年同月",
+            revenue_million_twd: Number(((lastYearRevenue ?? currentRevenue ?? 0) / 1000).toFixed(0)),
+            revenue_yoy: null,
+            revenue_mom: null,
+            accumulated_yoy: null,
+          },
+          {
+            date: shiftMonth(currentMonth, -1),
+            label: "上月",
+            revenue_million_twd: Number(((previousRevenue ?? currentRevenue ?? 0) / 1000).toFixed(0)),
+            revenue_yoy: null,
+            revenue_mom: null,
+            accumulated_yoy: null,
+          },
+          {
+            date: currentMonth,
+            label: "本月",
+            revenue_million_twd: Number(((currentRevenue ?? 0) / 1000).toFixed(0)),
+            revenue_yoy: yoy,
+            revenue_mom: mom,
+            accumulated_yoy: accumulatedYoy,
+          },
+        ];
+        const result = {
+          history,
+          source: {
+            name: "TWSE OpenAPI",
+            url: twseMonthlyRevenueUrl,
+            dataset: "上市公司每月營業收入彙總表 /opendata/t187ap05_L",
+            published_at: formatTwseDate(String(row["出表日期"] ?? "")),
+            note: "此 API 提供最新月營收、上月、去年同月、MoM、YoY 與累計 YoY，可作為成長曲線與基本面因子 reference。",
+          },
+        };
+        revenueGrowthCache.set(symbol, result);
+        return result;
+      }
+    }
+  } catch {
+    // Keep the page readable if TWSE is temporarily unavailable.
+  }
+  const fallback = fallbackGrowthHistory(symbol);
+  revenueGrowthCache.set(symbol, fallback);
+  return fallback;
+}
+
 function signal(symbol: string, name: string, index: number, sector: string | null = null): PredictionSignal {
   const seed = symbolSeed(symbol);
   const base = bounded(seed, 0.53, 0.72, 1);
@@ -594,6 +732,7 @@ async function stockDetail(symbol: string): Promise<StockDetailResponse> {
   const selected = await findSignal(symbol);
   const stocks = await getFallbackInstruments();
   const instrument = stocks.find((item) => item.symbol === selected.symbol) ?? stocks[0];
+  const growth = await getRevenueGrowth(selected.symbol);
   return {
     disclaimer,
     instrument,
@@ -604,6 +743,8 @@ async function stockDetail(symbol: string): Promise<StockDetailResponse> {
       { date: "2026-05-29", composite_score: 0.26, risk_score: 0.31 },
       { date: "2026-06-01", composite_score: selected.composite_score, risk_score: selected.risk_score.total },
     ],
+    growth_history: growth.history,
+    growth_source: growth.source,
   };
 }
 
