@@ -1577,6 +1577,243 @@ tbody tr:hover {
   line-height: 1.55;
 }
 
+.stock-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.watchlist-button {
+  border: 1px solid rgba(15, 118, 110, 0.26);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.watchlist-button.saved {
+  background: #ecfeff;
+  color: #115e59;
+}
+
+.stock-search-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.stock-search-hero .stock-search {
+  margin: 0;
+  background: #0f172a;
+}
+
+.panel-tag {
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #ecfeff;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.horizon-panel,
+.stock-insight-tabs,
+.growth-timeline-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.horizon-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.horizon-tabs button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.horizon-tabs button.on {
+  border-color: rgba(15, 118, 110, 0.34);
+  background: #0f766e;
+  color: #fff;
+}
+
+.horizon-main,
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.horizon-main > div,
+.insight-metric {
+  min-height: 128px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--soft);
+}
+
+.horizon-main span,
+.horizon-main small,
+.insight-metric span,
+.insight-metric small {
+  display: block;
+  color: var(--muted);
+}
+
+.horizon-main strong,
+.insight-metric strong {
+  display: block;
+  margin: 8px 0;
+  color: var(--accent);
+  font-size: 1.8rem;
+}
+
+.horizon-main strong.negative {
+  color: var(--negative);
+}
+
+.growth-timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.growth-timeline-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 100px;
+  gap: 10px;
+  align-items: center;
+}
+
+.growth-timeline-row span,
+.growth-timeline-row b {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.growth-timeline-row div {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.growth-timeline-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #2dd4bf);
+}
+
+.mini-table.compact {
+  margin-top: 16px;
+}
+
+.industry-grid,
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.industry-card,
+.watchlist-card,
+.empty-state {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.industry-card-head,
+.watchlist-card,
+.watchlist-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.industry-card-head span,
+.watchlist-card span,
+.empty-state span {
+  display: block;
+  color: var(--muted);
+}
+
+.industry-card h2,
+.watchlist-card h2 {
+  margin: 4px 0 0;
+}
+
+.industry-card-head strong {
+  color: var(--accent);
+  font-size: 2rem;
+}
+
+.industry-tags,
+.industry-stock-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.industry-tags b,
+.industry-stock-list a,
+.industry-stock-list span,
+.watchlist-actions a,
+.watchlist-actions button,
+.empty-state a {
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: #ecfeff;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.industry-card p {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.watchlist-actions {
+  flex: 0 0 auto;
+}
+
+.watchlist-actions button {
+  background: #fff7ed;
+  color: var(--risk);
+  cursor: pointer;
+}
+
+.empty-state {
+  display: grid;
+  gap: 10px;
+}
+
 @media (max-width: 920px) {
   .finance-shell,
   .workspace,
@@ -1595,6 +1832,11 @@ tbody tr:hover {
   .guide-strip,
   .api-source-strip,
   .related-news-grid,
+  .stock-search-hero,
+  .horizon-main,
+  .insight-grid,
+  .industry-grid,
+  .watchlist-grid,
   .growth-summary,
   .backtest-summary,
   .backtest-sections,
@@ -1631,6 +1873,7 @@ tbody tr:hover {
 
   .topbar,
   .panel-heading,
+  .stock-header-actions,
   .signal {
     align-items: flex-start;
     flex-direction: column;
@@ -1647,6 +1890,7 @@ tbody tr:hover {
   .subscore-grid,
   .detail-grid,
   .radar-grid,
+  .growth-timeline-row,
   .growth-metrics,
   .growth-source,
   .backtest-metrics,
