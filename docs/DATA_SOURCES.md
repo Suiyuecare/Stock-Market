@@ -97,6 +97,22 @@ The codebase now includes production-shaped provider classes for legal open-data
 | MOPS / mopsfin | `backend/app/services/data_providers/mops_provider.py` | Fetch and parse listed company profiles, monthly revenue CSV, and listed material information CSV |
 | CNA RSS | `backend/app/services/data_providers/news_provider.py` | Fetch and parse CNA finance and technology RSS into normalized news event payloads |
 
+The production frontend also has a no-key resilience layer so the public site can show official/open data even before the FastAPI jobs are fully promoted:
+
+| Source | Frontend usage | Endpoint |
+| --- | --- | --- |
+| TWSE listed stock master | Expands the stock universe beyond seed/mock rows | `https://openapi.twse.com.tw/v1/opendata/t187ap03_L` |
+| TWSE daily quotes | Current price, OHLC, volume, turnover, detail reference | `https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL` |
+| TWSE valuation | PE, dividend yield, PB reference | `https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL` |
+| TWSE material information/news/events | News timeline, NewsScore, event risk | `https://openapi.twse.com.tw/v1/opendata/t187ap04_L`, `/news/newsList`, `/news/eventList` |
+| TWSE risk/chip references | Attention stocks, disposition stocks, margin/short balance, foreign holding top list | `/announcement/notice`, `/announcement/punish`, `/exchangeReport/MI_MARGN`, `/fund/MI_QFIIS_sort_20` |
+| TPEx daily close quotes | Adds OTC stocks to the frontend universe and individual pages | `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes` |
+| TPEx valuation | OTC PE, dividend per share, yield, PB reference | `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis` |
+| TDCC ownership distribution | Large-holder concentration reference for risk explanations | `https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5` |
+| CNA finance/technology RSS | Open RSS context for news timeline and sector linkage | `https://feeds.feedburner.com/rsscna/finance`, `https://feeds.feedburner.com/rsscna/technology` |
+
+Optional keyed providers are exposed in `.env.example` and surfaced in the frontend API status strip as `needs_key` until configured. They must remain server-side environment variables only.
+
 Deployment notes:
 
 - These providers are safe to use as the first official-data layer, but their endpoint terms should still be reviewed before storing or redisplaying raw payloads.

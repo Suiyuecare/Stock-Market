@@ -6,6 +6,13 @@ const twseValuationUrl = "https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_A
 const twseMaterialNewsUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L";
 const twseExchangeNewsUrl = "https://openapi.twse.com.tw/v1/news/newsList";
 const twseExchangeEventsUrl = "https://openapi.twse.com.tw/v1/news/eventList";
+const twseAttentionUrl = "https://openapi.twse.com.tw/v1/announcement/notice";
+const twseDispositionUrl = "https://openapi.twse.com.tw/v1/announcement/punish";
+const twseMarginUrl = "https://openapi.twse.com.tw/v1/exchangeReport/MI_MARGN";
+const twseForeignHoldingUrl = "https://openapi.twse.com.tw/v1/fund/MI_QFIIS_sort_20";
+const tpexQuoteUrl = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes";
+const tpexValuationUrl = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis";
+const tdccOwnershipDistributionUrl = "https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5";
 const cnaFinanceRssUrl = "https://feeds.feedburner.com/rsscna/finance";
 const cnaTechnologyRssUrl = "https://feeds.feedburner.com/rsscna/technology";
 
@@ -22,6 +29,7 @@ export type MarketSummary = {
     currency: string;
   }>;
   us_linkage: Record<string, number>;
+  data_source_status?: DataSourceStatus[];
 };
 
 export type StockInstrument = MarketSummary["instruments"][number];
@@ -97,11 +105,13 @@ export type PredictionSignal = {
   }>;
   quote?: TwseQuote | null;
   valuation?: TwseValuation | null;
+  risk_flags?: ApiRiskFlag[];
+  data_source_status?: DataSourceStatus[];
   sector?: string | null;
 };
 
 export type TwseQuote = {
-  source: "TWSE OpenAPI";
+  source: "TWSE OpenAPI" | "TPEx OpenAPI";
   endpoint: string;
   date: string;
   symbol: string;
@@ -117,7 +127,7 @@ export type TwseQuote = {
 };
 
 export type TwseValuation = {
-  source: "TWSE OpenAPI";
+  source: "TWSE OpenAPI" | "TPEx OpenAPI";
   endpoint: string;
   date: string;
   symbol: string;
@@ -125,6 +135,25 @@ export type TwseValuation = {
   pe_ratio: number | null;
   dividend_yield: number | null;
   pb_ratio: number | null;
+  dividend_per_share?: number | null;
+};
+
+export type ApiRiskFlag = {
+  source: string;
+  endpoint: string;
+  title: string;
+  detail: string;
+  severity: number;
+  related_symbols: string[];
+  url?: string;
+};
+
+export type DataSourceStatus = {
+  name: string;
+  status: "connected" | "configured" | "needs_key";
+  detail: string;
+  url: string;
+  requires_key: boolean;
 };
 
 export type RankingResponse = {
@@ -424,9 +453,15 @@ let twseInstrumentCache: StockInstrument[] | null = null;
 const revenueGrowthCache = new Map<string, { history: RevenueGrowthPoint[]; source: DataSourceReference }>();
 let twseQuoteCache: Map<string, TwseQuote> | null = null;
 let twseValuationCache: Map<string, TwseValuation> | null = null;
+let tpexQuoteCache: Map<string, TwseQuote> | null = null;
+let tpexValuationCache: Map<string, TwseValuation> | null = null;
+let apiRiskFlagCache: Map<string, ApiRiskFlag[]> | null = null;
 let officialNewsCache: NewsItem[] | null = null;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
+let tpexQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
+let tpexValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
+let apiRiskFlagCachePromise: Promise<Map<string, ApiRiskFlag[]>> | null = null;
 let officialNewsCachePromise: Promise<NewsItem[]> | null = null;
 
 type NewsItem = PredictionSignal["news"][number] & {
@@ -474,11 +509,12 @@ const industryCodeMap: Record<string, string> = {
 
 async function getFallbackInstruments(): Promise<StockInstrument[]> {
   if (twseInstrumentCache) return twseInstrumentCache;
+  const normalized: StockInstrument[] = [];
   try {
     const response = await fetch(twseListedCompanyUrl, { next: { revalidate: 60 * 60 * 6 } });
     if (response.ok) {
       const rows = (await response.json()) as Array<Record<string, string>>;
-      const normalized = rows
+      normalized.push(...rows
         .map((row) => {
           const symbol = String(row["公司代號"] ?? "").trim();
           const name = String(row["公司簡稱"] || row["公司名稱"] || symbol).trim();
@@ -494,16 +530,24 @@ async function getFallbackInstruments(): Promise<StockInstrument[]> {
           };
           return instrument;
         })
-        .filter((item): item is StockInstrument => item !== null);
-      if (normalized.length > 0) {
-        twseInstrumentCache = normalized;
-        return normalized;
-      }
+        .filter((item): item is StockInstrument => item !== null));
     }
   } catch {
     // Keep the frontend resilient when TWSE is temporarily unavailable.
   }
-  twseInstrumentCache = uniqueInstruments(seedInstruments);
+  try {
+    const tpexQuoteMap = await getTpexQuoteMap();
+    normalized.push(...Array.from(tpexQuoteMap.values()).map((quote) => ({
+      symbol: quote.symbol,
+      market: "TPEX",
+      name: quote.name,
+      sector: "上櫃",
+      currency: "TWD",
+    } satisfies StockInstrument)));
+  } catch {
+    // TPEx data is additive; the TWSE/seed pool keeps the app usable.
+  }
+  twseInstrumentCache = uniqueInstruments(normalized.length > 0 ? normalized : seedInstruments);
   return twseInstrumentCache;
 }
 
@@ -641,6 +685,82 @@ async function loadTwseValuationMap(): Promise<Map<string, TwseValuation>> {
     // Keep the frontend resilient when TWSE is temporarily unavailable.
   }
   twseValuationCache = map;
+  return map;
+}
+
+async function getTpexQuoteMap(): Promise<Map<string, TwseQuote>> {
+  if (tpexQuoteCache) return tpexQuoteCache;
+  if (tpexQuoteCachePromise) return tpexQuoteCachePromise;
+  tpexQuoteCachePromise = loadTpexQuoteMap();
+  return tpexQuoteCachePromise;
+}
+
+async function loadTpexQuoteMap(): Promise<Map<string, TwseQuote>> {
+  const map = new Map<string, TwseQuote>();
+  try {
+    const response = await fetchWithTimeout(tpexQuoteUrl, { cache: "no-store", timeoutMs: 6000 });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      rows.forEach((row) => {
+        const symbol = String(row.SecuritiesCompanyCode ?? "").trim();
+        if (!/^\d{4}$/.test(symbol)) return;
+        map.set(symbol, {
+          source: "TPEx OpenAPI",
+          endpoint: tpexQuoteUrl,
+          date: parseTwseDate(row.Date),
+          symbol,
+          name: String(row.CompanyName ?? symbol).trim(),
+          open: parseTwseNumber(row.Open),
+          high: parseTwseNumber(row.High),
+          low: parseTwseNumber(row.Low),
+          close: parseTwseNumber(row.Close),
+          change: parseTwseNumber(row.Change),
+          trade_volume: parseTwseNumber(row.TradingShares),
+          trade_value: parseTwseNumber(row.TransactionAmount),
+          transaction_count: parseTwseNumber(row.TransactionNumber),
+        });
+      });
+    }
+  } catch {
+    // Keep the frontend resilient when TPEx is temporarily unavailable.
+  }
+  tpexQuoteCache = map;
+  return map;
+}
+
+async function getTpexValuationMap(): Promise<Map<string, TwseValuation>> {
+  if (tpexValuationCache) return tpexValuationCache;
+  if (tpexValuationCachePromise) return tpexValuationCachePromise;
+  tpexValuationCachePromise = loadTpexValuationMap();
+  return tpexValuationCachePromise;
+}
+
+async function loadTpexValuationMap(): Promise<Map<string, TwseValuation>> {
+  const map = new Map<string, TwseValuation>();
+  try {
+    const response = await fetchWithTimeout(tpexValuationUrl, { cache: "no-store", timeoutMs: 6000 });
+    if (response.ok) {
+      const rows = (await response.json()) as Array<Record<string, string>>;
+      rows.forEach((row) => {
+        const symbol = String(row.SecuritiesCompanyCode ?? "").trim();
+        if (!/^\d{4}$/.test(symbol)) return;
+        map.set(symbol, {
+          source: "TPEx OpenAPI",
+          endpoint: tpexValuationUrl,
+          date: parseTwseDate(row.Date),
+          symbol,
+          name: String(row.CompanyName ?? symbol).trim(),
+          pe_ratio: parseTwseNumber(row.PriceEarningRatio),
+          dividend_yield: parseTwseNumber(row.YieldRatio),
+          pb_ratio: parseTwseNumber(row.PriceBookRatio),
+          dividend_per_share: parseTwseNumber(row.DividendPerShare),
+        });
+      });
+    }
+  } catch {
+    // Keep the frontend resilient when TPEx is temporarily unavailable.
+  }
+  tpexValuationCache = map;
   return map;
 }
 
@@ -912,28 +1032,253 @@ function applyNewsSignal(signalPayload: PredictionSignal, news: NewsItem[]): Pre
   };
 }
 
+function addRiskFlag(map: Map<string, ApiRiskFlag[]>, symbol: string, flag: ApiRiskFlag): void {
+  if (!/^\d{4}$/.test(symbol)) return;
+  const current = map.get(symbol) ?? [];
+  current.push(flag);
+  map.set(symbol, current);
+}
+
+async function getApiRiskFlagMap(): Promise<Map<string, ApiRiskFlag[]>> {
+  if (apiRiskFlagCache) return apiRiskFlagCache;
+  if (apiRiskFlagCachePromise) return apiRiskFlagCachePromise;
+  apiRiskFlagCachePromise = loadApiRiskFlagMap();
+  return apiRiskFlagCachePromise;
+}
+
+async function loadApiRiskFlagMap(): Promise<Map<string, ApiRiskFlag[]>> {
+  const map = new Map<string, ApiRiskFlag[]>();
+  const settled = await Promise.allSettled([
+    fetchWithTimeout(twseAttentionUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 }),
+    fetchWithTimeout(twseDispositionUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 }),
+    fetchWithTimeout(twseMarginUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 }),
+    fetchWithTimeout(twseForeignHoldingUrl, { next: { revalidate: 60 * 60 }, timeoutMs: 6000 }),
+    fetchWithTimeout(tdccOwnershipDistributionUrl, { cache: "no-store", timeoutMs: 9000 }),
+  ]);
+
+  const [attention, disposition, margin, foreignHolding, tdccOwnership] = settled;
+  if (attention.status === "fulfilled" && attention.value.ok) {
+    const rows = (await attention.value.json()) as Array<Record<string, string>>;
+    rows.forEach((row) => {
+      const symbol = String(row.Code ?? "").trim();
+      const count = parseTwseNumber(row.NumberOfAnnouncement);
+      if (!/^\d{4}$/.test(symbol) || !count) return;
+      addRiskFlag(map, symbol, {
+        source: "TWSE 注意股票",
+        endpoint: twseAttentionUrl,
+        title: "交易所注意股票公告",
+        detail: `${row.Name ?? symbol} 近期有 ${count} 筆注意公告，需閱讀交易所原始原因。`,
+        severity: 0.55,
+        related_symbols: [symbol],
+        url: twseAttentionUrl,
+      });
+    });
+  }
+  if (disposition.status === "fulfilled" && disposition.value.ok) {
+    const rows = (await disposition.value.json()) as Array<Record<string, string>>;
+    rows.forEach((row) => {
+      const symbol = String(row.Code ?? "").trim();
+      if (!/^\d{4}$/.test(symbol)) return;
+      addRiskFlag(map, symbol, {
+        source: "TWSE 處置股票",
+        endpoint: twseDispositionUrl,
+        title: "交易所處置公告",
+        detail: `${row.Name ?? symbol}：${row.ReasonsOfDisposition ?? "處置原因請以交易所公告為準"}；期間 ${row.DispositionPeriod ?? "待確認"}`,
+        severity: 0.85,
+        related_symbols: [symbol],
+        url: twseDispositionUrl,
+      });
+    });
+  }
+  if (margin.status === "fulfilled" && margin.value.ok) {
+    const rows = (await margin.value.json()) as Array<Record<string, string>>;
+    rows.forEach((row) => {
+      const symbol = String(row["股票代號"] ?? "").trim();
+      if (!/^\d{4}$/.test(symbol)) return;
+      const marginYesterday = parseTwseNumber(row["融資前日餘額"]) ?? 0;
+      const marginToday = parseTwseNumber(row["融資今日餘額"]) ?? 0;
+      const shortYesterday = parseTwseNumber(row["融券前日餘額"]) ?? 0;
+      const shortToday = parseTwseNumber(row["融券今日餘額"]) ?? 0;
+      const marginDelta = marginToday - marginYesterday;
+      const shortDelta = shortToday - shortYesterday;
+      if (Math.abs(marginDelta) < 1200 && Math.abs(shortDelta) < 300) return;
+      addRiskFlag(map, symbol, {
+        source: "TWSE 融資融券",
+        endpoint: twseMarginUrl,
+        title: "融資融券餘額異動",
+        detail: `${row["股票名稱"] ?? symbol} 融資變動 ${marginDelta.toLocaleString()}、融券變動 ${shortDelta.toLocaleString()}，作為槓桿/軋空風險 reference。`,
+        severity: shortDelta > 0 || marginDelta > 0 ? 0.35 : 0.18,
+        related_symbols: [symbol],
+        url: twseMarginUrl,
+      });
+    });
+  }
+  if (foreignHolding.status === "fulfilled" && foreignHolding.value.ok) {
+    const rows = (await foreignHolding.value.json()) as Array<Record<string, string>>;
+    rows.forEach((row) => {
+      const symbol = String(row.Code ?? "").trim();
+      if (!/^\d{4}$/.test(symbol)) return;
+      addRiskFlag(map, symbol, {
+        source: "TWSE 外資持股",
+        endpoint: twseForeignHoldingUrl,
+        title: "外資持股比例參考",
+        detail: `${row.Name ?? symbol} 外資持股比 ${row.SharesHeldPer ?? "待確認"}%，排名 ${row.Rank ?? "待確認"}。`,
+        severity: 0.08,
+        related_symbols: [symbol],
+        url: twseForeignHoldingUrl,
+      });
+    });
+  }
+  if (tdccOwnership.status === "fulfilled" && tdccOwnership.value.ok) {
+    parseTdccOwnership(await tdccOwnership.value.text()).forEach((flag) => addRiskFlag(map, flag.related_symbols[0], flag));
+  }
+
+  apiRiskFlagCache = map;
+  return map;
+}
+
+function parseTdccOwnership(csv: string): ApiRiskFlag[] {
+  const [headerLine, ...lines] = csv.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+  const headers = splitCsvLine(headerLine);
+  const symbolIndex = headers.indexOf("證券代號");
+  const bucketIndex = headers.indexOf("持股分級");
+  const peopleIndex = headers.indexOf("人數");
+  const shareIndex = headers.indexOf("股數");
+  const ratioIndex = headers.indexOf("占集保庫存數比例%");
+  if (symbolIndex < 0 || bucketIndex < 0 || ratioIndex < 0) return [];
+  const bySymbol = new Map<string, { ratio: number; people: number; shares: number }>();
+  lines.forEach((line) => {
+    const cells = splitCsvLine(line);
+    const symbol = String(cells[symbolIndex] ?? "").trim();
+    const bucket = Number(cells[bucketIndex]);
+    if (!/^\d{4}$/.test(symbol) || bucket < 15) return;
+    const current = bySymbol.get(symbol) ?? { ratio: 0, people: 0, shares: 0 };
+    current.ratio += parseTwseNumber(cells[ratioIndex]) ?? 0;
+    current.people += parseTwseNumber(cells[peopleIndex]) ?? 0;
+    current.shares += parseTwseNumber(cells[shareIndex]) ?? 0;
+    bySymbol.set(symbol, current);
+  });
+  return Array.from(bySymbol.entries())
+    .filter(([, value]) => value.ratio >= 35)
+    .slice(0, 500)
+    .map(([symbol, value]) => ({
+      source: "TDCC 集保股權分散",
+      endpoint: tdccOwnershipDistributionUrl,
+      title: "大額持股集中度參考",
+      detail: `持股分級 15 以上合計約 ${value.ratio.toFixed(2)}%，人數 ${value.people.toLocaleString()}；此為股權集中度 reference。`,
+      severity: value.ratio >= 65 ? 0.32 : 0.18,
+      related_symbols: [symbol],
+      url: tdccOwnershipDistributionUrl,
+    }));
+}
+
+function splitCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === "\"") {
+      if (quoted && line[index + 1] === "\"") {
+        current += "\"";
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === "," && !quoted) {
+      values.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  values.push(current);
+  return values.map((value) => value.trim());
+}
+
+function applyApiRiskFlags(signalPayload: PredictionSignal, riskFlags: ApiRiskFlag[]): PredictionSignal {
+  if (riskFlags.length === 0) return { ...signalPayload, risk_flags: [] };
+  const severeFlags = riskFlags.filter((flag) => flag.severity >= 0.5);
+  const averageSeverity = riskFlags.reduce((sum, flag) => sum + flag.severity, 0) / riskFlags.length;
+  const eventRisk = clamp(signalPayload.risk_score.event + averageSeverity * 0.18 + severeFlags.length * 0.08, 0.05, 0.95);
+  const totalRisk = clamp(signalPayload.risk_score.total + averageSeverity * 0.08 + severeFlags.length * 0.04, 0.1, 0.95);
+  const bullishScore = signalPayload.bullish_score ?? Math.round(signalPayload.composite_score * 100);
+  const riskAdjustedScore = Math.round(clamp(bullishScore - totalRisk * 35, 20, 85));
+  const topRisk = riskFlags.map((flag) => `${flag.source}：${flag.title}`).slice(0, 3);
+
+  return {
+    ...signalPayload,
+    risk_flags: riskFlags,
+    risk_adjusted_score: riskAdjustedScore,
+    risk_score: {
+      ...signalPayload.risk_score,
+      total: totalRisk,
+      event: eventRisk,
+      explanation: `${signalPayload.risk_score.explanation} Official TWSE/TDCC reference flags are attached for risk review.`,
+    },
+    explanation: {
+      ...signalPayload.explanation,
+      top_risk_factors: [...topRisk, ...(signalPayload.explanation?.top_risk_factors ?? [])].slice(0, 5),
+    },
+  };
+}
+
+function getDataSourceStatus(): DataSourceStatus[] {
+  const keyedProviders: Array<[string, string, string]> = [
+    ["OpenAI 新聞解析", "OPENAI_API_KEY", "https://platform.openai.com/docs/api-reference"],
+    ["Finnhub 美股/新聞", "FINNHUB_API_KEY", "https://finnhub.io/docs/api"],
+    ["Polygon/Massive 美股", "POLYGON_API_KEY", "https://massive.com/docs"],
+    ["Alpha Vantage 技術指標", "ALPHA_VANTAGE_API_KEY", "https://www.alphavantage.co/documentation/"],
+    ["FRED 美國總經", "FRED_API_KEY", "https://fred.stlouisfed.org/docs/api/fred/"],
+    ["TEJ 商業台股資料", "TEJ_API_KEY", "https://api.tej.com.tw/"],
+    ["FactSet/LSEG 目標價", "FACTSET_API_KEY", "https://developer.factset.com/api-catalog/factset-estimates-api"],
+  ];
+  return [
+    { name: "TWSE OpenAPI", status: "connected", detail: "上市行情、估值、重大訊息、注意/處置、融資融券、外資持股", url: "https://openapi.twse.com.tw/", requires_key: false },
+    { name: "TPEx OpenAPI", status: "connected", detail: "上櫃行情與本益比/殖利率/股價淨值比", url: "https://www.tpex.org.tw/openapi/", requires_key: false },
+    { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
+    { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，前台新聞時間線已連動", url: cnaFinanceRssUrl, requires_key: false },
+    ...keyedProviders.map(([name, envName, url]) => ({
+      name,
+      status: process.env[envName] ? "configured" as const : "needs_key" as const,
+      detail: process.env[envName] ? `${envName} 已設定，可進入正式 provider 串接` : `${envName} 尚未設定，前台先顯示免授權資料與保留欄位`,
+      url,
+      requires_key: true,
+    })),
+  ];
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
 async function attachTwseMarketData(signalPayload: PredictionSignal): Promise<PredictionSignal> {
-  const [quoteMap, valuationMap] = await Promise.all([getTwseQuoteMap(), getTwseValuationMap()]);
-  const quote = quoteMap.get(signalPayload.symbol) ?? null;
-  const valuation = valuationMap.get(signalPayload.symbol) ?? null;
+  const [quoteMap, valuationMap, tpexQuoteMap, tpexValuationMap, riskFlagMap] = await Promise.all([
+    getTwseQuoteMap(),
+    getTwseValuationMap(),
+    getTpexQuoteMap(),
+    getTpexValuationMap(),
+    getApiRiskFlagMap(),
+  ]);
+  const quote = quoteMap.get(signalPayload.symbol) ?? tpexQuoteMap.get(signalPayload.symbol) ?? null;
+  const valuation = valuationMap.get(signalPayload.symbol) ?? tpexValuationMap.get(signalPayload.symbol) ?? null;
+  const market = quote?.source === "TPEx OpenAPI" || valuation?.source === "TPEx OpenAPI" ? "TPEX" : "TW";
   const instrument: StockInstrument = {
     symbol: signalPayload.symbol,
     name: quote?.name || valuation?.name || signalPayload.name,
     sector: signalPayload.sector ?? null,
-    market: "TW",
+    market,
     currency: "TWD",
   };
   const news = await getNewsForInstrument(instrument);
-  return applyNewsSignal({
+  const withMarketData = applyNewsSignal({
     ...signalPayload,
     name: instrument.name,
     quote,
     valuation,
+    data_source_status: getDataSourceStatus(),
   }, news);
+  return applyApiRiskFlags(withMarketData, riskFlagMap.get(signalPayload.symbol) ?? []);
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit & { next?: { revalidate?: number }; timeoutMs?: number } = {}): Promise<Response> {
@@ -1291,6 +1636,7 @@ async function mockResponse(path: string): Promise<unknown> {
       disclaimer,
       instruments: stocks,
       us_linkage: linkage,
+      data_source_status: getDataSourceStatus(),
     } satisfies MarketSummary;
   }
   if (path === "/api/stocks") {

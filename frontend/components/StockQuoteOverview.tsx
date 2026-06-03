@@ -5,6 +5,7 @@ export function StockQuoteOverview({ signal }: { signal: PredictionSignal }) {
   const quote = buildQuoteOverview(signal);
   const metrics = buildStockMetrics(signal);
   const changeTone = quote.change >= 0 ? "positive" : "negative";
+  const marketLabel = signal.quote?.source === "TPEx OpenAPI" ? "上櫃" : signal.quote?.source === "TWSE OpenAPI" ? "上市" : "台股";
   const quoteRows: Array<[string, string | number]> = [
     ["今開", quote.open],
     ["最高", quote.high],
@@ -38,7 +39,7 @@ export function StockQuoteOverview({ signal }: { signal: PredictionSignal }) {
     <section className="quote-overview">
       <div className="quote-main">
         <div>
-          <span className="market-chip">上市 · {quote.marketStatus}</span>
+          <span className="market-chip">{marketLabel} · {quote.marketStatus}</span>
           <h2>{signal.name} {signal.symbol}</h2>
           <small>{quote.quoteTime}</small>
         </div>

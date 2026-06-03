@@ -190,6 +190,24 @@ export function estimateCurrentPrice(signal: PredictionSignal): number {
   return Math.round(ma5 ?? ma20 ?? fallbackBySymbol[signal.symbol] ?? 100);
 }
 
+function quoteSourceLabel(signal: PredictionSignal): string {
+  if (signal.quote?.source === "TPEx OpenAPI") return "TPEx OpenAPI /tpex_mainboard_daily_close_quotes";
+  if (signal.quote?.source === "TWSE OpenAPI") return "TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL";
+  return "後端 API 或示範資料";
+}
+
+function valuationSourceLabel(signal: PredictionSignal): string {
+  if (signal.valuation?.source === "TPEx OpenAPI") return "TPEx OpenAPI /tpex_mainboard_peratio_analysis";
+  if (signal.valuation?.source === "TWSE OpenAPI") return "TWSE OpenAPI /exchangeReport/BWIBBU_ALL";
+  return "MVP 估算欄位，待接法人共識與財報";
+}
+
+function exchangeLabel(signal: PredictionSignal): string {
+  if (signal.quote?.source === "TPEx OpenAPI" || signal.valuation?.source === "TPEx OpenAPI") return "TPEx 上櫃";
+  if (signal.quote?.source === "TWSE OpenAPI" || signal.valuation?.source === "TWSE OpenAPI") return "TWSE 上市";
+  return "台股";
+}
+
 export function buildTargetPriceRange(signal: PredictionSignal): TargetPriceRange {
   const metrics = buildStockMetrics(signal);
   const currentPrice = estimateCurrentPrice(signal);
@@ -205,7 +223,7 @@ export function buildTargetPriceRange(signal: PredictionSignal): TargetPriceRang
     base: Math.round(base),
     optimistic: Math.round(optimistic),
     sourceLabel: signal.quote?.close
-      ? "現在金額使用 TWSE 官方盤後 API；上看區間仍為 MVP 研究估算，待接法人共識目標價資料源。"
+      ? `現在金額使用 ${quoteSourceLabel(signal)}；上看區間仍為 MVP 研究估算，待接法人共識目標價資料源。`
       : "MVP 研究估算，待接法人共識目標價資料源",
   };
 }
@@ -223,13 +241,16 @@ export function buildPlainLanguageReasons(signal: PredictionSignal): string[] {
 }
 
 export function buildReferences(signal: PredictionSignal): string[] {
+  const riskRefs = signal.risk_flags?.slice(0, 2).map((flag) => `${flag.source}：${flag.title}`).join("、");
+  const keyedStatus = signal.data_source_status?.filter((item) => item.requires_key).slice(0, 2).map((item) => `${item.name} ${item.status === "needs_key" ? "待授權" : "已設定"}`).join("、");
   const refs = [
     "因子分數：基本面、籌碼、技術、美股連動、新聞、風險分數",
-    signal.quote ? "行情來源：TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL" : "行情來源：後端 API 或示範資料",
-    signal.valuation ? "估值來源：TWSE OpenAPI /exchangeReport/BWIBBU_ALL" : "估值來源：後端 API 或示範資料",
+    `行情來源：${quoteSourceLabel(signal)}`,
+    `估值來源：${valuationSourceLabel(signal)}`,
     `新聞來源：${signal.news.map((item) => item.source).filter(Boolean).slice(0, 2).join("、") || "資料觀察中"}`,
     "技術依據：MA、RSI、KD、MACD、OBV、量價背離",
-    "風險依據：波動、流動性、事件風險、VIX/美股代理訊號",
+    `風險依據：${riskRefs || "波動、流動性、事件風險、VIX/美股代理訊號"}`,
+    `API 授權狀態：免授權 TWSE/TPEx/TDCC/CNA 已連動；${keyedStatus || "付費/需 key providers 保留環境變數"}`,
   ];
   return refs.map(sanitizeDisplayText);
 }
@@ -327,8 +348,8 @@ export function buildQuoteOverview(signal: PredictionSignal): QuoteOverview {
     currentPrice,
     change,
     changePercent,
-    marketStatus: quote ? "TWSE 盤後資料" : "市場收盤",
-    quoteTime: quote ? `${quote.date} TWSE 盤後` : `${signal.signal_date} 盤後`,
+    marketStatus: quote ? `${exchangeLabel(signal)}盤後資料` : "市場收盤",
+    quoteTime: quote ? `${quote.date} ${exchangeLabel(signal)}盤後` : `${signal.signal_date} 盤後`,
     open: quote?.open ?? Math.round((currentPrice + previousClose) / 2),
     high,
     low,
@@ -359,8 +380,11 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
   const quote = buildQuoteOverview(signal);
   const backtest = buildBacktestConfidenceProfile(signal);
   const target = buildTargetPriceRange(signal);
-  const quoteSourceNote = signal.quote ? "TWSE OpenAPI /exchangeReport/STOCK_DAY_ALL" : "後端 API 或示範資料";
-  const valuationSourceNote = signal.valuation ? "TWSE OpenAPI /exchangeReport/BWIBBU_ALL" : "MVP 估算欄位，待接法人共識與財報";
+  const quoteSourceNote = quoteSourceLabel(signal);
+  const valuationSourceNote = valuationSourceLabel(signal);
+  const riskReferenceNote = signal.risk_flags?.length
+    ? signal.risk_flags.slice(0, 2).map((flag) => `${flag.source}：${flag.detail}`).join("；")
+    : "TWSE/TDCC 官方 reference 若命中會自動顯示";
 
   return [
     {
@@ -414,6 +438,7 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
       rows: [
         { label: "USMarketScore", value: `${metrics.usMarketScore}`, note: "SOX、TSM ADR、NVDA、AAPL、VIX 與供應鏈權重" },
         { label: "NewsScore", value: `${metrics.newsScore}`, note: `${signal.news.length} 筆新聞/事件進入觀察` },
+        { label: "官方風險 Reference", value: signal.risk_flags?.length ? `${signal.risk_flags.length} 筆命中` : "未命中高風險公告", note: riskReferenceNote },
         { label: "容易失效狀態", value: backtest.worstMarketRegime, note: "模型監控與風險過濾會追蹤此類狀態" },
       ],
     },

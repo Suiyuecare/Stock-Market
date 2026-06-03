@@ -68,6 +68,18 @@ export default async function Home() {
         <ScoreCard label="入門首選觀察" value={`${selected.symbol}`} detail={`${selected.name} · 5D ${metrics.probabilityUp5d}%`} tone="positive" />
       </section>
 
+      {summary.data_source_status?.length ? (
+        <section className="api-source-strip" aria-label="API 資料與授權狀態">
+          {summary.data_source_status.slice(0, 8).map((source) => (
+            <a className={`api-source-pill ${source.status}`} href={source.url} target="_blank" rel="noreferrer" key={source.name}>
+              <span>{source.name}</span>
+              <strong>{source.status === "connected" ? "已連動" : source.status === "configured" ? "已授權" : "待 API key"}</strong>
+              <small>{source.detail}</small>
+            </a>
+          ))}
+        </section>
+      ) : null}
+
       <section className="grid">
         <article className="panel span-2">
           <div className="panel-heading">

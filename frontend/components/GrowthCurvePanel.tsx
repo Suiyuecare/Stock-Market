@@ -117,7 +117,7 @@ export function GrowthCurvePanel({
           <small>公布日：{source.published_at}</small>
         </div>
         <a href={source.url} target="_blank" rel="noreferrer">
-          TWSE OpenAPI
+          {source.name}
         </a>
       </div>
       <p className="muted-copy">{source.note}</p>
