@@ -4,7 +4,50 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StockInstrument } from "@/lib/api";
 
-export function StockSearch({ stocks }: { stocks: StockInstrument[] }) {
+const stockSearchUniverse: StockInstrument[] = [
+  { symbol: "1101", market: "TW", name: "台泥", sector: "水泥工業", currency: "TWD" },
+  { symbol: "1102", market: "TW", name: "亞泥", sector: "水泥工業", currency: "TWD" },
+  { symbol: "1216", market: "TW", name: "統一", sector: "食品工業", currency: "TWD" },
+  { symbol: "1301", market: "TW", name: "台塑", sector: "塑膠工業", currency: "TWD" },
+  { symbol: "1303", market: "TW", name: "南亞", sector: "塑膠工業", currency: "TWD" },
+  { symbol: "1402", market: "TW", name: "遠東新", sector: "紡織纖維", currency: "TWD" },
+  { symbol: "1590", market: "TW", name: "亞德客-KY", sector: "電機機械", currency: "TWD" },
+  { symbol: "2002", market: "TW", name: "中鋼", sector: "鋼鐵工業", currency: "TWD" },
+  { symbol: "2207", market: "TW", name: "和泰車", sector: "汽車工業", currency: "TWD" },
+  { symbol: "2301", market: "TW", name: "光寶科", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2303", market: "TW", name: "聯電", sector: "半導體", currency: "TWD" },
+  { symbol: "2308", market: "TW", name: "台達電", sector: "電源管理", currency: "TWD" },
+  { symbol: "2317", market: "TW", name: "鴻海", sector: "電子代工", currency: "TWD" },
+  { symbol: "2324", market: "TW", name: "仁寶", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2330", market: "TW", name: "台積電", sector: "半導體", currency: "TWD" },
+  { symbol: "2345", market: "TW", name: "智邦", sector: "通信網路", currency: "TWD" },
+  { symbol: "2357", market: "TW", name: "華碩", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2379", market: "TW", name: "瑞昱", sector: "半導體", currency: "TWD" },
+  { symbol: "2382", market: "TW", name: "廣達", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2395", market: "TW", name: "研華", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2408", market: "TW", name: "南亞科", sector: "半導體", currency: "TWD" },
+  { symbol: "2454", market: "TW", name: "聯發科", sector: "半導體", currency: "TWD" },
+  { symbol: "2603", market: "TW", name: "長榮", sector: "航運業", currency: "TWD" },
+  { symbol: "2881", market: "TW", name: "富邦金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2882", market: "TW", name: "國泰金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2884", market: "TW", name: "玉山金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2886", market: "TW", name: "兆豐金", sector: "金融保險", currency: "TWD" },
+  { symbol: "2891", market: "TW", name: "中信金", sector: "金融保險", currency: "TWD" },
+  { symbol: "3008", market: "TW", name: "大立光", sector: "光電業", currency: "TWD" },
+  { symbol: "3034", market: "TW", name: "聯詠", sector: "半導體", currency: "TWD" },
+  { symbol: "3035", market: "TW", name: "智原", sector: "半導體", currency: "TWD" },
+  { symbol: "3231", market: "TW", name: "緯創", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "3661", market: "TW", name: "世芯-KY", sector: "半導體", currency: "TWD" },
+  { symbol: "3711", market: "TW", name: "日月光投控", sector: "半導體", currency: "TWD" },
+  { symbol: "4938", market: "TW", name: "和碩", sector: "電子代工", currency: "TWD" },
+  { symbol: "6147", market: "TPEX", name: "頎邦", sector: "半導體", currency: "TWD" },
+  { symbol: "6187", market: "TPEX", name: "萬潤", sector: "半導體設備", currency: "TWD" },
+  { symbol: "6223", market: "TPEX", name: "旺矽", sector: "半導體", currency: "TWD" },
+  { symbol: "6488", market: "TPEX", name: "環球晶", sector: "半導體", currency: "TWD" },
+  { symbol: "8069", market: "TPEX", name: "元太", sector: "光電業", currency: "TWD" },
+];
+
+export function StockSearch({ stocks = stockSearchUniverse }: { stocks?: StockInstrument[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -26,6 +69,11 @@ export function StockSearch({ stocks }: { stocks: StockInstrument[] }) {
   }
 
   function submitSearch(): void {
+    const directSymbol = query.trim();
+    if (/^\d{4}$/.test(directSymbol)) {
+      goToStock(directSymbol);
+      return;
+    }
     const target = results[activeIndex] ?? results[0];
     if (target) goToStock(target.symbol);
   }

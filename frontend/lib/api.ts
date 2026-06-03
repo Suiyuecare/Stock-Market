@@ -1055,7 +1055,7 @@ async function loadApiRiskFlagMap(): Promise<Map<string, ApiRiskFlag[]>> {
     fetchWithTimeout(twseDispositionUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 }),
     fetchWithTimeout(twseMarginUrl, { next: { revalidate: 60 * 30 }, timeoutMs: 6000 }),
     fetchWithTimeout(twseForeignHoldingUrl, { next: { revalidate: 60 * 60 }, timeoutMs: 6000 }),
-    fetchWithTimeout(tdccOwnershipDistributionUrl, { cache: "no-store", timeoutMs: 9000 }),
+    fetchWithTimeout(tdccOwnershipDistributionUrl, { cache: "no-store", timeoutMs: 3500 }),
   ]);
 
   const [attention, disposition, margin, foreignHolding, tdccOwnership] = settled;
@@ -1494,7 +1494,7 @@ async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
 
 async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   const stocks = await getFallbackInstruments();
-  const selected = stocks.slice(0, Math.min(stocks.length, 180));
+  const selected = stocks.slice(0, Math.min(stocks.length, 120));
   fallbackSignalsCache = await Promise.all(selected.map((item, index) => attachTwseMarketData(signal(item.symbol, item.name, index, item.sector))));
   return fallbackSignalsCache;
 }
@@ -1640,10 +1640,8 @@ async function usMarketRadar(): Promise<USMarketRadarResponse> {
 }
 
 async function mockResponse(path: string): Promise<unknown> {
-  const stocks = await getFallbackInstruments();
-  const signals = await getFallbackSignals();
-  const compactSignals = signals.slice(0, 80);
   if (path === "/api/market/summary") {
+    const stocks = await getFallbackInstruments();
     return {
       session_date: "2026-06-02",
       tw_status: "盤後資料就緒",
@@ -1655,12 +1653,15 @@ async function mockResponse(path: string): Promise<unknown> {
     } satisfies MarketSummary;
   }
   if (path === "/api/stocks") {
+    const stocks = await getFallbackInstruments();
     return { disclaimer, stocks } satisfies StockListResponse;
   }
   if (path === "/api/stocks/ranking" || path === "/api/rankings/top-probability") {
+    const signals = await getFallbackSignals();
     return { disclaimer, signals } satisfies RankingResponse;
   }
   if (path === "/api/rankings/institutional-buying") {
+    const compactSignals = (await getFallbackSignals()).slice(0, 80);
     return {
       disclaimer,
       ranking: compactSignals.map((item) => ({
@@ -1674,6 +1675,7 @@ async function mockResponse(path: string): Promise<unknown> {
     } satisfies InstitutionalRankingResponse;
   }
   if (path === "/api/rankings/macd-golden-cross") {
+    const compactSignals = (await getFallbackSignals()).slice(0, 80);
     return {
       disclaimer,
       ranking: compactSignals.map((item) => ({
@@ -1688,6 +1690,7 @@ async function mockResponse(path: string): Promise<unknown> {
     } satisfies MacdRankingResponse;
   }
   if (path === "/api/rankings/volume-price-divergence") {
+    const compactSignals = (await getFallbackSignals()).slice(0, 80);
     return {
       disclaimer,
       ranking: compactSignals.map((item) => ({
@@ -1705,6 +1708,7 @@ async function mockResponse(path: string): Promise<unknown> {
     return usMarketRadar();
   }
   if (path === "/api/risk/high-risk") {
+    const compactSignals = (await getFallbackSignals()).slice(0, 80);
     return {
       disclaimer,
       signals: compactSignals
