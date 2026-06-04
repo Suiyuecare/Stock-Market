@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { ScoreCard } from "@/components/ScoreCard";
-import type { PredictionSignal } from "@/lib/api";
-import { fetchTopProbabilityRanking } from "@/lib/api";
+import type { PredictionSignal, TaiwanPredictionToolResponse } from "@/lib/api";
+import { fetchTaiwanPredictionTool, fetchTopProbabilityRanking } from "@/lib/api";
 import { buildStockMetrics, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
 
 type RecommendationRow = {
@@ -44,45 +44,45 @@ type MarketState = {
 
 const marketThemeProfiles: Record<string, { fit: number; themes: string[] }> = {
   "2330": { fit: 88, themes: ["半導體", "AI/HPC"] },
-  "2454": { fit: 82, themes: ["IC 設計", "Edge AI"] },
-  "3035": { fit: 80, themes: ["ASIC", "晶片設計服務"] },
-  "3661": { fit: 84, themes: ["ASIC", "HPC"] },
-  "2382": { fit: 86, themes: ["AI 伺服器", "雲端資料中心"] },
-  "3231": { fit: 84, themes: ["AI 伺服器", "雲端資料中心"] },
-  "6669": { fit: 86, themes: ["AI 伺服器", "雲端資料中心"] },
+  "2454": { fit: 89, themes: ["IC 設計", "Edge AI"] },
+  "3035": { fit: 89, themes: ["ASIC", "晶片設計服務"] },
+  "3661": { fit: 89, themes: ["ASIC", "HPC"] },
+  "2382": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
+  "3231": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
+  "6669": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
   "2317": { fit: 78, themes: ["EMS", "伺服器"] },
   "2308": { fit: 82, themes: ["電源管理", "資料中心"] },
   "2345": { fit: 80, themes: ["高速網通", "資料中心"] },
-  "3017": { fit: 82, themes: ["散熱", "液冷"] },
-  "3324": { fit: 80, themes: ["散熱", "液冷"] },
-  "2383": { fit: 82, themes: ["CCL", "高速材料"] },
-  "3037": { fit: 78, themes: ["ABF", "PCB/載板"] },
-  "8046": { fit: 76, themes: ["ABF", "載板"] },
+  "3017": { fit: 92, themes: ["散熱", "液冷"] },
+  "3324": { fit: 92, themes: ["散熱", "液冷"] },
+  "2383": { fit: 92, themes: ["CCL", "高速材料"] },
+  "3037": { fit: 92, themes: ["ABF", "PCB/載板"] },
+  "8046": { fit: 90, themes: ["ABF", "載板"] },
   "3711": { fit: 78, themes: ["封裝測試", "先進封裝"] },
-  "1590": { fit: 82, themes: ["機器人", "氣動元件"] },
-  "2049": { fit: 82, themes: ["機器人", "線性傳動"] },
-  "2359": { fit: 78, themes: ["機器人", "AI 視覺"] },
+  "1590": { fit: 74, themes: ["機器人", "氣動元件"] },
+  "2049": { fit: 74, themes: ["機器人", "線性傳動"] },
+  "2359": { fit: 74, themes: ["機器人", "AI 視覺"] },
   "1504": { fit: 76, themes: ["電機", "機器人/電動化"] },
   "1513": { fit: 78, themes: ["重電", "電網升級"] },
   "1519": { fit: 80, themes: ["重電", "變壓器"] },
   "1605": { fit: 72, themes: ["電線電纜", "電網"] },
-  "2603": { fit: 74, themes: ["貨櫃航運", "景氣循環"] },
-  "2609": { fit: 72, themes: ["貨櫃航運", "景氣循環"] },
-  "2615": { fit: 70, themes: ["貨櫃航運", "景氣循環"] },
-  "2618": { fit: 72, themes: ["航空", "旅運復甦"] },
-  "2610": { fit: 70, themes: ["航空", "旅運復甦"] },
+  "2603": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
+  "2609": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
+  "2615": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
+  "2618": { fit: 63, themes: ["航空", "旅運復甦"] },
+  "2610": { fit: 63, themes: ["航空", "旅運復甦"] },
   "2634": { fit: 68, themes: ["航太", "國防"] },
-  "2881": { fit: 78, themes: ["金融避險", "大型金控"] },
-  "2882": { fit: 78, themes: ["金融避險", "大型金控"] },
-  "2884": { fit: 76, themes: ["金融避險", "銀行"] },
-  "2885": { fit: 74, themes: ["金融避險", "券商"] },
-  "2886": { fit: 78, themes: ["金融避險", "銀行"] },
-  "2891": { fit: 78, themes: ["金融避險", "大型金控"] },
-  "5880": { fit: 76, themes: ["金融避險", "銀行"] },
-  "5876": { fit: 74, themes: ["金融避險", "銀行"] },
-  "1216": { fit: 70, themes: ["內需防禦", "食品通路"] },
-  "2912": { fit: 72, themes: ["內需防禦", "零售通路"] },
-  "2207": { fit: 70, themes: ["內需消費", "汽車"] },
+  "2881": { fit: 66, themes: ["金融避險", "大型金控"] },
+  "2882": { fit: 66, themes: ["金融避險", "大型金控"] },
+  "2884": { fit: 66, themes: ["金融避險", "銀行"] },
+  "2885": { fit: 66, themes: ["金融避險", "券商"] },
+  "2886": { fit: 66, themes: ["金融避險", "銀行"] },
+  "2891": { fit: 66, themes: ["金融避險", "大型金控"] },
+  "5880": { fit: 66, themes: ["金融避險", "銀行"] },
+  "5876": { fit: 66, themes: ["金融避險", "銀行"] },
+  "1216": { fit: 56, themes: ["內需防禦", "食品通路"] },
+  "2912": { fit: 56, themes: ["內需防禦", "零售通路"] },
+  "2207": { fit: 43, themes: ["內需消費", "汽車"] },
   "6505": { fit: 68, themes: ["能源", "油品價差"] },
   "1301": { fit: 66, themes: ["塑化", "景氣循環"] },
   "1303": { fit: 66, themes: ["塑化", "景氣循環"] },
@@ -124,15 +124,17 @@ const horizonWeights: Record<HorizonKey, FactorWeights> = {
 };
 
 export default async function RecommendationsPage() {
-  const ranking = await fetchTopProbabilityRanking();
-  const marketState = buildMarketState(ranking.signals);
+  const [ranking, tool] = await Promise.all([
+    fetchTopProbabilityRanking(),
+    fetchTaiwanPredictionTool(),
+  ]);
+  const marketState = buildMarketState(tool);
   const recommendations = ranking.signals
     .map((signal) => buildRecommendation(signal, marketState))
     .filter((row) => row.liquidityPassed)
     .sort((left, right) => right.scores["5d"] - left.scores["5d"])
     .slice(0, 20);
   const top = recommendations[0];
-  const averageProbability = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.probabilityUp5d, 0) / Math.max(1, recommendations.length));
   const averageRisk = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.riskScore, 0) / Math.max(1, recommendations.length));
   const averageScore = Math.round(recommendations.reduce((sum, row) => sum + row.score, 0) / Math.max(1, recommendations.length));
   const averageOverheat = Math.round(recommendations.reduce((sum, row) => sum + row.overheatPenalty, 0) / Math.max(1, recommendations.length));
@@ -141,7 +143,7 @@ export default async function RecommendationsPage() {
     <AppShell active="/recommendations">
       <header className="topbar">
         <div>
-          <p className="eyebrow">明燈推薦</p>
+          <p className="eyebrow">明燈推薦 · 2026/03/01-06/03 研究版</p>
           <h1>今日前 20 檔研究觀察名單</h1>
         </div>
         <div className={`status ${marketState.tone === "positive" ? "ok" : marketState.tone === "negative" ? "risk" : ""}`}>市場狀態 {marketState.score} · {marketState.label}</div>
@@ -151,7 +153,7 @@ export default async function RecommendationsPage() {
         <ScoreCard label="市場狀態分數" value={`${marketState.score}`} detail={marketState.action} tone={marketState.tone} />
         <ScoreCard label="第一名" value={top?.signal.symbol ?? "-"} detail={top ? top.signal.name : "資料整理中"} tone="positive" />
         <ScoreCard label="平均 5D 分數" value={`${averageScore}`} detail="分數不是機率" tone={scoreTone(averageScore)} />
-        <ScoreCard label="原模型 5D 機率" value={`${averageProbability}%`} detail="待歷史校準" tone={scoreTone(averageProbability)} />
+        <ScoreCard label="研究區間漲幅" value="+32.4%" detail="TAIEX 3/2 → 6/3" tone="positive" />
         <ScoreCard label="平均風險" value={`${averageRisk}`} detail="越低越保守" tone={averageRisk >= 55 ? "risk" : "neutral"} />
         <ScoreCard label="平均過熱扣分" value={`${averageOverheat}`} detail="最高扣 15 分" tone={averageOverheat >= 8 ? "risk" : "neutral"} />
       </section>
@@ -173,7 +175,49 @@ export default async function RecommendationsPage() {
             </div>
           ))}
         </div>
-        <p className="panel-note">MarketScore = 加權指數趨勢 30%、市場寬度 20%、外資大盤資金 20%、美股科技風險 15%、匯率 10%、波動風險 5%。目前前端以可取得的個股因子與官方行情作代理，後續會改接完整大盤寬度、外資總量與匯率資料。</p>
+        <p className="panel-note">MarketScore = 加權指數趨勢 30%、市場寬度 20%、大盤資金 20%、美股與 AI 外溢 15%、匯率 10%、波動風險 5%，再扣集中風險。3/1-6/3 的結論是強多但集中，所以可以挑股，但不能無腦追高。</p>
+      </section>
+
+      <section className="panel market-state-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Market Study</p>
+            <h2>3/1-6/3 台股情形</h2>
+          </div>
+          <span className="panel-tag">官方 TWSE / MOPS 資料整理</span>
+        </div>
+        <div className="market-state-grid">
+          <div>
+            <span>TAIEX 區間</span>
+            <strong>+32.4%</strong>
+            <small>35,095.09 → 46,459.16，6/3 創區間高點。</small>
+          </div>
+          <div>
+            <span>20D / 60D</span>
+            <strong>+12.9% / +38.3%</strong>
+            <small>站上 MA20 與 MA60，屬強趨勢。</small>
+          </div>
+          <div>
+            <span>市場寬度</span>
+            <strong>70%</strong>
+            <small>6/3 上漲 763 檔、下跌 289 檔。</small>
+          </div>
+          <div>
+            <span>最大回撤</span>
+            <strong>-9.6%</strong>
+            <small>強多裡仍有急跌風險，過熱扣分不可拿掉。</small>
+          </div>
+        </div>
+        <div className="horizon-weight-grid">
+          {tool.research.sector_rotation.slice(0, 6).map((sector) => (
+            <div key={sector.name}>
+              <span>{sector.name}</span>
+              <strong>{sector.score}</strong>
+              <small>{typeof sector.return === "number" ? `3/2-6/3 約 ${(sector.return * 100).toFixed(1)}%` : "用籌碼、技術與營收再決定是否入選"}</small>
+            </div>
+          ))}
+        </div>
+        <p className="panel-note">新工具不把 AI 當唯一答案。電子零組件、IC 設計、晶圓製造、AI 供應鏈確實是研究期主軸，但金融避險、航運、機器人、重電、內需股仍可靠同業相對強度、籌碼與基本面進入候選。</p>
       </section>
 
       <section className="panel">
@@ -212,7 +256,7 @@ export default async function RecommendationsPage() {
             </a>
           ))}
         </div>
-        <p className="panel-note">排序預設看 5D 短線分數。分數不是上漲機率；真正的 probability_up_1d / 5d / 20d 需要用歷史分數分桶、Brier Score 與 walk-forward 回測校準後再顯示。</p>
+        <p className="panel-note">排序預設看 5D 短線分數。分數不是上漲機率；真正的 probability_up_1d / 5d / 20d 需要用 2018 至今歷史分數分桶、Brier Score 與 walk-forward 回測校準後再顯示。</p>
       </section>
     </AppShell>
   );
@@ -278,79 +322,19 @@ function buildReason(
   return sanitizeDisplayText(drivers.slice(0, 3).join(" · ") || fallback);
 }
 
-function buildMarketState(signals: PredictionSignal[]): MarketState {
-  const metrics = signals.map(buildStockMetrics);
-  const taiexTrend = average(metrics.map((item) => item.technicalScore));
-  const marketBreadth = Math.round((metrics.filter((item) => item.technicalScore >= 55).length / Math.max(1, metrics.length)) * 100);
-  const foreignFunds = average(metrics.map((item) => item.chipScore));
-  const usTechRisk = average(metrics.map((item) => item.usMarketScore));
-  const fxTrend = 55;
-  const volatilityRisk = average(metrics.map((item) => 100 - item.riskScore));
-  const score = clampScore(
-    taiexTrend * 0.3
-    + marketBreadth * 0.2
-    + foreignFunds * 0.2
-    + usTechRisk * 0.15
-    + fxTrend * 0.1
-    + volatilityRisk * 0.05,
-  );
-
-  if (score > 65) {
-    return {
-      score,
-      label: "可積極挑股",
-      action: "可看多因子高分股",
-      multiplier: 1.06,
-      tone: "positive",
-      components: buildMarketComponents(taiexTrend, marketBreadth, foreignFunds, usTechRisk, fxTrend, volatilityRisk),
-    };
-  }
-  if (score >= 50) {
-    return {
-      score,
-      label: "精選高分股",
-      action: "降低部位，只看高分股",
-      multiplier: 1,
-      tone: "neutral",
-      components: buildMarketComponents(taiexTrend, marketBreadth, foreignFunds, usTechRisk, fxTrend, volatilityRisk),
-    };
-  }
-  if (score >= 40) {
-    return {
-      score,
-      label: "只觀察不追高",
-      action: "提高風險門檻",
-      multiplier: 0.92,
-      tone: "negative",
-      components: buildMarketComponents(taiexTrend, marketBreadth, foreignFunds, usTechRisk, fxTrend, volatilityRisk),
-    };
-  }
+function buildMarketState(tool: TaiwanPredictionToolResponse): MarketState {
   return {
-    score,
-    label: "偏防守",
-    action: "暫停新增高風險訊號",
-    multiplier: 0.84,
-    tone: "negative",
-    components: buildMarketComponents(taiexTrend, marketBreadth, foreignFunds, usTechRisk, fxTrend, volatilityRisk),
+    score: tool.market_state.score,
+    label: tool.market_state.label,
+    action: tool.market_state.action,
+    multiplier: tool.market_state.multiplier,
+    tone: tool.market_state.tone,
+    components: tool.market_state.components.map((component) => ({
+      label: component.name,
+      value: component.score,
+      detail: component.detail,
+    })),
   };
-}
-
-function buildMarketComponents(
-  taiexTrend: number,
-  marketBreadth: number,
-  foreignFunds: number,
-  usTechRisk: number,
-  fxTrend: number,
-  volatilityRisk: number,
-) {
-  return [
-    { label: "加權指數趨勢", value: taiexTrend, detail: "以全市場技術分數作代理" },
-    { label: "市場寬度", value: marketBreadth, detail: "技術分數高於 55 的股票比例" },
-    { label: "外資大盤資金", value: foreignFunds, detail: "以法人籌碼分數作代理" },
-    { label: "美股科技風險", value: usTechRisk, detail: "Nasdaq / SOX / ADR 代理分數" },
-    { label: "匯率", value: fxTrend, detail: "待接央行與外匯資料，暫用中性值" },
-    { label: "波動風險", value: volatilityRisk, detail: "100 - 平均風險係數" },
-  ];
 }
 
 function buildFactorInputs(
@@ -360,11 +344,12 @@ function buildFactorInputs(
   marketState: MarketState,
 ) {
   const revenueIndustry = clampScore(
-    marketProfile.fit * 0.42
-    + metrics.fundamentalScore * 0.3
-    + metrics.technicalScore * 0.13
-    + metrics.newsScore * 0.08
-    + metrics.usMarketScore * 0.07,
+    marketProfile.fit * 0.3
+    + metrics.fundamentalScore * 0.32
+    + metrics.chipScore * 0.12
+    + metrics.technicalScore * 0.12
+    + metrics.usMarketScore * 0.08
+    + metrics.newsScore * 0.06,
   );
   const valuation = clampScore(
     metrics.targetPriceScore * 0.4
@@ -410,6 +395,7 @@ function mapHorizonScores<T>(source: Record<HorizonKey, T>, mapper: (value: T, h
 function buildMarketMultiplier(marketState: MarketState, marketProfile: { themes: string[] }): number {
   const defensive = marketProfile.themes.some((theme) => /金融|內需|食品|零售/.test(theme));
   if (marketState.score < 50 && defensive) return Math.min(1, marketState.multiplier + 0.06);
+  if (marketState.score >= 65 && defensive) return Math.min(1.01, marketState.multiplier);
   return marketState.multiplier;
 }
 
@@ -434,10 +420,6 @@ function passesLiquidityFilter(signal: PredictionSignal): boolean {
   const tradeValue = signal.quote?.trade_value;
   if (typeof tradeValue !== "number" || tradeValue <= 0) return true;
   return tradeValue >= 30_000_000;
-}
-
-function average(values: number[]): number {
-  return clampScore(values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length));
 }
 
 function toScore(value: number): number {

@@ -330,6 +330,48 @@ export type HighRiskResponse = {
   }>;
 };
 
+export type TaiwanPredictionToolResponse = {
+  disclaimer: string;
+  research: {
+    research_window: {
+      start: string;
+      first_trading_day: string;
+      end: string;
+      trading_days: number;
+    };
+    market_summary: Record<string, number | string | boolean>;
+    sector_rotation: Array<{
+      name: string;
+      score: number;
+      return: number | null;
+      role: string;
+    }>;
+    hard_filters: Record<string, number | boolean>;
+    model_notes: string[];
+    data_sources: Array<{ name: string; url: string; usage: string }>;
+  };
+  horizon_weights: Record<"1d" | "5d" | "20d", Record<string, number>>;
+  market_state: {
+    score: number;
+    label: string;
+    action: string;
+    tone: "positive" | "negative" | "neutral";
+    multiplier: number;
+    components: Array<{ name: string; score: number; detail: string }>;
+  };
+  ranked_signals: Array<{
+    symbol: string;
+    name: string;
+    score_1d: number;
+    score_5d: number;
+    score_20d: number;
+    reason: string;
+    overheat_penalty: number;
+    event_risk_penalty: number;
+    liquidity_passed: boolean;
+  }>;
+};
+
 async function getJson<T>(path: string): Promise<T> {
   try {
     const response = await fetchWithTimeout(`${apiBaseUrl}${path}`, { cache: "no-store", timeoutMs: 1500 });
@@ -344,6 +386,10 @@ async function getJson<T>(path: string): Promise<T> {
 
 export async function fetchMarketSummary(): Promise<MarketSummary> {
   return getJson<MarketSummary>("/api/market/summary");
+}
+
+export async function fetchTaiwanPredictionTool(): Promise<TaiwanPredictionToolResponse> {
+  return getJson<TaiwanPredictionToolResponse>("/api/market/taiwan-prediction-tool");
 }
 
 export async function fetchStocks(): Promise<StockListResponse> {
@@ -1848,6 +1894,96 @@ async function usMarketRadar(): Promise<USMarketRadarResponse> {
   };
 }
 
+async function taiwanPredictionTool(): Promise<TaiwanPredictionToolResponse> {
+  const signals = await getRecommendationFallbackSignals();
+  const ranked = signals.slice(0, 20).map((item) => ({
+    symbol: item.symbol,
+    name: item.name,
+    score_1d: Math.round((item.explanation?.component_scores?.TechnicalScore ?? 62) * 0.35 + (item.explanation?.component_scores?.ChipScore ?? 60) * 0.3 + 27),
+    score_5d: Math.round((item.explanation?.component_scores?.TechnicalScore ?? 62) * 0.24 + (item.explanation?.component_scores?.ChipScore ?? 60) * 0.24 + (item.explanation?.component_scores?.FundamentalScore ?? 58) * 0.18 + 22),
+    score_20d: Math.round((item.explanation?.component_scores?.FundamentalScore ?? 58) * 0.34 + (item.explanation?.component_scores?.ChipScore ?? 60) * 0.18 + 26),
+    reason: "3/1-6/3 市場研究版 · 多因子共振 · 流動性硬篩",
+    overheat_penalty: 0,
+    event_risk_penalty: 0,
+    liquidity_passed: true,
+  }));
+  return {
+    disclaimer,
+    research: {
+      research_window: {
+        start: "2026-03-01",
+        first_trading_day: "2026-03-02",
+        end: "2026-06-03",
+        trading_days: 65,
+      },
+      market_summary: {
+        taiex_start_close: 35095.09,
+        taiex_end_close: 46459.16,
+        taiex_period_return: 0.3238,
+        taiex_20d_return: 0.1293,
+        taiex_60d_return: 0.3827,
+        taiex_high_date: "2026-06-03",
+        taiex_high: 46552.16,
+        taiex_low_date: "2026-03-09",
+        taiex_low: 31529.36,
+        max_drawdown: -0.0961,
+        latest_breadth_ratio: 0.7,
+        daily_volatility: 0.0197,
+      },
+      sector_rotation: [
+        { name: "電子零組件", score: 92, return: 0.7598, role: "leader" },
+        { name: "AI 供應鏈", score: 90, return: 0.7276, role: "leader" },
+        { name: "IC 設計", score: 89, return: 0.7181, role: "leader" },
+        { name: "晶圓製造", score: 88, return: 0.6984, role: "leader" },
+        { name: "智慧移動與電動車", score: 86, return: 0.7291, role: "leader" },
+        { name: "金融避險", score: 66, return: null, role: "defensive" },
+        { name: "航運航空", score: 63, return: null, role: "cyclical" },
+        { name: "內需防禦", score: 56, return: null, role: "defensive" },
+        { name: "生技醫療", score: 40, return: -0.1062, role: "laggard" },
+      ],
+      hard_filters: {
+        min_trade_value_twd: 30_000_000,
+        exclude_attention_or_disposition: true,
+        exclude_low_liquidity: true,
+        exclude_extreme_event_risk: true,
+      },
+      model_notes: [
+        "分數不是機率；probability_up 需要歷史分桶、Brier Score 與 walk-forward 校準。",
+        "流動性不加分，直接作硬性過濾。",
+        "所有產業都用同業百分位、籌碼、技術、營收與風險重新競爭，不只偏 AI。",
+      ],
+      data_sources: [
+        { name: "TWSE TAIEX historical index", url: "https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST", usage: "TAIEX trend, return and drawdown." },
+        { name: "TWSE daily market quotes", url: "https://www.twse.com.tw/rwd/zh/afterTrading/STOCK_DAY_ALL", usage: "Breadth and liquidity filters." },
+        { name: "TWSE daily index tables", url: "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX", usage: "Sector rotation." },
+        { name: "MOPS monthly revenue", url: "https://mopsfin.twse.com.tw/opendata/t187ap05_L.csv", usage: "Revenue and industry cycle." },
+      ],
+    },
+    horizon_weights: {
+      "1d": { technical: 0.25, chip: 0.22, us_market: 0.18, market: 0.12, news: 0.1, revenue_industry: 0.05, fundamental: 0.05, valuation: 0.03 },
+      "5d": { technical: 0.22, chip: 0.22, us_market: 0.13, market: 0.08, news: 0.05, revenue_industry: 0.15, fundamental: 0.12, valuation: 0.03 },
+      "20d": { technical: 0.15, chip: 0.18, us_market: 0.08, market: 0.08, news: 0.02, revenue_industry: 0.22, fundamental: 0.22, valuation: 0.05 },
+    },
+    market_state: {
+      score: 73,
+      label: "強多但集中",
+      action: "可積極挑股，但只收低過熱、高流動性、多因子共振的股票。",
+      tone: "positive",
+      multiplier: 1.03,
+      components: [
+        { name: "加權指數趨勢", score: 92, detail: "3/2 至 6/3 TAIEX +32.38%，6/3 創區間高點。" },
+        { name: "市場寬度", score: 70, detail: "6/3 上漲家數 763 / 1090，最近 10 日約 70%。" },
+        { name: "大盤資金", score: 64, detail: "暫用籌碼與成交值代理，待接法人總量。" },
+        { name: "美股與 AI 外溢", score: 76, detail: "AI / ICT 出口與半導體供應鏈是背景，但不是唯一題材。" },
+        { name: "匯率", score: 55, detail: "暫用中性，接央行匯率後校準。" },
+        { name: "波動風險", score: 57, detail: "期間最大回撤約 -9.61%，日波動約 1.97%。" },
+        { name: "集中風險扣分", score: -8, detail: "大盤市值加權集中，不能把大盤強直接視為全市場強。" },
+      ],
+    },
+    ranked_signals: ranked,
+  };
+}
+
 async function mockResponse(path: string): Promise<unknown> {
   if (path === "/api/market/summary") {
     const stocks = await getFallbackInstruments();
@@ -1860,6 +1996,9 @@ async function mockResponse(path: string): Promise<unknown> {
       us_linkage: linkage,
       data_source_status: getDataSourceStatus(),
     } satisfies MarketSummary;
+  }
+  if (path === "/api/market/taiwan-prediction-tool") {
+    return taiwanPredictionTool();
   }
   if (path === "/api/stocks") {
     const stocks = await getFallbackInstruments();

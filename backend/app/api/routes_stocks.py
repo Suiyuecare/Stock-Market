@@ -12,6 +12,7 @@ from app.services.indicators import build_technical_indicators
 from app.services.scoring.chip_score import calculate_chip_score
 from app.services.scoring.final_prediction_score import build_signal
 from app.services.scoring.technical_score import calculate_technical_score
+from app.services.taiwan_prediction_tool import build_prediction_tool_snapshot, rank_signals_with_taiwan_tool
 
 router = APIRouter()
 
@@ -375,13 +376,16 @@ def stock_ranking() -> RankingResponse:
 @router.get("/rankings/top-probability")
 def top_probability_ranking() -> Dict[str, Any]:
     ranking_candidates = _ranking_signals()
-    market_score = _market_state_score(ranking_candidates)
-    signals = sorted(
-        ranking_candidates,
-        key=lambda signal: _recommendation_score(signal, market_score, "5d"),
-        reverse=True,
-    )
+    signals = rank_signals_with_taiwan_tool(ranking_candidates, "5d")
     return _ranking_payload(signals)
+
+
+@router.get("/market/taiwan-prediction-tool")
+def taiwan_prediction_tool() -> Dict[str, Any]:
+    return {
+        "disclaimer": DISCLAIMER,
+        **build_prediction_tool_snapshot(_ranking_signals()),
+    }
 
 
 @router.get("/rankings/institutional-buying")
