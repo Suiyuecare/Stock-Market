@@ -578,12 +578,14 @@ let twseQuoteCache: Map<string, TwseQuote> | null = null;
 let twseQuoteCacheLoadedAt = 0;
 let twseValuationCache: Map<string, TwseValuation> | null = null;
 let tpexQuoteCache: Map<string, TwseQuote> | null = null;
+let tpexQuoteCacheLoadedAt = 0;
 let tpexValuationCache: Map<string, TwseValuation> | null = null;
 let apiRiskFlagCache: Map<string, ApiRiskFlag[]> | null = null;
 let officialNewsCache: NewsItem[] | null = null;
 let officialNewsCacheLoadedAt = 0;
 let fallbackSignalsCache: PredictionSignal[] | null = null;
 let fallbackRecommendationSignalsCache: PredictionSignal[] | null = null;
+let fallbackRecommendationSignalsCacheLoadedAt = 0;
 let fallbackRecommendationDataDate = "資料日期待確認";
 let fallbackRecommendationCandidateCount = 0;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
@@ -812,6 +814,19 @@ function shouldRefreshTwsePerStockQuotes(quotes: TwseQuote[]): boolean {
     .sort()
     .at(-1);
   return Boolean(latestTwseDate && latestTwseDate !== "資料日期待確認" && latestTwseDate < taipeiIsoDate());
+}
+
+function dateBehindToday(date: string): boolean {
+  return Boolean(taipeiMarketRefreshWindowStarted() && date && date !== "資料日期待確認" && date < taipeiIsoDate());
+}
+
+function quoteMapBehindToday(map: Map<string, TwseQuote>): boolean {
+  const latestDate = Array.from(map.values())
+    .map((quote) => quote.date)
+    .filter((date) => date && date !== "資料日期待確認")
+    .sort()
+    .at(-1);
+  return latestDate ? dateBehindToday(latestDate) : false;
 }
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
@@ -1149,7 +1164,8 @@ async function loadTwseValuationMap(): Promise<Map<string, TwseValuation>> {
 }
 
 async function getTpexQuoteMap(): Promise<Map<string, TwseQuote>> {
-  if (tpexQuoteCache) return tpexQuoteCache;
+  const cacheAgeMs = Date.now() - tpexQuoteCacheLoadedAt;
+  if (tpexQuoteCache && cacheAgeMs < 10 * 60 * 1000 && !quoteMapBehindToday(tpexQuoteCache)) return tpexQuoteCache;
   if (tpexQuoteCachePromise) return tpexQuoteCachePromise;
   tpexQuoteCachePromise = loadTpexQuoteMap();
   return tpexQuoteCachePromise;
@@ -1185,6 +1201,8 @@ async function loadTpexQuoteMap(): Promise<Map<string, TwseQuote>> {
     // Keep the frontend resilient when TPEx is temporarily unavailable.
   }
   tpexQuoteCache = map;
+  tpexQuoteCacheLoadedAt = Date.now();
+  tpexQuoteCachePromise = null;
   return map;
 }
 
@@ -2204,7 +2222,14 @@ async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
 }
 
 async function getRecommendationFallbackSignals(): Promise<PredictionSignal[]> {
-  if (fallbackRecommendationSignalsCache) return fallbackRecommendationSignalsCache;
+  const cacheAgeMs = Date.now() - fallbackRecommendationSignalsCacheLoadedAt;
+  if (
+    fallbackRecommendationSignalsCache
+    && cacheAgeMs < 10 * 60 * 1000
+    && !(dateBehindToday(fallbackRecommendationDataDate) && cacheAgeMs > 60 * 1000)
+  ) {
+    return fallbackRecommendationSignalsCache;
+  }
   if (fallbackRecommendationSignalsCachePromise) return fallbackRecommendationSignalsCachePromise;
   fallbackRecommendationSignalsCachePromise = loadRecommendationFallbackSignals();
   return fallbackRecommendationSignalsCachePromise;
@@ -2293,6 +2318,7 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
   fallbackRecommendationSignalsCache = enriched
     .sort((left, right) => dynamicRecommendationScore(right) - dynamicRecommendationScore(left))
     .slice(0, 80);
+  fallbackRecommendationSignalsCacheLoadedAt = Date.now();
 
   if (fallbackRecommendationSignalsCache.length === 0) {
     const seedMap = new Map(seedInstruments.map((item) => [item.symbol, item]));
@@ -2302,6 +2328,7 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
     fallbackRecommendationSignalsCache = selected.map((item, index) => signal(item.symbol, item.name, index, item.sector));
     fallbackRecommendationCandidateCount = fallbackRecommendationSignalsCache.length;
     fallbackRecommendationDataDate = "示範資料";
+    fallbackRecommendationSignalsCacheLoadedAt = Date.now();
   }
 
   fallbackRecommendationSignalsCachePromise = null;
