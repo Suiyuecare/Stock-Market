@@ -772,6 +772,26 @@ function taipeiDateKey(date = new Date()): string {
   return `${values.year}${values.month}${values.day}`;
 }
 
+function taipeiIsoDate(date = new Date()): string {
+  const key = taipeiDateKey(date);
+  return `${key.slice(0, 4)}-${key.slice(4, 6)}-${key.slice(6, 8)}`;
+}
+
+function taipeiMarketRefreshWindowStarted(date = new Date()): boolean {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Taipei",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const weekday = values.weekday ?? "";
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  const minutes = Number(values.hour) * 60 + Number(values.minute);
+  return minutes >= 13 * 60 + 30;
+}
+
 function pickLatestQuote(...quotes: Array<TwseQuote | null | undefined>): TwseQuote | null {
   return quotes.reduce<TwseQuote | null>((latest, quote) => {
     if (!quote?.close) return latest;
@@ -782,6 +802,30 @@ function pickLatestQuote(...quotes: Array<TwseQuote | null | undefined>): TwseQu
 
 function isTradableCommonStock(symbol: string): boolean {
   return /^\d{4}$/.test(symbol) && !symbol.startsWith("0");
+}
+
+function shouldRefreshTwsePerStockQuotes(quotes: TwseQuote[]): boolean {
+  if (!taipeiMarketRefreshWindowStarted()) return false;
+  const latestTwseDate = quotes
+    .filter((quote) => quote.source === "TWSE OpenAPI")
+    .map((quote) => quote.date)
+    .sort()
+    .at(-1);
+  return Boolean(latestTwseDate && latestTwseDate !== "資料日期待確認" && latestTwseDate < taipeiIsoDate());
+}
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 function quoteChangePercent(quote: TwseQuote | null | undefined): number {
@@ -2171,27 +2215,36 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
   ]);
   const stockMap = new Map(stocks.map((item) => [item.symbol, item]));
   const quoteMap = new Map<string, TwseQuote>([...twseQuoteMap.entries(), ...tpexQuoteMap.entries()]);
-  const candidates = Array.from(quoteMap.values())
+  const tradableQuotes = Array.from(quoteMap.values())
     .filter((quote) => isTradableCommonStock(quote.symbol))
     .filter((quote) => (quote.close ?? 0) >= 10)
-    .filter((quote) => (quote.trade_value ?? 0) >= 30_000_000)
-    .map((quote, index) => {
-      const fallbackInstrument: StockInstrument = {
-        symbol: quote.symbol,
-        name: quote.name,
-        market: quote.source === "TPEx OpenAPI" ? "TPEX" : "TW",
-        sector: stockMap.get(quote.symbol)?.sector ?? null,
-        currency: "TWD",
-      };
-      const instrument = stockMap.get(quote.symbol) ?? fallbackInstrument;
-      const valuation = valuationMap.get(quote.symbol) ?? tpexValuationMap.get(quote.symbol) ?? null;
-      const baseSignal = signal(instrument.symbol, instrument.name, index, instrument.sector);
-      const scoredSignal = applyDynamicQuoteScores(baseSignal, quote, valuation, instrument);
-      return {
-        signal: scoredSignal,
-        score: dynamicRecommendationScore(scoredSignal),
-      };
-    })
+    .filter((quote) => (quote.trade_value ?? 0) >= 30_000_000);
+
+  const buildCandidate = (quote: TwseQuote, index: number) => {
+    const fallbackInstrument: StockInstrument = {
+      symbol: quote.symbol,
+      name: quote.name,
+      market: quote.source === "TPEx OpenAPI" ? "TPEX" : "TW",
+      sector: stockMap.get(quote.symbol)?.sector ?? null,
+      currency: "TWD",
+    };
+    const instrument = stockMap.get(quote.symbol) ?? fallbackInstrument;
+    const valuation = valuationMap.get(quote.symbol) ?? tpexValuationMap.get(quote.symbol) ?? null;
+    const baseSignal = signal(instrument.symbol, instrument.name, index, instrument.sector);
+    const scoredSignal = applyDynamicQuoteScores(baseSignal, quote, valuation, instrument);
+    return {
+      signal: scoredSignal,
+      score: dynamicRecommendationScore(scoredSignal),
+    };
+  };
+  const preliminaryCandidates = tradableQuotes
+    .map(buildCandidate)
+    .sort((left, right) => right.score - left.score);
+  const latestQuoteOverrides = shouldRefreshTwsePerStockQuotes(tradableQuotes)
+    ? await getLatestRecommendationQuoteOverrides(preliminaryCandidates)
+    : new Map<string, TwseQuote>();
+  const candidates = tradableQuotes
+    .map((quote, index) => buildCandidate(latestQuoteOverrides.get(quote.symbol) ?? quote, index))
     .sort((left, right) => right.score - left.score);
 
   fallbackRecommendationCandidateCount = candidates.length;
@@ -2231,6 +2284,20 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
 
   fallbackRecommendationSignalsCachePromise = null;
   return fallbackRecommendationSignalsCache;
+}
+
+async function getLatestRecommendationQuoteOverrides(
+  preliminaryCandidates: Array<{ signal: PredictionSignal; score: number }>,
+): Promise<Map<string, TwseQuote>> {
+  const targets = preliminaryCandidates
+    .filter(({ signal: signalPayload }) => signalPayload.quote?.source === "TWSE OpenAPI")
+    .slice(0, 160);
+  const latestQuotes = await mapWithConcurrency(targets, 12, async ({ signal: signalPayload }) => {
+    return getLatestTwseStockDayQuote(signalPayload.symbol, signalPayload.name);
+  });
+  return new Map(latestQuotes
+    .filter((quote): quote is TwseQuote => Boolean(quote?.close && quote.date >= taipeiIsoDate()))
+    .map((quote) => [quote.symbol, quote]));
 }
 
 function mockNews(symbol: string): PredictionSignal["news"] {
