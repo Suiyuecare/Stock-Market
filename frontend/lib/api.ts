@@ -161,6 +161,9 @@ export type DataSourceStatus = {
 export type RankingResponse = {
   disclaimer: string;
   signals: PredictionSignal[];
+  data_date?: string;
+  candidate_count?: number;
+  method?: string;
 };
 
 export type StockDetailResponse = {
@@ -555,6 +558,8 @@ let officialNewsCache: NewsItem[] | null = null;
 let officialNewsCacheLoadedAt = 0;
 let fallbackSignalsCache: PredictionSignal[] | null = null;
 let fallbackRecommendationSignalsCache: PredictionSignal[] | null = null;
+let fallbackRecommendationDataDate = "資料日期待確認";
+let fallbackRecommendationCandidateCount = 0;
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
 let tpexQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
@@ -746,6 +751,199 @@ function pickLatestQuote(...quotes: Array<TwseQuote | null | undefined>): TwseQu
     if (!latest) return quote;
     return quote.date > latest.date ? quote : latest;
   }, null);
+}
+
+function isTradableCommonStock(symbol: string): boolean {
+  return /^\d{4}$/.test(symbol) && !symbol.startsWith("0");
+}
+
+function quoteChangePercent(quote: TwseQuote | null | undefined): number {
+  if (!quote?.close || quote.change === null || quote.change === undefined) return 0;
+  const previousClose = quote.close - quote.change;
+  if (!Number.isFinite(previousClose) || previousClose <= 0) return 0;
+  return quote.change / previousClose;
+}
+
+function quoteRangePositionScore(quote: TwseQuote | null | undefined): number {
+  if (!quote?.close || !quote.high || !quote.low || quote.high <= quote.low) return 50;
+  return clamp(((quote.close - quote.low) / (quote.high - quote.low)) * 100, 0, 100);
+}
+
+function quoteTradeValueScore(quote: TwseQuote | null | undefined): number {
+  const tradeValue = quote?.trade_value ?? 0;
+  if (tradeValue <= 0) return 0;
+  return clamp(45 + Math.log10(Math.max(1, tradeValue / 30_000_000)) * 18, 0, 100);
+}
+
+function quoteAmplitudeRisk(quote: TwseQuote | null | undefined): number {
+  if (!quote?.close || !quote.high || !quote.low) return 38;
+  return clamp(((quote.high - quote.low) / quote.close) * 650, 12, 88);
+}
+
+function valuationQualityScore(valuation: TwseValuation | null | undefined): number {
+  const pe = valuation?.pe_ratio ?? null;
+  const pb = valuation?.pb_ratio ?? null;
+  let score = 55;
+  if (typeof pe === "number" && pe > 0) {
+    if (pe >= 12 && pe <= 28) score += 12;
+    else if (pe > 28 && pe <= 45) score += 4;
+    else if (pe > 60) score -= 12;
+    else if (pe < 8) score -= 4;
+  }
+  if (typeof pb === "number" && pb > 0) {
+    if (pb <= 2.5) score += 6;
+    else if (pb >= 6) score -= 8;
+  }
+  return clamp(score, 25, 82);
+}
+
+function topicFitScore(instrument: StockInstrument): number {
+  const text = `${instrument.symbol} ${instrument.name} ${instrument.sector ?? ""}`;
+  const rules: Array<[RegExp, number]> = [
+    [/CCL|PCB|載板|ABF|散熱|液冷|封裝|先進封裝/, 82],
+    [/機器人|自動化|電機|電器電纜|重電|電網|變壓器/, 72],
+    [/半導體|IC|晶片|電子零組件|電腦及週邊|通信網路|其他電子|資訊服務|數位雲端/, 68],
+    [/金融|金控|銀行|保險|證券/, 64],
+    [/航運|航空|貨櫃|航太|國防/, 62],
+    [/油電|塑膠|化學|鋼鐵|水泥|原物料/, 58],
+    [/食品|貿易百貨|觀光|居家|運動休閒|內需/, 56],
+    [/生技|醫療|汽車|建材營造/, 46],
+  ];
+  return rules.find(([pattern]) => pattern.test(text))?.[1] ?? 54;
+}
+
+function replaceScoreFactor(factors: FactorScore[], category: string, score: number, weight: number, direction = "positive"): FactorScore[] {
+  const factorNameByCategory: Record<string, string> = {
+    fundamental: "FundamentalScore",
+    chip: "ChipScore",
+    technical: "TechnicalScore",
+    "us-linkage": "USMarketScore",
+    news: "NewsScore",
+    target_price: "TargetPriceScore",
+  };
+  const next = factor(factorNameByCategory[category] ?? category, category, score, weight, direction);
+  const found = factors.some((item) => item.category === category);
+  if (!found) return [...factors, next];
+  return factors.map((item) => (item.category === category ? next : item));
+}
+
+function applyDynamicQuoteScores(
+  signalPayload: PredictionSignal,
+  quote: TwseQuote | null,
+  valuation: TwseValuation | null,
+  instrument: StockInstrument,
+): PredictionSignal {
+  const componentScores = signalPayload.explanation?.component_scores ?? {};
+  const changePct = quoteChangePercent(quote);
+  const rangePosition = quoteRangePositionScore(quote);
+  const liquidityScore = quoteTradeValueScore(quote);
+  const amplitudeRisk = quoteAmplitudeRisk(quote);
+  const topicScore = topicFitScore(instrument);
+  const valuationScore = valuationQualityScore(valuation);
+  const momentumScore = clamp(50 + changePct * 520 + (rangePosition - 50) * 0.22, 18, 92);
+  const technicalScore = Math.round(clamp((componentScores.TechnicalScore ?? 55) * 0.34 + momentumScore * 0.42 + rangePosition * 0.14 + liquidityScore * 0.1, 20, 92));
+  const chipScore = Math.round(clamp((componentScores.ChipScore ?? 55) * 0.42 + liquidityScore * 0.34 + Math.max(0, momentumScore - 45) * 0.24, 18, 90));
+  const fundamentalScore = Math.round(clamp((componentScores.FundamentalScore ?? 55) * 0.56 + topicScore * 0.22 + valuationScore * 0.22, 20, 88));
+  const usMarketScore = Math.round(clamp((componentScores.USMarketScore ?? 52) * 0.5 + topicScore * 0.32 + Math.max(45, momentumScore) * 0.18, 22, 88));
+  const newsScore = Math.round(clamp((componentScores.NewsScore ?? 50) * 0.7 + topicScore * 0.18 + momentumScore * 0.12, 25, 82));
+  const bullishScore = Math.round(clamp(
+    fundamentalScore * 0.2
+    + chipScore * 0.22
+    + technicalScore * 0.23
+    + usMarketScore * 0.13
+    + newsScore * 0.07
+    + valuationScore * 0.05
+    + liquidityScore * 0.1,
+    20,
+    90,
+  ));
+  const totalRisk = clamp(
+    signalPayload.risk_score.total
+    + Math.max(0, amplitudeRisk - 45) / 260
+    - Math.max(0, liquidityScore - 55) / 420
+    + (changePct < -0.03 ? 0.08 : 0),
+    0.12,
+    0.9,
+  );
+  const riskAdjustedScore = Math.round(clamp(bullishScore - totalRisk * 35, 20, 86));
+  const probabilityBase = clamp(0.46 + riskAdjustedScore / 260 + Math.max(-0.05, Math.min(0.06, changePct)) * 0.55, 0.42, 0.76);
+  let factors = signalPayload.factor_scores;
+  factors = replaceScoreFactor(factors, "fundamental", fundamentalScore, 0.2, fundamentalScore >= 58 ? "positive" : "neutral");
+  factors = replaceScoreFactor(factors, "chip", chipScore, 0.22, chipScore >= 58 ? "positive" : chipScore <= 42 ? "negative" : "neutral");
+  factors = replaceScoreFactor(factors, "technical", technicalScore, 0.23, technicalScore >= 58 ? "positive" : technicalScore <= 42 ? "negative" : "neutral");
+  factors = replaceScoreFactor(factors, "us-linkage", usMarketScore, 0.13, usMarketScore >= 58 ? "positive" : "neutral");
+  factors = replaceScoreFactor(factors, "news", newsScore, 0.07, newsScore >= 58 ? "positive" : "neutral");
+  factors = replaceScoreFactor(factors, "target_price", valuationScore, 0.05, valuationScore >= 62 ? "positive" : valuationScore <= 45 ? "negative" : "neutral");
+
+  return {
+    ...signalPayload,
+    name: quote?.name || instrument.name,
+    sector: instrument.sector,
+    signal_date: quote?.date ?? signalPayload.signal_date,
+    quote,
+    valuation,
+    probability_up: probabilityBase,
+    probability_up_1d: clamp(probabilityBase + (technicalScore - 60) / 600, 0.4, 0.78),
+    probability_up_5d: clamp(probabilityBase + (chipScore - 60) / 650, 0.4, 0.78),
+    probability_up_20d: clamp(probabilityBase + (fundamentalScore - 60) / 700, 0.38, 0.76),
+    confidence: clamp(0.54 + liquidityScore / 360 + (quote ? 0.06 : 0), 0.52, 0.86),
+    composite_score: bullishScore / 100,
+    bullish_score: bullishScore,
+    risk_adjusted_score: riskAdjustedScore,
+    factor_scores: factors,
+    positive_drivers: factors.filter((item) => item.direction === "positive").slice(0, 3),
+    negative_drivers: factors.filter((item) => item.direction === "negative").slice(0, 3),
+    risk_score: {
+      ...signalPayload.risk_score,
+      total: totalRisk,
+      volatility: clamp(amplitudeRisk / 100, 0.12, 0.9),
+      liquidity: clamp(1 - liquidityScore / 100, 0.05, 0.85),
+      explanation: "Risk now includes latest official quote amplitude and liquidity from TWSE/TPEx daily quote feeds.",
+    },
+    technicals: {
+      ...signalPayload.technicals,
+      ma_5: quote?.close ? Number((quote.close * (1 - changePct * 0.35)).toFixed(2)) : signalPayload.technicals.ma_5,
+      ma_20: quote?.close ? Number((quote.close * (1 - changePct * 0.75)).toFixed(2)) : signalPayload.technicals.ma_20,
+      rsi_14: Math.round(clamp(48 + changePct * 520 + (rangePosition - 50) * 0.2, 20, 82)),
+    },
+    explanation: {
+      ...signalPayload.explanation,
+      top_positive_factors: [
+        `最新${quote?.source ?? "官方"}報價納入：${quote?.date ?? "日期待確認"}`,
+        `成交值流動性分數 ${Math.round(liquidityScore)}`,
+        `產業/題材相對分數 ${Math.round(topicScore)}`,
+        ...(signalPayload.explanation?.top_positive_factors ?? []),
+      ].slice(0, 5),
+      component_scores: {
+        ...(signalPayload.explanation?.component_scores ?? {}),
+        FundamentalScore: fundamentalScore,
+        ChipScore: chipScore,
+        TechnicalScore: technicalScore,
+        USMarketScore: usMarketScore,
+        NewsScore: newsScore,
+        TargetPriceScore: valuationScore,
+      },
+    },
+  };
+}
+
+function dynamicRecommendationScore(signalPayload: PredictionSignal): number {
+  const scores = signalPayload.explanation?.component_scores ?? {};
+  const riskScore = (signalPayload.risk_score.total ?? 0.5) * 100;
+  const liquidityScore = quoteTradeValueScore(signalPayload.quote);
+  return clamp(
+    (scores.TechnicalScore ?? 50) * 0.22
+    + (scores.ChipScore ?? 50) * 0.22
+    + (scores.FundamentalScore ?? 50) * 0.15
+    + (scores.USMarketScore ?? 50) * 0.11
+    + (scores.NewsScore ?? 50) * 0.06
+    + (scores.TargetPriceScore ?? 50) * 0.04
+    + liquidityScore * 0.12
+    + quoteRangePositionScore(signalPayload.quote) * 0.08
+    - Math.max(0, riskScore - 45) * 0.18,
+    0,
+    100,
+  );
 }
 
 async function getTwseQuoteMap(): Promise<Map<string, TwseQuote>> {
@@ -1729,7 +1927,7 @@ async function getAllFallbackSignals(): Promise<PredictionSignal[]> {
 async function getRecommendationFallbackSignals(): Promise<PredictionSignal[]> {
   if (fallbackRecommendationSignalsCache) return fallbackRecommendationSignalsCache;
   if (fallbackRecommendationSignalsCachePromise) return fallbackRecommendationSignalsCachePromise;
-  fallbackRecommendationSignalsCachePromise = Promise.resolve(loadRecommendationFallbackSignals());
+  fallbackRecommendationSignalsCachePromise = loadRecommendationFallbackSignals();
   return fallbackRecommendationSignalsCachePromise;
 }
 
@@ -1745,12 +1943,74 @@ async function loadAllFallbackSignals(): Promise<PredictionSignal[]> {
   return fallbackSignalsCache;
 }
 
-function loadRecommendationFallbackSignals(): PredictionSignal[] {
-  const seedMap = new Map(seedInstruments.map((item) => [item.symbol, item]));
-  const selected = recommendationCoverageSymbols
-    .map((symbol) => seedMap.get(symbol))
-    .filter((item): item is StockInstrument => Boolean(item));
-  fallbackRecommendationSignalsCache = selected.map((item, index) => signal(item.symbol, item.name, index, item.sector));
+async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> {
+  const [stocks, twseQuoteMap, tpexQuoteMap, valuationMap, tpexValuationMap, riskFlagMap] = await Promise.all([
+    getFallbackInstruments(),
+    getTwseQuoteMap(),
+    getTpexQuoteMap(),
+    getTwseValuationMap(),
+    getTpexValuationMap(),
+    getApiRiskFlagMap(),
+  ]);
+  const stockMap = new Map(stocks.map((item) => [item.symbol, item]));
+  const quoteMap = new Map<string, TwseQuote>([...twseQuoteMap.entries(), ...tpexQuoteMap.entries()]);
+  const candidates = Array.from(quoteMap.values())
+    .filter((quote) => isTradableCommonStock(quote.symbol))
+    .filter((quote) => (quote.close ?? 0) >= 10)
+    .filter((quote) => (quote.trade_value ?? 0) >= 30_000_000)
+    .map((quote, index) => {
+      const fallbackInstrument: StockInstrument = {
+        symbol: quote.symbol,
+        name: quote.name,
+        market: quote.source === "TPEx OpenAPI" ? "TPEX" : "TW",
+        sector: stockMap.get(quote.symbol)?.sector ?? null,
+        currency: "TWD",
+      };
+      const instrument = stockMap.get(quote.symbol) ?? fallbackInstrument;
+      const valuation = valuationMap.get(quote.symbol) ?? tpexValuationMap.get(quote.symbol) ?? null;
+      const baseSignal = signal(instrument.symbol, instrument.name, index, instrument.sector);
+      const scoredSignal = applyDynamicQuoteScores(baseSignal, quote, valuation, instrument);
+      return {
+        signal: scoredSignal,
+        score: dynamicRecommendationScore(scoredSignal),
+      };
+    })
+    .sort((left, right) => right.score - left.score);
+
+  fallbackRecommendationCandidateCount = candidates.length;
+  fallbackRecommendationDataDate = candidates[0]?.signal.quote?.date ?? "資料日期待確認";
+
+  const enriched = await Promise.all(candidates.slice(0, 90).map(async ({ signal: signalPayload }) => {
+    const instrument: StockInstrument = {
+      symbol: signalPayload.symbol,
+      name: signalPayload.name,
+      market: signalPayload.quote?.source === "TPEx OpenAPI" ? "TPEX" : "TW",
+      sector: signalPayload.sector ?? null,
+      currency: "TWD",
+    };
+    const news = await getNewsForInstrument(instrument);
+    const withNews = applyNewsSignal({
+      ...signalPayload,
+      data_source_status: getDataSourceStatus(),
+    }, news);
+    return applyApiRiskFlags(withNews, riskFlagMap.get(signalPayload.symbol) ?? []);
+  }));
+
+  fallbackRecommendationSignalsCache = enriched
+    .sort((left, right) => dynamicRecommendationScore(right) - dynamicRecommendationScore(left))
+    .slice(0, 80);
+
+  if (fallbackRecommendationSignalsCache.length === 0) {
+    const seedMap = new Map(seedInstruments.map((item) => [item.symbol, item]));
+    const selected = recommendationCoverageSymbols
+      .map((symbol) => seedMap.get(symbol))
+      .filter((item): item is StockInstrument => Boolean(item));
+    fallbackRecommendationSignalsCache = selected.map((item, index) => signal(item.symbol, item.name, index, item.sector));
+    fallbackRecommendationCandidateCount = fallbackRecommendationSignalsCache.length;
+    fallbackRecommendationDataDate = "示範資料";
+  }
+
+  fallbackRecommendationSignalsCachePromise = null;
   return fallbackRecommendationSignalsCache;
 }
 
@@ -2006,7 +2266,13 @@ async function mockResponse(path: string): Promise<unknown> {
   }
   if (path === "/api/rankings/top-probability") {
     const signals = await getRecommendationFallbackSignals();
-    return { disclaimer, signals } satisfies RankingResponse;
+    return {
+      disclaimer,
+      signals,
+      data_date: fallbackRecommendationDataDate,
+      candidate_count: fallbackRecommendationCandidateCount,
+      method: "dynamic-twse-tpex-quote-pool",
+    } satisfies RankingResponse;
   }
   if (path === "/api/stocks/ranking") {
     const signals = await getFallbackSignals();

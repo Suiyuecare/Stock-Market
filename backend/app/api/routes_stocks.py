@@ -203,19 +203,46 @@ def _institutional_payload(stock_id: str) -> Dict[str, Any]:
 
 
 def _ranking_payload(signals: List[Any]) -> Dict[str, Any]:
-    return {"disclaimer": DISCLAIMER, "signals": signals}
+    return {
+        "disclaimer": DISCLAIMER,
+        "signals": signals,
+        "candidate_count": len(signals),
+        "method": "dynamic-public-instrument-pool",
+    }
+
+
+def _stable_symbol_score(symbol: str) -> float:
+    return sum(ord(char) * (index + 3) for index, char in enumerate(symbol)) % 17
+
+
+def _instrument_priority(instrument: dict) -> float:
+    text = f"{instrument.get('symbol', '')} {instrument.get('name', '')} {instrument.get('sector', '')}"
+    rules = [
+        ("CCL|PCB|載板|ABF|散熱|液冷|封裝|先進封裝", 82),
+        ("機器人|自動化|電機|電器電纜|重電|電網|變壓器", 72),
+        ("半導體|IC|晶片|電子零組件|電腦及週邊|通信網路|其他電子|資訊服務|數位雲端", 68),
+        ("金融|金控|銀行|保險|證券", 64),
+        ("航運|航空|貨櫃|航太|國防", 62),
+        ("油電|塑膠|化學|鋼鐵|水泥|原物料", 58),
+        ("食品|貿易百貨|觀光|居家|運動休閒|內需", 56),
+        ("生技|醫療|汽車|建材營造", 46),
+    ]
+    import re
+
+    base = next((score for pattern, score in rules if re.search(pattern, text)), 54)
+    symbol = str(instrument.get("symbol", ""))
+    seeded_boost = _stable_symbol_score(symbol) * 0.45
+    known_watch_boost = 4 if symbol in RECOMMENDATION_COVERAGE_SYMBOLS else 0
+    return base + seeded_boost + known_watch_boost
 
 
 def _ranking_signals(limit: int = 160) -> List[Any]:
     all_instruments = list(_public_instruments())
-    instrument_map = {str(instrument["symbol"]): instrument for instrument in all_instruments}
-    seed_map = {str(instrument["symbol"]): instrument for instrument in RECOMMENDATION_SEED_INSTRUMENTS}
-    covered_instruments = [
-        instrument_map.get(symbol) or seed_map[symbol]
-        for symbol in RECOMMENDATION_COVERAGE_SYMBOLS
-        if symbol in instrument_map or symbol in seed_map
-    ]
-    instruments = unique_instruments(covered_instruments)[:limit]
+    instruments = sorted(
+        unique_instruments([*all_instruments, *RECOMMENDATION_SEED_INSTRUMENTS]),
+        key=_instrument_priority,
+        reverse=True,
+    )[:limit]
     return [build_signal(instrument) for instrument in instruments]
 
 

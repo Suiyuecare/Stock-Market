@@ -1,6 +1,5 @@
 from fastapi.testclient import TestClient
 
-from app.api.routes_stocks import RECOMMENDATION_COVERAGE_SYMBOLS
 from app.main import app
 
 
@@ -92,7 +91,8 @@ def test_top_probability_ranking() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["signals"]) >= 1
-    assert payload["signals"][0]["symbol"] in set(RECOMMENDATION_COVERAGE_SYMBOLS)
+    assert payload["candidate_count"] >= len(payload["signals"])
+    assert payload["method"] == "dynamic-public-instrument-pool"
 
 
 def test_institutional_buying_ranking() -> None:

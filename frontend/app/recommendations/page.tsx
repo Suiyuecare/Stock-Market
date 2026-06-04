@@ -135,6 +135,8 @@ export default async function RecommendationsPage() {
     .sort((left, right) => right.scores["5d"] - left.scores["5d"])
     .slice(0, 20);
   const top = recommendations[0];
+  const dataDate = ranking.data_date ?? tool.research.research_window.end;
+  const candidateCount = ranking.candidate_count ?? ranking.signals.length;
   const averageRisk = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.riskScore, 0) / Math.max(1, recommendations.length));
   const averageScore = Math.round(recommendations.reduce((sum, row) => sum + row.score, 0) / Math.max(1, recommendations.length));
   const averageOverheat = Math.round(recommendations.reduce((sum, row) => sum + row.overheatPenalty, 0) / Math.max(1, recommendations.length));
@@ -143,7 +145,7 @@ export default async function RecommendationsPage() {
     <AppShell active="/recommendations">
       <header className="topbar">
         <div>
-          <p className="eyebrow">明燈推薦 · 2026/03/01-06/03 研究版</p>
+          <p className="eyebrow">明燈推薦 · {dataDate} 動態候選池</p>
           <h1>今日前 20 檔研究觀察名單</h1>
         </div>
         <div className={`status ${marketState.tone === "positive" ? "ok" : marketState.tone === "negative" ? "risk" : ""}`}>市場狀態 {marketState.score} · {marketState.label}</div>
@@ -151,6 +153,8 @@ export default async function RecommendationsPage() {
 
       <section className="metric-grid">
         <ScoreCard label="市場狀態分數" value={`${marketState.score}`} detail={marketState.action} tone={marketState.tone} />
+        <ScoreCard label="資料日期" value={dataDate.replaceAll("-", "/")} detail="以官方最新盤後資料為準" tone="neutral" />
+        <ScoreCard label="動態候選池" value={`${candidateCount}`} detail="通過股價與流動性篩選後再排名" tone="neutral" />
         <ScoreCard label="第一名" value={top?.signal.symbol ?? "-"} detail={top ? top.signal.name : "資料整理中"} tone="positive" />
         <ScoreCard label="平均 5D 分數" value={`${averageScore}`} detail="分數不是機率" tone={scoreTone(averageScore)} />
         <ScoreCard label="研究區間漲幅" value="+32.4%" detail="TAIEX 3/2 → 6/3" tone="positive" />
@@ -256,7 +260,7 @@ export default async function RecommendationsPage() {
             </a>
           ))}
         </div>
-        <p className="panel-note">排序預設看 5D 短線分數。分數不是上漲機率；真正的 probability_up_1d / 5d / 20d 需要用 2018 至今歷史分數分桶、Brier Score 與 walk-forward 回測校準後再顯示。</p>
+        <p className="panel-note">排序預設看 5D 短線分數。候選池不再鎖固定 20 檔，會從 TWSE / TPEx 最新報價裡先過濾低價、低流動性與風險，再依 1D / 5D / 20D 權重重排。分數不是上漲機率；真正的 probability_up_1d / 5d / 20d 需要用 2018 至今歷史分數分桶、Brier Score 與 walk-forward 回測校準後再顯示。</p>
       </section>
     </AppShell>
   );
