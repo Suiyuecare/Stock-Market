@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { PredictionSignal, TaiwanPredictionToolResponse } from "@/lib/api";
 import { fetchTaiwanPredictionTool, fetchTopProbabilityRanking } from "@/lib/api";
-import { buildStockMetrics, buildTargetPriceRange, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
+import { buildExternalAnalystTargetPrice, buildStockMetrics, buildTargetPriceRange, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
 
 type RecommendationRow = {
   signal: PredictionSignal;
@@ -17,6 +17,7 @@ type RecommendationRow = {
   themeFit: number;
   metrics: ReturnType<typeof buildStockMetrics>;
   targetRange: ReturnType<typeof buildTargetPriceRange>;
+  externalTarget: ReturnType<typeof buildExternalAnalystTargetPrice>;
 };
 
 type HorizonKey = "1d" | "5d" | "20d";
@@ -257,8 +258,9 @@ export default async function RecommendationsPage() {
                 <span>{row.reason}</span>
               </div>
               <div className="recommendation-price">
-                <span>現價 / 目標</span>
-                <strong>{formatPrice(row.targetRange.currentPrice)} → {formatPrice(row.targetRange.base)}</strong>
+                <span>現價 / 外部法人</span>
+                <strong>{formatPrice(row.targetRange.currentPrice)} → {row.externalTarget.isAvailable ? formatPrice(row.externalTarget.targetPriceMean) : "待授權"}</strong>
+                <small>{row.externalTarget.isAvailable ? row.externalTarget.sourceLabel : `模型估算 ${formatPrice(row.targetRange.base)}`}</small>
               </div>
               <em>{row.score}</em>
               <small>1D {row.scores["1d"]} · 5D {row.scores["5d"]} · 20D {row.scores["20d"]} · 過熱扣 {row.overheatPenalty} · 事件扣 {row.eventRiskPenalty}</small>
@@ -295,6 +297,7 @@ function buildRecommendation(signal: PredictionSignal, marketState: MarketState)
   const scores = mapHorizonScores(stockScores, (stockScore) => clampScore(stockScore * marketMultiplier - overheatPenalty - eventRiskPenalty));
   const score = scores["5d"];
   const targetRange = buildTargetPriceRange(signal);
+  const externalTarget = buildExternalAnalystTargetPrice(signal);
 
   return {
     signal,
@@ -309,10 +312,12 @@ function buildRecommendation(signal: PredictionSignal, marketState: MarketState)
     themeFit: marketProfile.fit,
     metrics,
     targetRange,
+    externalTarget,
   };
 }
 
-function formatPrice(value: number): string {
+function formatPrice(value: number | null): string {
+  if (typeof value !== "number") return "待授權";
   if (value >= 1000) return value.toLocaleString("zh-TW", { maximumFractionDigits: 0 });
   if (value >= 100) return value.toLocaleString("zh-TW", { maximumFractionDigits: 1 });
   return value.toLocaleString("zh-TW", { maximumFractionDigits: 2 });

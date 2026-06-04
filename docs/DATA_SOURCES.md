@@ -165,6 +165,7 @@ Implementation notes:
 - Do not commit FactSet, LSEG, or Bloomberg credentials.
 - Keep these integrations behind a TargetPrice/AnalystEstimates provider so `TargetPriceScore` can remain a neutral placeholder when no license is configured.
 - Normalize provider payloads into EPS consensus, revenue consensus, target price mean/high/low, recommendation revisions, estimate revision direction, analyst count, and data freshness.
+- Frontend display rule: `外部法人目標價` must come from a licensed/keyed provider such as FactSet/LSEG/Bloomberg/FMP or from an explicit broker target-price mention in a linked news article. If no external source is available, show `待授權` and keep the model-estimated target range in a separate `模型估算區間` section.
 
 ## News / RSS / Financial News Data Sources
 

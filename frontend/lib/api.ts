@@ -16,6 +16,13 @@ const tpexValuationUrl = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_pera
 const tdccOwnershipDistributionUrl = "https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5";
 const cnaFinanceRssUrl = "https://feeds.feedburner.com/rsscna/finance";
 const cnaTechnologyRssUrl = "https://feeds.feedburner.com/rsscna/technology";
+const fmpTargetPriceConsensusUrl = "https://financialmodelingprep.com/stable/price-target-consensus";
+const analystProviderUrls = {
+  factset: "https://developer.factset.com/api-catalog/factset-estimates-api",
+  lseg: "https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/estimates-API",
+  bloomberg: "https://professional.bloomberg.com/products/data/data-management/data-license/",
+  fmp: "https://financialmodelingprep.com/stable/price-target-consensus",
+};
 
 export type MarketSummary = {
   session_date: string;
@@ -107,6 +114,7 @@ export type PredictionSignal = {
   }>;
   quote?: TwseQuote | null;
   valuation?: TwseValuation | null;
+  analyst_target_price?: AnalystTargetPrice | null;
   risk_flags?: ApiRiskFlag[];
   data_source_status?: DataSourceStatus[];
   sector?: string | null;
@@ -138,6 +146,24 @@ export type TwseValuation = {
   dividend_yield: number | null;
   pb_ratio: number | null;
   dividend_per_share?: number | null;
+};
+
+export type AnalystTargetPrice = {
+  symbol: string;
+  currency: string;
+  target_price_mean: number | null;
+  target_price_high: number | null;
+  target_price_low: number | null;
+  analyst_count?: number | null;
+  broker?: string | null;
+  rating?: string | null;
+  source: string;
+  source_type: "licensed_or_keyed_api" | "news_extracted" | "needs_license";
+  source_url?: string;
+  published_at?: string;
+  confidence: number;
+  provider_status: "configured" | "needs_key" | "extracted";
+  note: string;
 };
 
 export type ApiRiskFlag = {
@@ -568,6 +594,7 @@ let apiRiskFlagCachePromise: Promise<Map<string, ApiRiskFlag[]>> | null = null;
 let officialNewsCachePromise: Promise<NewsItem[]> | null = null;
 let fallbackSignalsCachePromise: Promise<PredictionSignal[]> | null = null;
 let fallbackRecommendationSignalsCachePromise: Promise<PredictionSignal[]> | null = null;
+const analystTargetCache = new Map<string, { loadedAt: number; value: AnalystTargetPrice }>();
 
 type NewsItem = PredictionSignal["news"][number] & {
   stock_id?: string | null;
@@ -1413,6 +1440,187 @@ async function getNewsForInstrument(instrument: StockInstrument): Promise<NewsIt
   }));
 }
 
+function analystEstimateApiKey(): string | undefined {
+  return process.env.FMP_API_KEY || process.env.FINANCIAL_MODELING_PREP_API_KEY;
+}
+
+function configuredCommercialAnalystProviders(): string[] {
+  return [
+    process.env.FACTSET_API_KEY ? "FactSet" : "",
+    process.env.LSEG_API_KEY ? "LSEG I/B/E/S" : "",
+    process.env.BLOOMBERG_API_KEY ? "Bloomberg" : "",
+    analystEstimateApiKey() ? "FMP" : "",
+  ].filter(Boolean);
+}
+
+function buildAnalystSymbolCandidates(instrument: StockInstrument): string[] {
+  const suffix = instrument.market === "TPEX" ? ".TWO" : ".TW";
+  return Array.from(new Set([
+    instrument.symbol,
+    `${instrument.symbol}${suffix}`,
+    `${instrument.symbol}.TW`,
+    `${instrument.symbol}.TWO`,
+  ]));
+}
+
+async function getExternalAnalystTargetPrice(instrument: StockInstrument, news: NewsItem[]): Promise<AnalystTargetPrice> {
+  const cacheKey = `${instrument.symbol}:${news.map((item) => item.title).join("|").slice(0, 240)}`;
+  const cached = analystTargetCache.get(cacheKey);
+  if (cached && Date.now() - cached.loadedAt < 60 * 1000) return cached.value;
+
+  const keyedTarget = await fetchFmpTargetPriceConsensus(instrument);
+  const extractedTarget = keyedTarget ?? extractAnalystTargetFromNews(instrument, news);
+  const value = extractedTarget ?? buildPendingAnalystTarget(instrument);
+  analystTargetCache.set(cacheKey, { loadedAt: Date.now(), value });
+  return value;
+}
+
+async function fetchFmpTargetPriceConsensus(instrument: StockInstrument): Promise<AnalystTargetPrice | null> {
+  const apiKey = analystEstimateApiKey();
+  if (!apiKey) return null;
+  for (const symbol of buildAnalystSymbolCandidates(instrument)) {
+    const endpoint = `${fmpTargetPriceConsensusUrl}?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(apiKey)}`;
+    try {
+      const response = await fetchWithTimeout(endpoint, { next: { revalidate: 60 * 60 * 6 }, timeoutMs: 6000 });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      const row = Array.isArray(payload) ? payload[0] : payload;
+      const normalized = normalizeFmpTargetPrice(instrument.symbol, row);
+      if (normalized?.target_price_mean) return normalized;
+    } catch {
+      // Try the next symbol candidate; Taiwan tickers vary by provider suffix.
+    }
+  }
+  return null;
+}
+
+function normalizeFmpTargetPrice(symbol: string, row: unknown): AnalystTargetPrice | null {
+  if (!row || typeof row !== "object") return null;
+  const item = row as Record<string, unknown>;
+  const mean = parseProviderNumber(item.targetConsensus ?? item.targetPrice ?? item.target_price_mean);
+  if (typeof mean !== "number") return null;
+  return {
+    symbol,
+    currency: String(item.currency ?? "USD"),
+    target_price_mean: mean,
+    target_price_high: parseProviderNumber(item.targetHigh ?? item.target_price_high),
+    target_price_low: parseProviderNumber(item.targetLow ?? item.target_price_low),
+    analyst_count: parseProviderNumber(item.numberOfAnalystOpinions ?? item.analystCount ?? item.analyst_count),
+    source: "FMP price target consensus",
+    source_type: "licensed_or_keyed_api",
+    source_url: analystProviderUrls.fmp,
+    published_at: typeof item.date === "string" ? item.date : new Date().toISOString(),
+    confidence: 0.72,
+    provider_status: "configured",
+    note: "外部 keyed API 回傳的法人/分析師目標價共識；正式商用仍需確認該 provider 的台股涵蓋率與 redisplay 權利。",
+  };
+}
+
+type TargetPriceMention = {
+  targetPrice: number;
+  targetPriceLow?: number;
+  targetPriceHigh?: number;
+  broker?: string | null;
+  rating?: string | null;
+  confidence: number;
+};
+
+function extractAnalystTargetFromNews(instrument: StockInstrument, news: NewsItem[]): AnalystTargetPrice | null {
+  const candidates = news.flatMap((event) => {
+    const mentions = extractTargetPriceMentions(`${event.title}\n${event.summary ?? ""}`);
+    return mentions.map((mention) => ({ mention, event }));
+  });
+  const best = candidates
+    .filter(({ mention }) => typeof mention.targetPrice === "number")
+    .sort((left, right) => {
+      const confidenceDelta = right.mention.confidence - left.mention.confidence;
+      if (Math.abs(confidenceDelta) > 0.001) return confidenceDelta;
+      return Date.parse(right.event.published_at) - Date.parse(left.event.published_at);
+    })[0];
+  if (!best) return null;
+
+  return {
+    symbol: instrument.symbol,
+    currency: "TWD",
+    target_price_mean: best.mention.targetPrice,
+    target_price_high: best.mention.targetPriceHigh ?? null,
+    target_price_low: best.mention.targetPriceLow ?? null,
+    analyst_count: null,
+    broker: best.mention.broker ?? null,
+    rating: best.mention.rating ?? null,
+    source: best.mention.broker ? `${best.event.source} / ${best.mention.broker}` : best.event.source,
+    source_type: "news_extracted",
+    source_url: best.event.url || best.event.source_url,
+    published_at: best.event.published_at,
+    confidence: best.mention.confidence,
+    provider_status: "extracted",
+    note: "新聞文字明確提到的券商/法人目標價，非正式法人共識；應點開原文確認報告日期、評等與適用假設。",
+  };
+}
+
+function extractTargetPriceMentions(text: string): TargetPriceMention[] {
+  const brokerPattern = /(摩根士丹利|高盛|花旗|麥格理|里昂|大摩|小摩|美銀|瑞銀|野村|元大|富邦|國泰|群益|凱基|統一|永豐|玉山|中信|法人|投顧|券商)/i;
+  const ratingPattern = /(買進|中立|加碼|減碼|優於大盤|劣於大盤|持有|Buy|Hold|Neutral|Overweight|Underweight)/i;
+  const pricePattern = /(?:目標價|合理價|上看|喊到|調升至|調降至)\s*(?:新台幣|台幣|NT\$|\$)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:元)?/gi;
+  const rangePattern = /(?:區間|目標區間)\s*(?:新台幣|台幣|NT\$|\$)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:至|-|~)\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:元)?/gi;
+  const mentions: TargetPriceMention[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = pricePattern.exec(text)) !== null) {
+    const window = text.slice(Math.max(0, match.index - 32), Math.min(text.length, match.index + match[0].length + 32));
+    const broker = brokerPattern.exec(window)?.[1] ?? null;
+    const rating = ratingPattern.exec(window)?.[1] ?? null;
+    const targetPrice = parseProviderNumber(match[1]);
+    if (typeof targetPrice !== "number") continue;
+    mentions.push({
+      targetPrice,
+      broker,
+      rating,
+      confidence: broker ? 0.58 : 0.42,
+    });
+  }
+
+  while ((match = rangePattern.exec(text)) !== null) {
+    const low = parseProviderNumber(match[1]);
+    const high = parseProviderNumber(match[2]);
+    if (typeof low !== "number" || typeof high !== "number") continue;
+    mentions.push({
+      targetPrice: Number(((low + high) / 2).toFixed(2)),
+      targetPriceLow: Math.min(low, high),
+      targetPriceHigh: Math.max(low, high),
+      confidence: 0.5,
+    });
+  }
+
+  return mentions;
+}
+
+function buildPendingAnalystTarget(instrument: StockInstrument): AnalystTargetPrice {
+  const configured = configuredCommercialAnalystProviders();
+  return {
+    symbol: instrument.symbol,
+    currency: "TWD",
+    target_price_mean: null,
+    target_price_high: null,
+    target_price_low: null,
+    analyst_count: null,
+    source: configured.length > 0 ? configured.join(" / ") : "FactSet / LSEG I/B/E/S / Bloomberg / FMP",
+    source_type: "needs_license",
+    source_url: configured.includes("FactSet") ? analystProviderUrls.factset : analystProviderUrls.lseg,
+    confidence: 0,
+    provider_status: configured.length > 0 ? "configured" : "needs_key",
+    note: configured.length > 0
+      ? "外部法人資料授權變數已設定，但仍需要依合約欄位完成 provider mapping 後才顯示正式共識目標價。"
+      : "尚未設定外部法人目標價授權。請提供 FactSet、LSEG I/B/E/S、Bloomberg 或 FMP 的 API key 與 redisplay 權限後啟用。",
+  };
+}
+
+function parseProviderNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const numeric = Number(String(value).replaceAll(",", "").replace("%", "").trim());
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function dedupeNews(events: NewsItem[]): NewsItem[] {
   const seen = new Set<string>();
   return events.filter((event) => {
@@ -1655,27 +1863,34 @@ function applyApiRiskFlags(signalPayload: PredictionSignal, riskFlags: ApiRiskFl
 }
 
 function getDataSourceStatus(): DataSourceStatus[] {
-  const keyedProviders: Array<[string, string, string]> = [
+  const keyedProviders: Array<[string, string | string[], string]> = [
     ["OpenAI 新聞解析", "OPENAI_API_KEY", "https://platform.openai.com/docs/api-reference"],
     ["Finnhub 美股/新聞", "FINNHUB_API_KEY", "https://finnhub.io/docs/api"],
     ["Polygon/Massive 美股", "POLYGON_API_KEY", "https://massive.com/docs"],
     ["Alpha Vantage 技術指標", "ALPHA_VANTAGE_API_KEY", "https://www.alphavantage.co/documentation/"],
     ["FRED 美國總經", "FRED_API_KEY", "https://fred.stlouisfed.org/docs/api/fred/"],
     ["TEJ 商業台股資料", "TEJ_API_KEY", "https://api.tej.com.tw/"],
-    ["FactSet/LSEG 目標價", "FACTSET_API_KEY", "https://developer.factset.com/api-catalog/factset-estimates-api"],
+    ["FMP 法人目標價", ["FMP_API_KEY", "FINANCIAL_MODELING_PREP_API_KEY"], analystProviderUrls.fmp],
+    ["FactSet 法人共識", "FACTSET_API_KEY", analystProviderUrls.factset],
+    ["LSEG I/B/E/S 法人共識", "LSEG_API_KEY", analystProviderUrls.lseg],
+    ["Bloomberg 法人/估值資料", "BLOOMBERG_API_KEY", analystProviderUrls.bloomberg],
   ];
   return [
     { name: "TWSE OpenAPI", status: "connected", detail: "上市總表、估值、重大訊息、注意/處置、融資融券、外資持股；個股頁另接 TWSE 官方日成交資訊", url: "https://openapi.twse.com.tw/", requires_key: false },
     { name: "TPEx OpenAPI", status: "connected", detail: "上櫃行情與本益比/殖利率/股價淨值比", url: "https://www.tpex.org.tw/openapi/", requires_key: false },
     { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
     { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，新聞池與前台畫面每 1 分鐘同步", url: cnaFinanceRssUrl, requires_key: false },
-    ...keyedProviders.map(([name, envName, url]) => ({
+    ...keyedProviders.map(([name, envName, url]) => {
+      const envNames = Array.isArray(envName) ? envName : [envName];
+      const configured = envNames.some((item) => process.env[item]);
+      return {
       name,
-      status: process.env[envName] ? "configured" as const : "needs_key" as const,
-      detail: process.env[envName] ? `${envName} 已設定，可進入正式 provider 串接` : `${envName} 尚未設定，前台先顯示免授權資料與保留欄位`,
+      status: configured ? "configured" as const : "needs_key" as const,
+      detail: configured ? `${envNames.join(" / ")} 已設定，可進入正式 provider 串接` : `${envNames.join(" / ")} 尚未設定，前台先顯示免授權資料與保留欄位`,
       url,
       requires_key: true,
-    })),
+    };
+    }),
   ];
 }
 
@@ -1705,11 +1920,13 @@ async function attachTwseMarketData(signalPayload: PredictionSignal): Promise<Pr
     currency: "TWD",
   };
   const news = await getNewsForInstrument(instrument);
+  const analystTargetPrice = await getExternalAnalystTargetPrice(instrument, news);
   const withMarketData = applyNewsSignal({
     ...signalPayload,
     name: instrument.name,
     quote,
     valuation,
+    analyst_target_price: analystTargetPrice,
     data_source_status: getDataSourceStatus(),
   }, news);
   return applyApiRiskFlags(withMarketData, riskFlagMap.get(signalPayload.symbol) ?? []);
@@ -1989,8 +2206,10 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
       currency: "TWD",
     };
     const news = await getNewsForInstrument(instrument);
+    const analystTargetPrice = await getExternalAnalystTargetPrice(instrument, news);
     const withNews = applyNewsSignal({
       ...signalPayload,
+      analyst_target_price: analystTargetPrice,
       data_source_status: getDataSourceStatus(),
     }, news);
     return applyApiRiskFlags(withNews, riskFlagMap.get(signalPayload.symbol) ?? []);

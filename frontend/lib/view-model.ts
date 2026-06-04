@@ -32,6 +32,21 @@ export type TargetPriceRange = {
   sourceLabel: string;
 };
 
+export type ExternalAnalystTargetPriceDisplay = {
+  currentPrice: number;
+  targetPriceMean: number | null;
+  targetPriceHigh: number | null;
+  targetPriceLow: number | null;
+  analystCount: number | null;
+  statusLabel: string;
+  sourceLabel: string;
+  publishedAt: string;
+  confidence: number;
+  note: string;
+  isAvailable: boolean;
+  brokerLabel: string;
+};
+
 export type PortfolioAllocation = {
   label: string;
   percent: number;
@@ -229,6 +244,35 @@ export function buildTargetPriceRange(signal: PredictionSignal): TargetPriceRang
   };
 }
 
+export function buildExternalAnalystTargetPrice(signal: PredictionSignal): ExternalAnalystTargetPriceDisplay {
+  const currentPrice = estimateCurrentPrice(signal);
+  const target = signal.analyst_target_price;
+  const targetPriceMean = typeof target?.target_price_mean === "number" ? target.target_price_mean : null;
+  const sourceType = target?.source_type ?? "needs_license";
+  const statusLabel = targetPriceMean
+    ? sourceType === "news_extracted"
+      ? "新聞抽取"
+      : "外部 API"
+    : target?.provider_status === "configured"
+      ? "待 provider mapping"
+      : "待授權";
+
+  return {
+    currentPrice,
+    targetPriceMean,
+    targetPriceHigh: typeof target?.target_price_high === "number" ? target.target_price_high : null,
+    targetPriceLow: typeof target?.target_price_low === "number" ? target.target_price_low : null,
+    analystCount: typeof target?.analyst_count === "number" ? target.analyst_count : null,
+    statusLabel,
+    sourceLabel: target?.source ?? "FactSet / LSEG I/B/E/S / Bloomberg / FMP",
+    publishedAt: target?.published_at ?? "待授權",
+    confidence: target?.confidence ?? 0,
+    note: target?.note ?? "尚未接入外部法人目標價授權，前台不以模型估算冒充法人共識。",
+    isAvailable: targetPriceMean !== null,
+    brokerLabel: target?.broker || target?.rating ? [target.broker, target.rating].filter(Boolean).join(" · ") : statusLabel,
+  };
+}
+
 export function buildPlainLanguageReasons(signal: PredictionSignal): string[] {
   const metrics = buildStockMetrics(signal);
   const reasons = [
@@ -244,10 +288,12 @@ export function buildPlainLanguageReasons(signal: PredictionSignal): string[] {
 export function buildReferences(signal: PredictionSignal): string[] {
   const riskRefs = signal.risk_flags?.slice(0, 2).map((flag) => `${flag.source}：${flag.title}`).join("、");
   const keyedStatus = signal.data_source_status?.filter((item) => item.requires_key).slice(0, 2).map((item) => `${item.name} ${item.status === "needs_key" ? "待授權" : "已設定"}`).join("、");
+  const externalTarget = buildExternalAnalystTargetPrice(signal);
   const refs = [
     "因子分數：基本面、籌碼、技術、美股連動、新聞、風險分數",
     `行情來源：${quoteSourceLabel(signal)}`,
     `估值來源：${valuationSourceLabel(signal)}`,
+    `外部法人目標價：${externalTarget.isAvailable ? `${externalTarget.sourceLabel}，${externalTarget.targetPriceMean}` : externalTarget.statusLabel}`,
     `新聞來源：${signal.news.map((item) => item.source).filter(Boolean).slice(0, 2).join("、") || "資料觀察中"}`,
     "技術依據：MA、RSI、KD、MACD、OBV、量價背離",
     `風險依據：${riskRefs || "波動、流動性、事件風險、VIX/美股代理訊號"}`,
@@ -381,6 +427,7 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
   const quote = buildQuoteOverview(signal);
   const backtest = buildBacktestConfidenceProfile(signal);
   const target = buildTargetPriceRange(signal);
+  const externalTarget = buildExternalAnalystTargetPrice(signal);
   const quoteSourceNote = quoteSourceLabel(signal);
   const valuationSourceNote = valuationSourceLabel(signal);
   const riskReferenceNote = signal.risk_flags?.length
@@ -428,6 +475,7 @@ export function buildProfessionalInfoSections(signal: PredictionSignal): Profess
       title: "財務與估值",
       description: "基本面、目標區間與財務品質，正式版會接月營收與財報資料。",
       rows: [
+        { label: "外部法人目標價", value: externalTarget.isAvailable ? `${externalTarget.targetPriceMean}` : externalTarget.statusLabel, note: externalTarget.note },
         { label: "現價 / 保守 / 基準 / 樂觀", value: `${target.currentPrice} / ${target.conservative} / ${target.base} / ${target.optimistic}`, note: target.sourceLabel },
         { label: "EPS / PE / 殖利率", value: `${quote.epsTtm} / ${quote.peRatio} / ${quote.dividendYield}%`, note: valuationSourceNote },
         { label: "毛利率 / 營益率 / 淨利率", value: `${quote.grossMargin}% / ${quote.operatingMargin}% / ${quote.netMargin}%`, note: "財務品質與獲利能力觀察" },

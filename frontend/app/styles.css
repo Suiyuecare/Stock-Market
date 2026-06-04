@@ -1391,6 +1391,12 @@ tbody tr:hover {
   margin-top: 16px;
 }
 
+.target-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+}
+
 .price-now {
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -1404,6 +1410,51 @@ tbody tr:hover {
   color: var(--positive);
   font-size: 2.45rem;
   font-weight: 1000;
+}
+
+.external-target-card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  background: #fffdf8;
+}
+
+.external-target-card.available {
+  border-color: rgba(179, 58, 45, 0.24);
+  background: #fff2ed;
+}
+
+.external-target-card.pending {
+  border-style: dashed;
+}
+
+.external-target-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: var(--negative);
+  font-size: 2.2rem;
+  font-weight: 1000;
+}
+
+.external-target-card.pending strong {
+  color: var(--muted);
+  font-size: 1.8rem;
+}
+
+.external-target-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.external-target-meta b {
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: rgba(224, 147, 56, 0.1);
+  color: var(--ink);
+  font-size: 0.78rem;
+  text-align: center;
 }
 
 .range-track {
@@ -1679,8 +1730,19 @@ tbody tr:hover {
 }
 
 .recommendation-price strong {
+  display: block;
   color: var(--ink);
   font-size: 0.96rem;
+}
+
+.recommendation-price small {
+  display: block;
+  max-width: 190px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recommendation-row em {
@@ -2771,7 +2833,8 @@ tbody tr:hover {
   .growth-summary,
   .backtest-summary,
   .backtest-sections,
-  .backtest-columns {
+  .backtest-columns,
+  .target-summary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2879,6 +2942,11 @@ tbody tr:hover {
     color: var(--accent);
     font-size: 0.8rem;
     font-weight: 1000;
+  }
+
+  .external-target-meta,
+  .range-track {
+    grid-template-columns: 1fr;
   }
 
   .mobile-footer-nav b {
