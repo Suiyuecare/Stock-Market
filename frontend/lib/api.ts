@@ -2240,15 +2240,19 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
   const preliminaryCandidates = tradableQuotes
     .map(buildCandidate)
     .sort((left, right) => right.score - left.score);
-  const latestQuoteOverrides = shouldRefreshTwsePerStockQuotes(tradableQuotes)
-    ? await getLatestRecommendationQuoteOverrides(preliminaryCandidates)
+  const shouldRefreshLatestQuotes = shouldRefreshTwsePerStockQuotes(tradableQuotes);
+  const latestQuoteOverrides = shouldRefreshLatestQuotes
+    ? await getLatestRecommendationQuoteOverrides(preliminaryCandidates, tradableQuotes)
     : new Map<string, TwseQuote>();
   const candidates = tradableQuotes
     .map((quote, index) => buildCandidate(latestQuoteOverrides.get(quote.symbol) ?? quote, index))
     .sort((left, right) => right.score - left.score);
 
   fallbackRecommendationCandidateCount = candidates.length;
-  fallbackRecommendationDataDate = candidates[0]?.signal.quote?.date ?? "資料日期待確認";
+  fallbackRecommendationDataDate = [
+    ...candidates.map((candidate) => candidate.signal.quote?.date),
+    ...Array.from(latestQuoteOverrides.values()).map((quote) => quote.date),
+  ].filter((date): date is string => Boolean(date && date !== "資料日期待確認")).sort().at(-1) ?? candidates[0]?.signal.quote?.date ?? "資料日期待確認";
 
   const enriched = await Promise.all(candidates.slice(0, 90).map(async ({ signal: signalPayload }) => {
     const instrument: StockInstrument = {
@@ -2288,8 +2292,13 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
 
 async function getLatestRecommendationQuoteOverrides(
   preliminaryCandidates: Array<{ signal: PredictionSignal; score: number }>,
+  tradableQuotes: TwseQuote[],
 ): Promise<Map<string, TwseQuote>> {
-  const targets = preliminaryCandidates
+  const prioritySymbols = new Set(recommendationCoverageSymbols);
+  const priorityQuotes = tradableQuotes
+    .filter((quote) => prioritySymbols.has(quote.symbol))
+    .map((quote) => ({ signal: { symbol: quote.symbol, name: quote.name, quote } as PredictionSignal, score: 100 }));
+  const targets = uniqueRecommendationTargets([...priorityQuotes, ...preliminaryCandidates])
     .filter(({ signal: signalPayload }) => signalPayload.quote?.source === "TWSE OpenAPI")
     .slice(0, 160);
   const latestQuotes = await mapWithConcurrency(targets, 12, async ({ signal: signalPayload }) => {
@@ -2298,6 +2307,17 @@ async function getLatestRecommendationQuoteOverrides(
   return new Map(latestQuotes
     .filter((quote): quote is TwseQuote => Boolean(quote?.close && quote.date >= taipeiIsoDate()))
     .map((quote) => [quote.symbol, quote]));
+}
+
+function uniqueRecommendationTargets(
+  targets: Array<{ signal: PredictionSignal; score: number }>,
+): Array<{ signal: PredictionSignal; score: number }> {
+  const seen = new Set<string>();
+  return targets.filter(({ signal: signalPayload }) => {
+    if (seen.has(signalPayload.symbol)) return false;
+    seen.add(signalPayload.symbol);
+    return true;
+  });
 }
 
 function mockNews(symbol: string): PredictionSignal["news"] {
