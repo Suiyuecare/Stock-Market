@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { PredictionSignal, TaiwanPredictionToolResponse } from "@/lib/api";
 import { fetchTaiwanPredictionTool, fetchTopProbabilityRanking } from "@/lib/api";
-import { buildStockMetrics, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
+import { buildStockMetrics, buildTargetPriceRange, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
 
 type RecommendationRow = {
   signal: PredictionSignal;
@@ -16,6 +16,7 @@ type RecommendationRow = {
   themes: string[];
   themeFit: number;
   metrics: ReturnType<typeof buildStockMetrics>;
+  targetRange: ReturnType<typeof buildTargetPriceRange>;
 };
 
 type HorizonKey = "1d" | "5d" | "20d";
@@ -255,6 +256,10 @@ export default async function RecommendationsPage() {
                 <strong>{row.signal.symbol} {row.signal.name}</strong>
                 <span>{row.reason}</span>
               </div>
+              <div className="recommendation-price">
+                <span>現價 / 目標</span>
+                <strong>{formatPrice(row.targetRange.currentPrice)} → {formatPrice(row.targetRange.base)}</strong>
+              </div>
               <em>{row.score}</em>
               <small>1D {row.scores["1d"]} · 5D {row.scores["5d"]} · 20D {row.scores["20d"]} · 過熱扣 {row.overheatPenalty} · 事件扣 {row.eventRiskPenalty}</small>
             </a>
@@ -289,6 +294,7 @@ function buildRecommendation(signal: PredictionSignal, marketState: MarketState)
   const marketMultiplier = buildMarketMultiplier(marketState, marketProfile);
   const scores = mapHorizonScores(stockScores, (stockScore) => clampScore(stockScore * marketMultiplier - overheatPenalty - eventRiskPenalty));
   const score = scores["5d"];
+  const targetRange = buildTargetPriceRange(signal);
 
   return {
     signal,
@@ -302,7 +308,14 @@ function buildRecommendation(signal: PredictionSignal, marketState: MarketState)
     themes: marketProfile.themes,
     themeFit: marketProfile.fit,
     metrics,
+    targetRange,
   };
+}
+
+function formatPrice(value: number): string {
+  if (value >= 1000) return value.toLocaleString("zh-TW", { maximumFractionDigits: 0 });
+  if (value >= 100) return value.toLocaleString("zh-TW", { maximumFractionDigits: 1 });
+  return value.toLocaleString("zh-TW", { maximumFractionDigits: 2 });
 }
 
 function buildReason(

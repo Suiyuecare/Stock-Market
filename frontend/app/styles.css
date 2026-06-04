@@ -1614,7 +1614,7 @@ tbody tr:hover {
 
 .recommendation-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 72px minmax(170px, 0.5fr);
+  grid-template-columns: 44px minmax(0, 1fr) minmax(132px, 0.34fr) 72px minmax(170px, 0.5fr);
   gap: 12px;
   align-items: center;
   border: 1px solid var(--line);
@@ -1666,6 +1666,21 @@ tbody tr:hover {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 800;
+}
+
+.recommendation-price {
+  justify-self: end;
+  text-align: right;
+}
+
+.recommendation-price span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.recommendation-price strong {
+  color: var(--ink);
+  font-size: 0.96rem;
 }
 
 .recommendation-row em {
@@ -2897,6 +2912,12 @@ tbody tr:hover {
 
   .recommendation-row {
     grid-template-columns: 38px minmax(0, 1fr) 58px;
+  }
+
+  .recommendation-price {
+    grid-column: 2 / -1;
+    justify-self: start;
+    text-align: left;
   }
 
   .recommendation-row small {
