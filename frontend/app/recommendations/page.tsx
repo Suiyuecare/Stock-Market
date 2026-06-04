@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { PredictionSignal, TaiwanPredictionToolResponse } from "@/lib/api";
 import { fetchTaiwanPredictionTool, fetchTopProbabilityRanking } from "@/lib/api";
+import { buildSignalIndustryScore, classifySignal } from "@/lib/industry-classification";
 import { buildExternalAnalystTargetPrice, buildStockMetrics, buildTargetPriceRange, sanitizeDisplayText, scoreTone } from "@/lib/view-model";
 
 type RecommendationRow = {
@@ -15,9 +16,19 @@ type RecommendationRow = {
   reason: string;
   themes: string[];
   themeFit: number;
+  majorCategory: string;
+  subcategories: string[];
   metrics: ReturnType<typeof buildStockMetrics>;
   targetRange: ReturnType<typeof buildTargetPriceRange>;
   externalTarget: ReturnType<typeof buildExternalAnalystTargetPrice>;
+};
+
+type RecommendationCategoryGroup = {
+  majorCategory: string;
+  averageScore: number;
+  count: number;
+  rows: RecommendationRow[];
+  subcategories: Array<{ name: string; score: number; count: number }>;
 };
 
 type HorizonKey = "1d" | "5d" | "20d";
@@ -42,54 +53,6 @@ type MarketState = {
   multiplier: number;
   tone: "positive" | "negative" | "neutral";
   components: Array<{ label: string; value: number; detail: string }>;
-};
-
-const marketThemeProfiles: Record<string, { fit: number; themes: string[] }> = {
-  "2330": { fit: 88, themes: ["半導體", "AI/HPC"] },
-  "2454": { fit: 89, themes: ["IC 設計", "Edge AI"] },
-  "3035": { fit: 89, themes: ["ASIC", "晶片設計服務"] },
-  "3661": { fit: 89, themes: ["ASIC", "HPC"] },
-  "2382": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
-  "3231": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
-  "6669": { fit: 90, themes: ["AI 伺服器", "雲端資料中心"] },
-  "2317": { fit: 78, themes: ["EMS", "伺服器"] },
-  "2308": { fit: 82, themes: ["電源管理", "資料中心"] },
-  "2345": { fit: 80, themes: ["高速網通", "資料中心"] },
-  "3017": { fit: 92, themes: ["散熱", "液冷"] },
-  "3324": { fit: 92, themes: ["散熱", "液冷"] },
-  "2383": { fit: 92, themes: ["CCL", "高速材料"] },
-  "3037": { fit: 92, themes: ["ABF", "PCB/載板"] },
-  "8046": { fit: 90, themes: ["ABF", "載板"] },
-  "3711": { fit: 78, themes: ["封裝測試", "先進封裝"] },
-  "1590": { fit: 74, themes: ["機器人", "氣動元件"] },
-  "2049": { fit: 74, themes: ["機器人", "線性傳動"] },
-  "2359": { fit: 74, themes: ["機器人", "AI 視覺"] },
-  "1504": { fit: 76, themes: ["電機", "機器人/電動化"] },
-  "1513": { fit: 78, themes: ["重電", "電網升級"] },
-  "1519": { fit: 80, themes: ["重電", "變壓器"] },
-  "1605": { fit: 72, themes: ["電線電纜", "電網"] },
-  "2603": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
-  "2609": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
-  "2615": { fit: 63, themes: ["貨櫃航運", "景氣循環"] },
-  "2618": { fit: 63, themes: ["航空", "旅運復甦"] },
-  "2610": { fit: 63, themes: ["航空", "旅運復甦"] },
-  "2634": { fit: 68, themes: ["航太", "國防"] },
-  "2881": { fit: 66, themes: ["金融避險", "大型金控"] },
-  "2882": { fit: 66, themes: ["金融避險", "大型金控"] },
-  "2884": { fit: 66, themes: ["金融避險", "銀行"] },
-  "2885": { fit: 66, themes: ["金融避險", "券商"] },
-  "2886": { fit: 66, themes: ["金融避險", "銀行"] },
-  "2891": { fit: 66, themes: ["金融避險", "大型金控"] },
-  "5880": { fit: 66, themes: ["金融避險", "銀行"] },
-  "5876": { fit: 66, themes: ["金融避險", "銀行"] },
-  "1216": { fit: 56, themes: ["內需防禦", "食品通路"] },
-  "2912": { fit: 56, themes: ["內需防禦", "零售通路"] },
-  "2207": { fit: 43, themes: ["內需消費", "汽車"] },
-  "6505": { fit: 68, themes: ["能源", "油品價差"] },
-  "1301": { fit: 66, themes: ["塑化", "景氣循環"] },
-  "1303": { fit: 66, themes: ["塑化", "景氣循環"] },
-  "2002": { fit: 64, themes: ["鋼鐵", "景氣循環"] },
-  "6446": { fit: 72, themes: ["生技醫療", "新藥"] },
 };
 
 const horizonWeights: Record<HorizonKey, FactorWeights> = {
@@ -142,6 +105,7 @@ export default async function RecommendationsPage() {
   const averageRisk = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.riskScore, 0) / Math.max(1, recommendations.length));
   const averageScore = Math.round(recommendations.reduce((sum, row) => sum + row.score, 0) / Math.max(1, recommendations.length));
   const averageOverheat = Math.round(recommendations.reduce((sum, row) => sum + row.overheatPenalty, 0) / Math.max(1, recommendations.length));
+  const recommendationGroups = buildRecommendationGroups(recommendations);
 
   return (
     <AppShell active="/recommendations">
@@ -244,6 +208,47 @@ export default async function RecommendationsPage() {
       <section className="panel">
         <div className="panel-heading">
           <div>
+            <p className="eyebrow">Category First</p>
+            <h2>推薦也先選大分類，再看小分類</h2>
+          </div>
+          <span className="panel-tag">大分類依平均 5D 分數排序</span>
+        </div>
+        <div className="recommendation-category-grid">
+          {recommendationGroups.map((group, index) => (
+            <details className="recommendation-category-card" key={group.majorCategory} open={index === 0}>
+              <summary>
+                <b>{index + 1}</b>
+                <div>
+                  <strong>{group.majorCategory}</strong>
+                  <span>{group.count} 檔入選 · 平均 {group.averageScore}</span>
+                </div>
+                <em>{group.averageScore}</em>
+              </summary>
+              <div className="recommendation-category-body">
+                <div className="recommendation-categories">
+                  {group.subcategories.map((subcategory) => (
+                    <b key={`${group.majorCategory}-${subcategory.name}`}>
+                      {subcategory.name} · {subcategory.score}
+                    </b>
+                  ))}
+                </div>
+                <div className="industry-stock-list">
+                  {group.rows.slice(0, 5).map((row) => (
+                    <a href={`/stocks/${row.signal.symbol}`} key={`${group.majorCategory}-${row.signal.symbol}`}>
+                      {row.signal.symbol} {row.signal.name} · {row.score}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+        <p className="panel-note">這裡的分類不是固定偏 AI，而是依每檔股票的大分類、小分類、籌碼、技術、基本面、風險與市場狀態重新排序；同一大分類裡的小分類也會由好到不好排列。</p>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
             <p className="eyebrow">Top 20</p>
             <h2>明燈推薦清單</h2>
           </div>
@@ -256,6 +261,10 @@ export default async function RecommendationsPage() {
               <div>
                 <strong>{row.signal.symbol} {row.signal.name}</strong>
                 <span>{row.reason}</span>
+                <div className="recommendation-categories">
+                  <b>{row.majorCategory}</b>
+                  {row.subcategories.slice(0, 2).map((subcategory) => <b key={`${row.signal.symbol}-${subcategory}`}>{subcategory}</b>)}
+                </div>
               </div>
               <div className="recommendation-price">
                 <span>現價 / 外部法人</span>
@@ -286,8 +295,51 @@ function HorizonWeightCard({ horizon, title, detail }: { horizon: HorizonKey; ti
   );
 }
 
+function buildRecommendationGroups(rows: RecommendationRow[]): RecommendationCategoryGroup[] {
+  const buckets = new Map<string, RecommendationRow[]>();
+  rows.forEach((row) => {
+    const bucket = buckets.get(row.majorCategory) ?? [];
+    bucket.push(row);
+    buckets.set(row.majorCategory, bucket);
+  });
+
+  return Array.from(buckets.entries())
+    .map(([majorCategory, bucketRows]) => {
+      const sortedRows = [...bucketRows].sort((left, right) => right.score - left.score);
+      return {
+        majorCategory,
+        averageScore: Math.round(bucketRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, bucketRows.length)),
+        count: bucketRows.length,
+        rows: sortedRows,
+        subcategories: buildRecommendationSubcategories(bucketRows),
+      } satisfies RecommendationCategoryGroup;
+    })
+    .sort((left, right) => right.averageScore - left.averageScore || right.count - left.count);
+}
+
+function buildRecommendationSubcategories(rows: RecommendationRow[]): RecommendationCategoryGroup["subcategories"] {
+  const buckets = new Map<string, RecommendationRow[]>();
+  rows.forEach((row) => {
+    row.subcategories.forEach((subcategory) => {
+      const bucket = buckets.get(subcategory) ?? [];
+      bucket.push(row);
+      buckets.set(subcategory, bucket);
+    });
+  });
+
+  return Array.from(buckets.entries())
+    .map(([name, bucketRows]) => ({
+      name,
+      score: Math.round(bucketRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, bucketRows.length)),
+      count: bucketRows.length,
+    }))
+    .sort((left, right) => right.score - left.score || right.count - left.count)
+    .slice(0, 6);
+}
+
 function buildRecommendation(signal: PredictionSignal, marketState: MarketState): RecommendationRow {
   const metrics = buildStockMetrics(signal);
+  const classification = classifySignal(signal);
   const marketProfile = getMarketProfile(signal);
   const factors = buildFactorInputs(signal, metrics, marketProfile, marketState);
   const stockScores = buildHorizonScores(factors);
@@ -310,6 +362,8 @@ function buildRecommendation(signal: PredictionSignal, marketState: MarketState)
     reason: buildReason(signal, metrics, marketProfile, marketState, overheatPenalty),
     themes: marketProfile.themes,
     themeFit: marketProfile.fit,
+    majorCategory: classification.major.name,
+    subcategories: classification.subcategories,
     metrics,
     targetRange,
     externalTarget,
@@ -461,19 +515,9 @@ function clampScore(value: number): number {
 }
 
 function getMarketProfile(signal: PredictionSignal): { fit: number; themes: string[] } {
-  const direct = marketThemeProfiles[signal.symbol];
-  if (direct) return direct;
-  const haystack = `${signal.name} ${signal.sector ?? ""}`;
-  const themes: string[] = [];
-  if (/半導體|IC|晶片|封裝|測試/.test(haystack)) themes.push("半導體");
-  if (/電腦|週邊|伺服器|雲端|資料中心/.test(haystack)) themes.push("AI/雲端");
-  if (/電機|機械|自動化|氣動|機器人/.test(haystack)) themes.push("機器人/自動化");
-  if (/航運|航空|運輸|物流/.test(haystack)) themes.push("運輸");
-  if (/金融|銀行|金控|保險|證券/.test(haystack)) themes.push("金融避險");
-  if (/電線|電纜|重電|電力|能源|油電/.test(haystack)) themes.push("電力能源");
-  if (/水泥|塑膠|鋼鐵|化學|原物料/.test(haystack)) themes.push("原物料循環");
-  if (/食品|百貨|觀光|汽車|零售/.test(haystack)) themes.push("內需防禦");
-  if (/生技|醫療|製藥/.test(haystack)) themes.push("生技醫療");
-  const fit = themes.length ? 58 + Math.min(18, themes.length * 6) : 52;
-  return { fit, themes: themes.length ? themes : ["一般產業"] };
+  const classification = classifySignal(signal);
+  return {
+    fit: buildSignalIndustryScore(signal),
+    themes: [classification.major.shortName, ...classification.subcategories],
+  };
 }

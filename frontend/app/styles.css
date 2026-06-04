@@ -1719,9 +1719,102 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.recommendation-categories {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+  margin-top: 4px;
+}
+
+.recommendation-categories b {
+  max-width: 150px;
+  overflow: hidden;
+  border: 1px solid rgba(47, 125, 85, 0.18);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #eef7ed;
+  color: var(--positive);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .recommendation-price {
   justify-self: end;
   text-align: right;
+}
+
+.recommendation-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.recommendation-category-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fffdf8;
+  overflow: hidden;
+}
+
+.recommendation-category-card summary {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 52px;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.recommendation-category-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.recommendation-category-card summary > b {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff0db;
+  color: var(--accent);
+  font-weight: 1000;
+}
+
+.recommendation-category-card summary div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recommendation-category-card summary strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 1000;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendation-category-card summary span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.recommendation-category-card summary em {
+  justify-self: end;
+  color: var(--negative);
+  font-size: 1.3rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.recommendation-category-body {
+  padding: 0 16px 16px;
 }
 
 .recommendation-price span {
@@ -2665,6 +2758,114 @@ tbody tr:hover {
   line-height: 1.6;
 }
 
+.industry-rank-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.industry-rank-card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fffdf8;
+  box-shadow: 0 16px 36px rgba(73, 44, 18, 0.06);
+  overflow: hidden;
+}
+
+.industry-rank-card summary {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 64px;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.industry-rank-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.industry-rank-card summary > b {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #fff0db;
+  color: var(--accent);
+  font-weight: 1000;
+}
+
+.industry-rank-card summary div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.industry-rank-card summary span,
+.industry-rank-card summary small,
+.subindustry-card small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.industry-rank-card summary strong {
+  color: var(--ink);
+  font-size: 1.18rem;
+  font-weight: 1000;
+}
+
+.industry-rank-card summary em {
+  justify-self: end;
+  color: var(--negative);
+  font-size: 1.5rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.subindustry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.subindustry-card {
+  border: 1px solid rgba(220, 193, 158, 0.85);
+  border-radius: 18px;
+  padding: 15px;
+  background: rgba(255, 250, 242, 0.82);
+}
+
+.subindustry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.subindustry-head span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.subindustry-head strong {
+  color: var(--positive);
+  font-size: 1.2rem;
+}
+
+.subindustry-card h3 {
+  margin: 6px 0 2px;
+  color: var(--ink);
+}
+
+.compact-tags {
+  margin-top: 14px;
+}
+
 .watchlist-actions {
   flex: 0 0 auto;
 }
@@ -2822,12 +3023,14 @@ tbody tr:hover {
   .related-news-grid,
   .stock-search-hero,
   .stock-ai-selector,
-  .market-state-grid,
-  .horizon-weight-grid,
-  .horizon-main,
-  .insight-grid,
-  .industry-grid,
-  .watchlist-grid,
+	  .market-state-grid,
+	  .horizon-weight-grid,
+	  .recommendation-category-grid,
+	  .horizon-main,
+	  .insight-grid,
+	  .industry-grid,
+	  .subindustry-grid,
+	  .watchlist-grid,
   .weight-grid,
   .data-state-grid,
   .growth-summary,
@@ -2978,9 +3181,21 @@ tbody tr:hover {
     border-radius: 12px;
   }
 
-  .recommendation-row {
-    grid-template-columns: 38px minmax(0, 1fr) 58px;
-  }
+	  .recommendation-row {
+	    grid-template-columns: 38px minmax(0, 1fr) 58px;
+	  }
+
+	  .recommendation-category-card summary,
+	  .industry-rank-card summary {
+	    grid-template-columns: 34px minmax(0, 1fr) 44px;
+	    gap: 10px;
+	    padding: 14px;
+	  }
+
+	  .recommendation-category-card summary em,
+	  .industry-rank-card summary em {
+	    font-size: 1.1rem;
+	  }
 
   .recommendation-price {
     grid-column: 2 / -1;

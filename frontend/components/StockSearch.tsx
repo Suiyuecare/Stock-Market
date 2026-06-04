@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StockInstrument } from "@/lib/api";
+import { classifyInstrument } from "@/lib/industry-classification";
 
 const stockSearchUniverse: StockInstrument[] = [
   { symbol: "1101", market: "TW", name: "台泥", sector: "水泥工業", currency: "TWD" },
@@ -123,7 +124,7 @@ export function StockSearch({ stocks = stockSearchUniverse, compact = false }: {
             >
               <strong>{stock.symbol}</strong>
               <span>{stock.name}</span>
-              <small>{stock.market === "TPEX" ? "上櫃" : "上市"} · {stock.sector ?? "未分類"}</small>
+              <small>{stock.market === "TPEX" ? "上櫃" : "上市"} · {formatStockClassification(stock)}</small>
             </button>
           ))
         ) : keyword ? (
@@ -134,4 +135,9 @@ export function StockSearch({ stocks = stockSearchUniverse, compact = false }: {
       </div>
     </div>
   );
+}
+
+function formatStockClassification(stock: StockInstrument): string {
+  const classification = classifyInstrument(stock);
+  return `${classification.major.shortName} · ${classification.subcategories.slice(0, 2).join(" / ")}`;
 }

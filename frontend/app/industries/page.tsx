@@ -1,106 +1,78 @@
 import { AppShell } from "@/components/AppShell";
 import { ComplianceNotice } from "@/components/ComplianceNotice";
 import { ScoreCard } from "@/components/ScoreCard";
+import { fetchTopProbabilityRanking } from "@/lib/api";
+import { buildIndustryRankings } from "@/lib/industry-classification";
 
-const industries = [
-  {
-    name: "AI 伺服器",
-    score: 78,
-    trend: "需求延續",
-    segments: ["散熱", "電源", "組裝", "高速傳輸"],
-    stocks: ["2382 廣達", "3231 緯創", "6669 緯穎", "2308 台達電", "2345 智邦"],
-    reason: "NVDA / 雲端資本支出 / 伺服器供應鏈新聞會共同影響。",
-  },
-  {
-    name: "半導體",
-    score: 74,
-    trend: "先進製程與 AI ASIC 支撐",
-    segments: ["IC 設計", "晶圓代工", "封裝", "測試", "矽晶圓"],
-    stocks: ["2330 台積電", "2454 聯發科", "3035 智原", "3711 日月光投控", "6488 環球晶"],
-    reason: "SOX、TSM ADR、NVDA、AMD、AVGO 與台股法人籌碼共同加權。",
-  },
-  {
-    name: "CCL / PCB",
-    score: 69,
-    trend: "高速材料升級",
-    segments: ["CCL", "載板", "高階 PCB", "HDI"],
-    stocks: ["8046 南電", "3037 欣興", "2368 金像電", "2383 台光電"],
-    reason: "AI 伺服器與高速網通升級會推升材料與板材需求。",
-  },
-  {
-    name: "散熱",
-    score: 72,
-    trend: "高功耗平台帶動",
-    segments: ["液冷", "均熱片", "風扇", "機殼熱流"],
-    stocks: ["3017 奇鋐", "3324 雙鴻", "3653 健策", "2421 建準"],
-    reason: "GPU/ASIC 功耗提升，使散熱從零組件變成平台級瓶頸。",
-  },
-  {
-    name: "封裝 / 測試",
-    score: 73,
-    trend: "CoWoS 與先進封裝吃緊",
-    segments: ["先進封裝", "測試介面", "探針卡", "封測"],
-    stocks: ["3711 日月光投控", "6223 旺矽", "6147 頎邦", "3264 欣銓"],
-    reason: "先進封裝產能、測試時間與 AI 晶片需求形成連動。",
-  },
-  {
-    name: "記憶體",
-    score: 63,
-    trend: "報價復甦觀察",
-    segments: ["DRAM", "NAND", "模組", "HBM"],
-    stocks: ["2408 南亞科", "8299 群聯", "2337 旺宏", "2344 華邦電"],
-    reason: "MU、HBM 需求、報價週期與庫存變化會進入分數。",
-  },
-];
-
-export default function IndustriesPage() {
-  const rankedIndustries = [...industries].sort((left, right) => right.score - left.score);
+export default async function IndustriesPage() {
+  const ranking = await fetchTopProbabilityRanking();
+  const rankedIndustries = buildIndustryRankings(ranking.signals);
   const top = rankedIndustries[0];
+  const weakest = rankedIndustries.at(-1);
+  const topSubcategory = top?.subcategories[0];
 
   return (
     <AppShell active="/industries">
       <header className="topbar">
         <div>
-          <p className="eyebrow">產業明燈</p>
-          <h1>最夯族群排在最上面，一路看到冷門觀察</h1>
+          <p className="eyebrow">產業明燈 · {ranking.data_date?.replaceAll("-", "/") ?? "最新官方資料"}</p>
+          <h1>先選大分類，再看小分類熱度</h1>
         </div>
-        <div className="status ok">最高族群：{top.name} {top.score}</div>
+        <div className="status ok">目前最強：{top?.category.name ?? "資料整理中"} {top?.score ?? "-"}</div>
       </header>
       <ComplianceNotice />
 
       <section className="metric-grid">
-        <ScoreCard label="追蹤族群" value={`${rankedIndustries.length}`} detail="依熱度分數由高到低排序" />
-        <ScoreCard label="最高趨勢分" value={`${top.score}`} detail={top.name} tone="positive" />
-        <ScoreCard label="細分類別" value="CCL / 散熱 / 封裝" detail="可繼續擴充族群樹" />
-        <ScoreCard label="輸出方式" value="研究訊號" detail="不構成個人化建議" />
+        <ScoreCard label="大分類數" value={`${rankedIndustries.length}`} detail="依分數由好到不好排序" />
+        <ScoreCard label="最強大分類" value={`${top?.score ?? "-"}`} detail={top?.category.name ?? "資料整理中"} tone="positive" />
+        <ScoreCard label="最強小分類" value={topSubcategory?.name ?? "-"} detail={topSubcategory ? `${topSubcategory.score} 分 · ${topSubcategory.stockCount} 檔` : "資料整理中"} />
+        <ScoreCard label="相對落後" value={weakest?.category.shortName ?? "-"} detail={weakest ? `${weakest.score} 分，先觀察即可` : "資料整理中"} tone="neutral" />
       </section>
 
-      <section className="industry-grid">
-        {rankedIndustries.map((industry, index) => (
-          <article className="industry-card" key={industry.name}>
-            <div className="industry-card-head">
-              <div>
-                <span>#{index + 1} 熱度排序 · {industry.trend}</span>
-                <h2>{industry.name}</h2>
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Beginner Flow</p>
+            <h2>新手先看大分類，點開後再選小分類</h2>
+          </div>
+          <span className="panel-tag">每日隨明燈候選池重排</span>
+        </div>
+        <p className="panel-note">排序方式：把同一分類底下股票的 5D 研究分數、最高分股票、平均風險與候選數量合併。分數越高代表目前研究條件越完整，不代表保證上漲。</p>
+        <div className="industry-rank-list">
+          {rankedIndustries.map((industry, index) => (
+            <details className="industry-rank-card" key={industry.category.id} open={index < 3}>
+              <summary>
+                <b>{index + 1}</b>
+                <div>
+                  <span>{industry.trend} · {industry.stockCount} 檔候選 · 平均風險 {industry.averageRisk}</span>
+                  <strong>{industry.category.name}</strong>
+                  <small>{industry.reason}</small>
+                </div>
+                <em>{industry.score}</em>
+              </summary>
+
+              <div className="subindustry-grid">
+                {industry.subcategories.map((subcategory, subIndex) => (
+                  <article className="subindustry-card" key={subcategory.name}>
+                    <div className="subindustry-head">
+                      <span>#{subIndex + 1} 小分類</span>
+                      <strong>{subcategory.score}</strong>
+                    </div>
+                    <h3>{subcategory.name}</h3>
+                    <small>{subcategory.stockCount} 檔候選，依好壞排序</small>
+                    <div className="industry-stock-list">
+                      {subcategory.stocks.map((stock) => (
+                        <a href={`/stocks/${stock.symbol}`} key={`${subcategory.name}-${stock.symbol}`}>
+                          {stock.symbol} {stock.name} · {stock.score}
+                        </a>
+                      ))}
+                    </div>
+                  </article>
+                ))}
               </div>
-              <strong>{industry.score}</strong>
-            </div>
-            <div className="industry-tags">
-              {industry.segments.map((segment) => <b key={segment}>{segment}</b>)}
-            </div>
-            <p>{industry.reason}</p>
-            <div className="industry-stock-list">
-              {industry.stocks.map((stock) => {
-                const [symbol, ...name] = stock.split(" ");
-                return /^\d{4}$/.test(symbol) ? (
-                  <a href={`/stocks/${symbol}`} key={stock}>{stock}</a>
-                ) : (
-                  <span key={stock}>{stock}</span>
-                );
-              })}
-            </div>
-          </article>
-        ))}
+            </details>
+          ))}
+        </div>
       </section>
     </AppShell>
   );

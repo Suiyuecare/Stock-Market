@@ -12,8 +12,8 @@ export function FactorBreakdown({
 }) {
   return (
     <div className="driver-list">
-      {positiveDrivers.map((driver) => (
-        <div className="driver positive-border" key={driver.name}>
+      {positiveDrivers.map((driver, index) => (
+        <div className="driver positive-border" key={`${driver.name}-${driver.score}-${index}`}>
           <div className="driver-title">
             <strong>{driver.name}</strong>
             <b>{toFactorScore(driver.score)}</b>
@@ -21,8 +21,8 @@ export function FactorBreakdown({
           <span>{sanitizeDisplayText(driver.explanation)}</span>
         </div>
       ))}
-      {negativeDrivers.map((driver) => (
-        <div className="driver negative-border" key={driver.name}>
+      {negativeDrivers.map((driver, index) => (
+        <div className="driver negative-border" key={`${driver.name}-${driver.score}-${index}`}>
           <div className="driver-title">
             <strong>{driver.name}</strong>
             <b>{toFactorScore(driver.score)}</b>
@@ -30,8 +30,8 @@ export function FactorBreakdown({
           <span>{sanitizeDisplayText(driver.explanation)}</span>
         </div>
       ))}
-      {riskFactors.map((factor) => (
-        <div className="driver risk-border" key={factor}>
+      {riskFactors.map((factor, index) => (
+        <div className="driver risk-border" key={`${factor}-${index}`}>
           <strong>{factor}</strong>
           <span>風險係數觀察項目</span>
         </div>
