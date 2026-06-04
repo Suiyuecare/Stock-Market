@@ -1095,6 +1095,24 @@ async function getLatestTwseStockDayQuote(symbol: string, fallbackName?: string)
   }
 }
 
+async function getLatestOfficialQuoteDate(): Promise<string> {
+  const [twseQuoteMap, tpexQuoteMap] = await Promise.all([
+    getTwseQuoteMap(),
+    getTpexQuoteMap(),
+  ]);
+  const dates = [
+    ...Array.from(twseQuoteMap.values()).map((quote) => quote.date),
+    ...Array.from(tpexQuoteMap.values()).map((quote) => quote.date),
+  ].filter((date) => date && date !== "資料日期待確認");
+  if (taipeiMarketRefreshWindowStarted()) {
+    const latestBellwetherQuote = await getLatestTwseStockDayQuote("2330", "台積電");
+    if (latestBellwetherQuote?.date && latestBellwetherQuote.date !== "資料日期待確認") {
+      dates.push(latestBellwetherQuote.date);
+    }
+  }
+  return dates.sort().at(-1) ?? "資料日期待確認";
+}
+
 async function getTwseValuationMap(): Promise<Map<string, TwseValuation>> {
   if (twseValuationCache) return twseValuationCache;
   if (twseValuationCachePromise) return twseValuationCachePromise;
@@ -2553,8 +2571,9 @@ async function taiwanPredictionTool(): Promise<TaiwanPredictionToolResponse> {
 async function mockResponse(path: string): Promise<unknown> {
   if (path === "/api/market/summary") {
     const stocks = await getFallbackInstruments();
+    const sessionDate = await getLatestOfficialQuoteDate();
     return {
-      session_date: "2026-06-02",
+      session_date: sessionDate,
       tw_status: "盤後資料就緒",
       us_premarket_status: "美股開盤前觀察",
       disclaimer,

@@ -260,7 +260,7 @@ export default async function RecommendationsPage() {
               <div className="recommendation-price">
                 <span>現價 / 外部法人</span>
                 <strong>{formatPrice(row.targetRange.currentPrice)} → {row.externalTarget.isAvailable ? formatPrice(row.externalTarget.targetPriceMean) : "待授權"}</strong>
-                <small>{row.externalTarget.isAvailable ? row.externalTarget.sourceLabel : `模型估算 ${formatPrice(row.targetRange.base)}`}</small>
+                <small>{formatQuoteDate(row.signal.quote?.date)} · {row.externalTarget.isAvailable ? row.externalTarget.sourceLabel : `模型估算 ${formatPrice(row.targetRange.base)}`}</small>
               </div>
               <em>{row.score}</em>
               <small>1D {row.scores["1d"]} · 5D {row.scores["5d"]} · 20D {row.scores["20d"]} · 過熱扣 {row.overheatPenalty} · 事件扣 {row.eventRiskPenalty}</small>
@@ -321,6 +321,13 @@ function formatPrice(value: number | null): string {
   if (value >= 1000) return value.toLocaleString("zh-TW", { maximumFractionDigits: 0 });
   if (value >= 100) return value.toLocaleString("zh-TW", { maximumFractionDigits: 1 });
   return value.toLocaleString("zh-TW", { maximumFractionDigits: 2 });
+}
+
+function formatQuoteDate(value: string | null | undefined): string {
+  if (!value || value === "資料日期待確認") return "日期待確認";
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+  return `${Number(match[2])}/${Number(match[3])} 官價`;
 }
 
 function buildReason(
