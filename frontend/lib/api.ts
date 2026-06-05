@@ -1,3 +1,5 @@
+import { brokerResearchSymbols, getBrokerAnalystTargetPrice, getBrokerResearchEventsForInstrument, getBrokerResearchScore } from "@/lib/broker-research";
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
 const twseMonthlyRevenueUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L";
@@ -529,10 +531,30 @@ const seedInstruments: StockInstrument[] = [
   { symbol: "2382", market: "TW", name: "廣達", sector: "電腦及週邊", currency: "TWD" },
   { symbol: "2395", market: "TW", name: "研華", sector: "電腦及週邊", currency: "TWD" },
   { symbol: "2408", market: "TW", name: "南亞科", sector: "半導體", currency: "TWD" },
+  { symbol: "2059", market: "TW", name: "川湖", sector: "伺服器導軌", currency: "TWD" },
+  { symbol: "2376", market: "TW", name: "技嘉", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2377", market: "TW", name: "微星", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "2455", market: "TW", name: "全新", sector: "光通訊", currency: "TWD" },
+  { symbol: "2458", market: "TW", name: "義隆", sector: "半導體", currency: "TWD" },
   { symbol: "3017", market: "TW", name: "奇鋐", sector: "散熱", currency: "TWD" },
   { symbol: "3324", market: "TPEX", name: "雙鴻", sector: "散熱", currency: "TWD" },
   { symbol: "2383", market: "TW", name: "台光電", sector: "CCL", currency: "TWD" },
   { symbol: "3037", market: "TW", name: "欣興", sector: "PCB/載板", currency: "TWD" },
+  { symbol: "3081", market: "TPEX", name: "聯亞", sector: "光通訊", currency: "TWD" },
+  { symbol: "3189", market: "TW", name: "景碩", sector: "PCB/載板", currency: "TWD" },
+  { symbol: "3260", market: "TPEX", name: "威剛", sector: "記憶體模組", currency: "TWD" },
+  { symbol: "3515", market: "TPEX", name: "華擎", sector: "電腦及週邊", currency: "TWD" },
+  { symbol: "3653", market: "TW", name: "健策", sector: "散熱", currency: "TWD" },
+  { symbol: "3665", market: "TW", name: "貿聯-KY", sector: "高速連接器", currency: "TWD" },
+  { symbol: "3710", market: "TPEX", name: "連展投控", sector: "光通訊/連接器", currency: "TWD" },
+  { symbol: "4971", market: "TPEX", name: "IET-KY", sector: "光通訊", currency: "TWD" },
+  { symbol: "4991", market: "TPEX", name: "環宇-KY", sector: "光通訊", currency: "TWD" },
+  { symbol: "5274", market: "TPEX", name: "信驊", sector: "半導體", currency: "TWD" },
+  { symbol: "6197", market: "TW", name: "佳必琪", sector: "連接器", currency: "TWD" },
+  { symbol: "6274", market: "TW", name: "台燿", sector: "CCL", currency: "TWD" },
+  { symbol: "6442", market: "TW", name: "光聖", sector: "光通訊", currency: "TWD" },
+  { symbol: "6510", market: "TPEX", name: "精測", sector: "半導體", currency: "TWD" },
+  { symbol: "8210", market: "TW", name: "勤誠", sector: "伺服器機殼", currency: "TWD" },
   { symbol: "2049", market: "TW", name: "上銀", sector: "機器人/自動化", currency: "TWD" },
   { symbol: "2359", market: "TW", name: "所羅門", sector: "機器人/AI 視覺", currency: "TWD" },
   { symbol: "1504", market: "TW", name: "東元", sector: "電機機械", currency: "TWD" },
@@ -714,13 +736,14 @@ const linkage = {
   AMZN: 0.15,
 };
 
-const recommendationCoverageSymbols = [
+const recommendationCoverageSymbols = Array.from(new Set([
+  ...brokerResearchSymbols,
   "2330", "2454", "3035", "3661", "2382", "3231", "6669", "2317", "2308", "2345",
   "3017", "3324", "2383", "3037", "8046", "3711", "1590", "2049", "2359", "1504",
   "1513", "1519", "1605", "2603", "2609", "2615", "2618", "2610", "2634", "2881",
   "2882", "2884", "2885", "2886", "2891", "5880", "5876", "1216", "2912", "2207",
   "6505", "1301", "1303", "2002", "6446", "5871", "4904", "3008", "2408", "2357",
-];
+]));
 
 function factor(name: string, category: string, score: number, weight: number, direction = "positive"): FactorScore {
   return {
@@ -887,6 +910,7 @@ function topicFitScore(instrument: StockInstrument): number {
   const text = `${instrument.symbol} ${instrument.name} ${instrument.sector ?? ""}`;
   const rules: Array<[RegExp, number]> = [
     [/CCL|PCB|載板|ABF|散熱|液冷|封裝|先進封裝/, 82],
+    [/光通訊|CPO|互連|連接器|導軌|機櫃|BMC|測試介面|探針卡/, 80],
     [/機器人|自動化|電機|電器電纜|重電|電網|變壓器/, 72],
     [/半導體|IC|晶片|電子零組件|電腦及週邊|通信網路|其他電子|資訊服務|數位雲端/, 68],
     [/金融|金控|銀行|保險|證券/, 64],
@@ -895,7 +919,9 @@ function topicFitScore(instrument: StockInstrument): number {
     [/食品|貿易百貨|觀光|居家|運動休閒|內需/, 56],
     [/生技|醫療|汽車|建材營造/, 46],
   ];
-  return rules.find(([pattern]) => pattern.test(text))?.[1] ?? 54;
+  const brokerScore = getBrokerResearchScore(instrument.symbol);
+  const ruleScore = rules.find(([pattern]) => pattern.test(text))?.[1] ?? 54;
+  return brokerScore ? Math.max(ruleScore, brokerScore) : ruleScore;
 }
 
 function replaceScoreFactor(factors: FactorScore[], category: string, score: number, weight: number, direction = "positive"): FactorScore[] {
@@ -1017,6 +1043,7 @@ function dynamicRecommendationScore(signalPayload: PredictionSignal): number {
   const scores = signalPayload.explanation?.component_scores ?? {};
   const riskScore = (signalPayload.risk_score.total ?? 0.5) * 100;
   const liquidityScore = quoteTradeValueScore(signalPayload.quote);
+  const brokerCoverageScore = getBrokerResearchScore(signalPayload.symbol) ?? 0;
   return clamp(
     (scores.TechnicalScore ?? 50) * 0.22
     + (scores.ChipScore ?? 50) * 0.22
@@ -1026,6 +1053,7 @@ function dynamicRecommendationScore(signalPayload: PredictionSignal): number {
     + (scores.TargetPriceScore ?? 50) * 0.04
     + liquidityScore * 0.12
     + quoteRangePositionScore(signalPayload.quote) * 0.08
+    + Math.max(0, brokerCoverageScore - 62) * 0.16
     - Math.max(0, riskScore - 45) * 0.18,
     0,
     100,
@@ -1490,8 +1518,11 @@ function deriveRelatedStockSymbols(instrument: StockInstrument): string[] {
     base.push("2330", "2303", "2454", "3034", "3035", "3661", "3711", "6147", "6223", "6488", "2408");
   }
   if (/電腦|週邊|電子代工|電源|通信|AI|伺服器/.test(sector)) {
-    base.push("2317", "2382", "3231", "6669", "2308", "2345", "2357", "4938", "6187");
+    base.push("2317", "2324", "2356", "2376", "2377", "2382", "3231", "6669", "2308", "2345", "2357", "4938", "8210", "6187");
   }
+  if (/散熱|液冷|水冷|導軌|機櫃/.test(sector)) base.push("2059", "3017", "3324", "3653", "8210", "2308");
+  if (/光通訊|CPO|互連|連接器/.test(sector)) base.push("2455", "3081", "3665", "3710", "4971", "4991", "6197", "6442");
+  if (/PCB|CCL|載板|ABF/.test(sector)) base.push("2383", "3037", "3189", "6274", "8046");
   if (/金融/.test(sector)) base.push("2881", "2882", "2884", "2885", "2886", "2891", "5880");
   if (/航運/.test(sector)) base.push("2603", "2609", "2615");
   if (/光電/.test(sector)) base.push("3008", "8069", "2409");
@@ -1503,13 +1534,14 @@ async function getNewsForInstrument(instrument: StockInstrument): Promise<NewsIt
   const keywords = deriveNewsKeywords(instrument);
   const relatedStockSymbols = deriveRelatedStockSymbols(instrument);
   const direct = pool.filter((event) => event.stock_id === instrument.symbol || event.related_symbols.includes(instrument.symbol));
+  const brokerResearch = getBrokerResearchEventsForInstrument(instrument);
   const contextual = pool.filter((event) => {
     if (direct.includes(event)) return false;
     const haystack = `${event.title}\n${event.summary ?? ""}`;
     return keywords.some((keyword) => keyword && haystack.includes(keyword));
   });
   const marketBackground = pool.filter((event) => event.source.startsWith("TWSE") || event.source.startsWith("CNA")).slice(0, 4);
-  const selected = dedupeNews([...direct, ...contextual, ...marketBackground]).slice(0, 8);
+  const selected = dedupeNews([...brokerResearch, ...direct, ...contextual, ...marketBackground]).slice(0, 10);
   return selected.map((event) => ({
     ...event,
     related_symbols: Array.from(new Set([
@@ -1549,7 +1581,8 @@ async function getExternalAnalystTargetPrice(instrument: StockInstrument, news: 
   if (cached && Date.now() - cached.loadedAt < 60 * 1000) return cached.value;
 
   const keyedTarget = await fetchFmpTargetPriceConsensus(instrument);
-  const extractedTarget = keyedTarget ?? extractAnalystTargetFromNews(instrument, news);
+  const brokerTarget = getBrokerAnalystTargetPrice(instrument);
+  const extractedTarget = keyedTarget ?? brokerTarget ?? extractAnalystTargetFromNews(instrument, news);
   const value = extractedTarget ?? buildPendingAnalystTarget(instrument);
   analystTargetCache.set(cacheKey, { loadedAt: Date.now(), value });
   return value;
@@ -1960,6 +1993,7 @@ function getDataSourceStatus(): DataSourceStatus[] {
     { name: "TPEx OpenAPI", status: "connected", detail: "上櫃行情與本益比/殖利率/股價淨值比", url: "https://www.tpex.org.tw/openapi/", requires_key: false },
     { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
     { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，新聞池與前台畫面每 1 分鐘同步", url: cnaFinanceRssUrl, requires_key: false },
+    { name: "本機券商研究報告", status: "connected", detail: "已匯入富邦、合庫、中信、國泰、元大 Computex/AI factory PDF 摘要、供應鏈事件與部分目標價；正式商用需確認轉載與 redisplay 權利", url: "https://stock.suiyuecare.com/news", requires_key: false },
     ...keyedProviders.map(([name, envName, url]) => {
       const envNames = Array.isArray(envName) ? envName : [envName];
       const configured = envNames.some((item) => process.env[item]);
@@ -2297,7 +2331,10 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
     ...Array.from(latestQuoteOverrides.values()).map((quote) => quote.date),
   ].filter((date): date is string => Boolean(date && date !== "資料日期待確認")).sort().at(-1) ?? candidates[0]?.signal.quote?.date ?? "資料日期待確認";
 
-  const enriched = await Promise.all(candidates.slice(0, 90).map(async ({ signal: signalPayload }) => {
+  const priorityCandidateSymbols = new Set(recommendationCoverageSymbols);
+  const priorityCandidates = candidates.filter(({ signal: signalPayload }) => priorityCandidateSymbols.has(signalPayload.symbol));
+  const enrichmentTargets = uniqueRecommendationTargets([...candidates.slice(0, 90), ...priorityCandidates]).slice(0, 140);
+  const enriched = await Promise.all(enrichmentTargets.map(async ({ signal: signalPayload }) => {
     const instrument: StockInstrument = {
       symbol: signalPayload.symbol,
       name: signalPayload.name,
