@@ -1,4 +1,5 @@
 import { brokerResearchSymbols, getBrokerAnalystTargetPrice, getBrokerResearchEventsForInstrument, getBrokerResearchScore } from "@/lib/broker-research";
+import { fetchLatestSupabaseAnalystTargetPrice, isSupabaseAnalystTargetReadConfigured, isSupabaseAnalystTargetWriteConfigured } from "@/lib/supabase-analyst-targets";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const twseListedCompanyUrl = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
@@ -1580,9 +1581,9 @@ async function getExternalAnalystTargetPrice(instrument: StockInstrument, news: 
   const cached = analystTargetCache.get(cacheKey);
   if (cached && Date.now() - cached.loadedAt < 60 * 1000) return cached.value;
 
-  const keyedTarget = await fetchFmpTargetPriceConsensus(instrument);
+  const supabaseTarget = await fetchLatestSupabaseAnalystTargetPrice(instrument);
   const brokerTarget = getBrokerAnalystTargetPrice(instrument);
-  const extractedTarget = keyedTarget ?? brokerTarget ?? extractAnalystTargetFromNews(instrument, news);
+  const extractedTarget = supabaseTarget ?? brokerTarget ?? extractAnalystTargetFromNews(instrument, news);
   const value = extractedTarget ?? buildPendingAnalystTarget(instrument);
   analystTargetCache.set(cacheKey, { loadedAt: Date.now(), value });
   return value;
@@ -1976,6 +1977,8 @@ function applyApiRiskFlags(signalPayload: PredictionSignal, riskFlags: ApiRiskFl
 }
 
 function getDataSourceStatus(): DataSourceStatus[] {
+  const supabaseTargetReadConfigured = isSupabaseAnalystTargetReadConfigured();
+  const supabaseTargetWriteConfigured = isSupabaseAnalystTargetWriteConfigured();
   const keyedProviders: Array<[string, string | string[], string]> = [
     ["OpenAI 新聞解析", "OPENAI_API_KEY", "https://platform.openai.com/docs/api-reference"],
     ["Finnhub 美股/新聞", "FINNHUB_API_KEY", "https://finnhub.io/docs/api"],
@@ -1994,6 +1997,15 @@ function getDataSourceStatus(): DataSourceStatus[] {
     { name: "TDCC OpenData", status: "connected", detail: "股權分散與大額持股集中度 reference", url: tdccOwnershipDistributionUrl, requires_key: false },
     { name: "CNA RSS", status: "connected", detail: "財經與科技新聞 RSS，新聞池與前台畫面每 1 分鐘同步", url: cnaFinanceRssUrl, requires_key: false },
     { name: "本機券商研究報告", status: "connected", detail: "已匯入富邦、合庫、中信、國泰、元大 Computex/AI factory PDF 摘要、供應鏈事件與部分目標價；正式商用需確認轉載與 redisplay 權利", url: "https://stock.suiyuecare.com/news", requires_key: false },
+    {
+      name: "Supabase 新聞法人目標價",
+      status: supabaseTargetReadConfigured ? "configured" : "needs_key",
+      detail: supabaseTargetWriteConfigured
+        ? "每兩天由公開新聞/RSS 擷取法人目標價並寫入 Supabase，前台優先讀取最新紀錄"
+        : "前台可讀設定尚未完整，或缺少 server-side SUPABASE_SERVICE_ROLE_KEY，暫時無法由 Cron 寫入新目標價",
+      url: "https://supabase.com/docs/guides/api",
+      requires_key: true,
+    },
     ...keyedProviders.map(([name, envName, url]) => {
       const envNames = Array.isArray(envName) ? envName : [envName];
       const configured = envNames.some((item) => process.env[item]);

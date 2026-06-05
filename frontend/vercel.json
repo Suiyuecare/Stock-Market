@@ -2,5 +2,11 @@
   "framework": "nextjs",
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/analyst-target-prices",
+      "schedule": "0 6 */2 * *"
+    }
+  ]
 }
