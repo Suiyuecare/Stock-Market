@@ -203,11 +203,19 @@ def _institutional_payload(stock_id: str) -> Dict[str, Any]:
 
 
 def _ranking_payload(signals: List[Any]) -> Dict[str, Any]:
+    data_date = max((getattr(signal, "signal_date", None) for signal in signals), default=None)
     return {
         "disclaimer": DISCLAIMER,
         "signals": signals,
+        "data_date": data_date,
         "candidate_count": len(signals),
         "method": "dynamic-public-instrument-pool",
+        "freshness": {
+            "mode": "official_aggregate",
+            "label": f"候選池資料日 {data_date.isoformat()}" if data_date else "候選池資料日待確認",
+            "summary": "後端 ranking 目前使用當日產生的候選池日期。若前端 fallback 偵測到 TWSE 個股 STOCK_DAY 比 STOCK_DAY_ALL 新，會在 UI 顯示個股官方覆蓋說明。",
+            "market_study_baseline_date": "2026-06-03",
+        },
     }
 
 
@@ -397,7 +405,7 @@ def stocks() -> Dict[str, Any]:
 @router.get("/stocks/ranking", response_model=RankingResponse)
 def stock_ranking() -> RankingResponse:
     signals = sorted(get_prediction_signals(), key=lambda signal: signal.probability_up, reverse=True)
-    return RankingResponse(disclaimer=DISCLAIMER, signals=signals)
+    return RankingResponse(**_ranking_payload(signals))
 
 
 @router.get("/rankings/top-probability")

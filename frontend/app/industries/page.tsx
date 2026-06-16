@@ -6,6 +6,7 @@ import { buildIndustryRankings } from "@/lib/industry-classification";
 
 export default async function IndustriesPage() {
   const ranking = await fetchTopProbabilityRanking();
+  const freshness = ranking.freshness;
   const rankedIndustries = buildIndustryRankings(ranking.signals);
   const top = rankedIndustries[0];
   const weakest = rankedIndustries.at(-1);
@@ -27,6 +28,7 @@ export default async function IndustriesPage() {
         <ScoreCard label="最強大分類" value={`${top?.score ?? "-"}`} detail={top?.category.name ?? "資料整理中"} tone="positive" />
         <ScoreCard label="最強小分類" value={topSubcategory?.name ?? "-"} detail={topSubcategory ? `${topSubcategory.score} 分 · ${topSubcategory.stockCount} 檔` : "資料整理中"} />
         <ScoreCard label="相對落後" value={weakest?.category.shortName ?? "-"} detail={weakest ? `${weakest.score} 分，先觀察即可` : "資料整理中"} tone="neutral" />
+        <ScoreCard label="資料新鮮度" value={(freshness?.twse_official_stock_day_date ?? ranking.data_date ?? "待確認").replaceAll("-", "/")} detail={freshness?.label ?? "官方日期待確認"} tone="neutral" />
       </section>
 
       <section className="panel">
@@ -37,7 +39,7 @@ export default async function IndustriesPage() {
           </div>
           <span className="panel-tag">每日隨明燈候選池重排</span>
         </div>
-        <p className="panel-note">排序方式：把同一分類底下股票的 5D 研究分數、最高分股票、平均風險與候選數量合併。分數越高代表目前研究條件越完整，不代表保證上漲。</p>
+        <p className="panel-note">排序方式：把同一分類底下股票的 5D 研究分數、最高分股票、平均風險與候選數量合併。分數越高代表目前研究條件越完整，不代表保證上漲。{freshness ? ` ${freshness.summary}` : ""}</p>
         <div className="industry-rank-list">
           {rankedIndustries.map((industry, index) => (
             <details className="industry-rank-card" key={industry.category.id} open={index < 3}>

@@ -101,6 +101,7 @@ export default async function RecommendationsPage() {
     .slice(0, 20);
   const top = recommendations[0];
   const dataDate = ranking.data_date ?? tool.research.research_window.end;
+  const freshness = ranking.freshness;
   const candidateCount = ranking.candidate_count ?? ranking.signals.length;
   const averageRisk = Math.round(recommendations.reduce((sum, row) => sum + row.metrics.riskScore, 0) / Math.max(1, recommendations.length));
   const averageScore = Math.round(recommendations.reduce((sum, row) => sum + row.score, 0) / Math.max(1, recommendations.length));
@@ -119,13 +120,24 @@ export default async function RecommendationsPage() {
 
       <section className="metric-grid">
         <ScoreCard label="市場狀態分數" value={`${marketState.score}`} detail={marketState.action} tone={marketState.tone} />
-        <ScoreCard label="資料日期" value={dataDate.replaceAll("-", "/")} detail="以官方最新盤後資料為準" tone="neutral" />
+        <ScoreCard label="資料日期" value={dataDate.replaceAll("-", "/")} detail={freshness?.label ?? "以官方最新盤後資料為準"} tone="neutral" />
         <ScoreCard label="動態候選池" value={`${candidateCount}`} detail="通過股價與流動性篩選後再排名" tone="neutral" />
         <ScoreCard label="第一名" value={top?.signal.symbol ?? "-"} detail={top ? top.signal.name : "資料整理中"} tone="positive" />
         <ScoreCard label="平均 5D 分數" value={`${averageScore}`} detail="分數不是機率" tone={scoreTone(averageScore)} />
-        <ScoreCard label="研究區間漲幅" value="+32.4%" detail="TAIEX 3/2 → 6/3" tone="positive" />
+        <ScoreCard label="研究快照基準" value={(freshness?.market_study_baseline_date ?? tool.research.research_window.end).replaceAll("-", "/")} detail="市場摘要與 sector rotation 仍沿用此基準快照" tone="neutral" />
         <ScoreCard label="平均風險" value={`${averageRisk}`} detail="越低越保守" tone={averageRisk >= 55 ? "risk" : "neutral"} />
         <ScoreCard label="平均過熱扣分" value={`${averageOverheat}`} detail="最高扣 15 分" tone={averageOverheat >= 8 ? "risk" : "neutral"} />
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Data Freshness</p>
+            <h2>官方來源日期說明</h2>
+          </div>
+          <span className="panel-tag">{freshness?.label ?? "官方日期待確認"}</span>
+        </div>
+        <p className="panel-note">{freshness?.summary ?? "若 TWSE 總表尚未更新，但個股 STOCK_DAY 已完成盤後資料，推薦池會優先採用個股官方資料。若官方新交易日尚未發布，production 會維持既有資料。"}</p>
       </section>
 
       <section className="panel market-state-panel">
@@ -152,9 +164,9 @@ export default async function RecommendationsPage() {
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Market Study</p>
-            <h2>3/1-6/3 台股情形</h2>
+            <h2>市場研究基準快照</h2>
           </div>
-          <span className="panel-tag">官方 TWSE / MOPS 資料整理</span>
+          <span className="panel-tag">基準日 {freshness?.market_study_baseline_date?.replaceAll("-", "/") ?? tool.research.research_window.end.replaceAll("-", "/")}</span>
         </div>
         <div className="market-state-grid">
           <div>
@@ -187,7 +199,7 @@ export default async function RecommendationsPage() {
             </div>
           ))}
         </div>
-        <p className="panel-note">新工具不把 AI 當唯一答案。電子零組件、IC 設計、晶圓製造、AI 供應鏈確實是研究期主軸，但金融避險、航運、機器人、重電、內需股仍可靠同業相對強度、籌碼與基本面進入候選。</p>
+        <p className="panel-note">這一塊仍是既有研究快照，不會因單日個股盤後補檔自動重算。最新的明燈排序會另外使用上方標示的官方最新報價日；市場摘要與 sector rotation 則等待下一次完整官方基礎資料重算。</p>
       </section>
 
       <section className="panel">

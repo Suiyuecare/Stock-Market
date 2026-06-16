@@ -25,6 +25,8 @@ def test_stock_ranking() -> None:
     payload = response.json()
     assert "research and education" in payload["disclaimer"]
     assert len(payload["signals"]) >= 1
+    assert payload["data_date"]
+    assert payload["freshness"]["market_study_baseline_date"] == "2026-06-03"
 
 
 def test_stock_detail() -> None:
@@ -91,7 +93,9 @@ def test_top_probability_ranking() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["signals"]) >= 1
+    assert payload["data_date"]
     assert payload["candidate_count"] >= len(payload["signals"])
+    assert payload["freshness"]["label"].startswith("候選池資料日")
     assert payload["method"] == "dynamic-public-instrument-pool"
 
 

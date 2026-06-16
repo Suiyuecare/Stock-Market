@@ -107,6 +107,10 @@ class NewsParseResponse(BaseModel):
 class RankingResponse(BaseModel):
     disclaimer: str
     signals: List[PredictionSignal]
+    data_date: Optional[date] = None
+    candidate_count: Optional[int] = None
+    method: Optional[str] = None
+    freshness: Optional[Dict[str, Any]] = None
 
 
 class StockDetailResponse(BaseModel):

@@ -193,6 +193,17 @@ export type RankingResponse = {
   data_date?: string;
   candidate_count?: number;
   method?: string;
+  freshness?: RecommendationFreshness;
+};
+
+export type RecommendationFreshness = {
+  mode: "official_aggregate" | "per_stock_override" | "demo";
+  label: string;
+  summary: string;
+  twse_stock_day_all_date?: string | null;
+  twse_official_stock_day_date?: string | null;
+  tpex_date?: string | null;
+  market_study_baseline_date?: string | null;
 };
 
 export type StockDetailResponse = {
@@ -611,6 +622,15 @@ let fallbackRecommendationSignalsCache: PredictionSignal[] | null = null;
 let fallbackRecommendationSignalsCacheLoadedAt = 0;
 let fallbackRecommendationDataDate = "資料日期待確認";
 let fallbackRecommendationCandidateCount = 0;
+let fallbackRecommendationFreshness: RecommendationFreshness = {
+  mode: "demo",
+  label: "資料日期待確認",
+  summary: "官方來源日期尚未確認，頁面可能顯示示範資料或延遲資料。",
+  twse_stock_day_all_date: null,
+  twse_official_stock_day_date: null,
+  tpex_date: null,
+  market_study_baseline_date: "2026-06-03",
+};
 let twseQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
 let twseValuationCachePromise: Promise<Map<string, TwseValuation>> | null = null;
 let tpexQuoteCachePromise: Promise<Map<string, TwseQuote>> | null = null;
@@ -845,12 +865,61 @@ function dateBehindToday(date: string): boolean {
 }
 
 function quoteMapBehindToday(map: Map<string, TwseQuote>): boolean {
-  const latestDate = Array.from(map.values())
-    .map((quote) => quote.date)
-    .filter((date) => date && date !== "資料日期待確認")
-    .sort()
-    .at(-1);
+  const latestDate = latestQuoteDateFromQuotes(Array.from(map.values()));
   return latestDate ? dateBehindToday(latestDate) : false;
+}
+
+function latestQuoteDateFromQuotes(quotes: Array<TwseQuote | null | undefined>): string | null {
+  return quotes
+    .map((quote) => quote?.date)
+    .filter((date): date is string => Boolean(date && date !== "資料日期待確認"))
+    .sort()
+    .at(-1) ?? null;
+}
+
+function latestQuoteDateFromMap(map: Map<string, TwseQuote>): string | null {
+  return latestQuoteDateFromQuotes(Array.from(map.values()));
+}
+
+function buildRecommendationFreshness(params: {
+  twseStockDayAllDate: string | null;
+  twseOfficialStockDayDate: string | null;
+  tpexDate: string | null;
+}): RecommendationFreshness {
+  const marketStudyBaselineDate = "2026-06-03";
+  const { twseStockDayAllDate, twseOfficialStockDayDate, tpexDate } = params;
+  if (twseOfficialStockDayDate && twseStockDayAllDate && twseOfficialStockDayDate > twseStockDayAllDate) {
+    return {
+      mode: "per_stock_override",
+      label: `個股官方補最新至 ${twseOfficialStockDayDate}`,
+      summary: `TWSE STOCK_DAY_ALL 仍停在 ${twseStockDayAllDate}；推薦池已改用 TWSE 個股 STOCK_DAY 補到 ${twseOfficialStockDayDate}，TPEx 盤後資料 ${tpexDate ?? "待確認"}。市場研究快照與 sector rotation 仍沿用 ${marketStudyBaselineDate} 基準。`,
+      twse_stock_day_all_date: twseStockDayAllDate,
+      twse_official_stock_day_date: twseOfficialStockDayDate,
+      tpex_date: tpexDate,
+      market_study_baseline_date: marketStudyBaselineDate,
+    };
+  }
+  if (twseStockDayAllDate || tpexDate) {
+    const displayedDate = [twseStockDayAllDate, tpexDate].filter((date): date is string => Boolean(date)).sort().at(-1) ?? "資料日期待確認";
+    return {
+      mode: "official_aggregate",
+      label: `官方盤後資料 ${displayedDate}`,
+      summary: `推薦池目前以官方盤後總表更新：TWSE STOCK_DAY_ALL ${twseStockDayAllDate ?? "待確認"}、TPEx ${tpexDate ?? "待確認"}。市場研究快照與 sector rotation 仍沿用 ${marketStudyBaselineDate} 基準。`,
+      twse_stock_day_all_date: twseStockDayAllDate,
+      twse_official_stock_day_date: twseOfficialStockDayDate,
+      tpex_date: tpexDate,
+      market_study_baseline_date: marketStudyBaselineDate,
+    };
+  }
+  return {
+    mode: "demo",
+    label: "官方資料待確認",
+    summary: `尚未取得新的官方盤後日期，暫維持既有資料。市場研究快照基準為 ${marketStudyBaselineDate}。`,
+    twse_stock_day_all_date: twseStockDayAllDate,
+    twse_official_stock_day_date: twseOfficialStockDayDate,
+    tpex_date: tpexDate,
+    market_study_baseline_date: marketStudyBaselineDate,
+  };
 }
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
@@ -2333,6 +2402,11 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
   const latestQuoteOverrides = shouldRefreshLatestQuotes
     ? await getLatestRecommendationQuoteOverrides(preliminaryCandidates, tradableQuotes)
     : new Map<string, TwseQuote>();
+  fallbackRecommendationFreshness = buildRecommendationFreshness({
+    twseStockDayAllDate: latestQuoteDateFromMap(twseQuoteMap),
+    twseOfficialStockDayDate: latestQuoteDateFromMap(latestQuoteOverrides),
+    tpexDate: latestQuoteDateFromMap(tpexQuoteMap),
+  });
   const candidates = tradableQuotes
     .map((quote, index) => buildCandidate(latestQuoteOverrides.get(quote.symbol) ?? quote, index))
     .sort((left, right) => right.score - left.score);
@@ -2378,6 +2452,15 @@ async function loadRecommendationFallbackSignals(): Promise<PredictionSignal[]> 
     fallbackRecommendationCandidateCount = fallbackRecommendationSignalsCache.length;
     fallbackRecommendationDataDate = "示範資料";
     fallbackRecommendationSignalsCacheLoadedAt = Date.now();
+    fallbackRecommendationFreshness = {
+      mode: "demo",
+      label: "示範資料",
+      summary: "官方來源暫時不可用，推薦頁暫退回示範候選池。",
+      twse_stock_day_all_date: null,
+      twse_official_stock_day_date: null,
+      tpex_date: null,
+      market_study_baseline_date: "2026-06-03",
+    };
   }
 
   fallbackRecommendationSignalsCachePromise = null;
@@ -2673,6 +2756,7 @@ async function mockResponse(path: string): Promise<unknown> {
       data_date: fallbackRecommendationDataDate,
       candidate_count: fallbackRecommendationCandidateCount,
       method: "dynamic-twse-tpex-quote-pool",
+      freshness: fallbackRecommendationFreshness,
     } satisfies RankingResponse;
   }
   if (path === "/api/stocks/ranking") {
